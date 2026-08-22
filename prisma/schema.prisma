@@ -1,0 +1,25 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider          = "postgresql"
+  url               = env("DATABASE_URL")
+  shadowDatabaseUrl = env("SHADOW_DATABASE_URL")
+}
+
+// Configuración global de la tienda (singleton: id = 1)
+model Configuracion {
+  id             Int      @id @default(autoincrement())
+  nombreTienda   String   @default("Mi Tienda")
+  nit            String?
+  direccion      String?
+  telefono       String?
+  // Meta de ventas diaria en COP
+  metaDiaria     Int      @default(1000000)
+  // Regla de puntos: cada X pesos gastados = 1 punto
+  puntosPorMonto Int      @default(10000)
+  updatedAt      DateTime @updatedAt
+
+  @@map("configuracion")
+}
