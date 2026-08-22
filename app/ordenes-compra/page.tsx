@@ -1,8 +1,22 @@
-'use client';
-import DataTable from '@/components/ui/DataTable';
-import { Button } from '@/components/ui/Button';
-const COLS = [{ key: 'fecha', label: 'Fecha' }, { key: 'proveedor', label: 'Proveedor' }, { key: 'total', label: 'Total' }, { key: 'estado', label: 'Estado' }];
-export default function Page() {
-  return <DataTable columns={COLS} data={[]}
-      actions={<Button variant="primary">+ Nuevo</Button>} pageTitle="Ordenes de Compras" />;
+import { listarOrdenesCompra, type OrdenCompraLista } from "@/lib/actions/compras";
+import { listarProveedores } from "@/lib/actions/contactos";
+import { listarBodegas } from "@/lib/actions/catalogos";
+import OrdenesCompraClient from "./OrdenesCompraClient";
+
+export const dynamic = "force-dynamic";
+
+export default async function OrdenesCompraPage() {
+  const [ordenes, proveedores, bodegas] = await Promise.all([
+    listarOrdenesCompra(),
+    listarProveedores(true),
+    listarBodegas(true),
+  ]);
+
+  return (
+    <OrdenesCompraClient
+      ordenesIniciales={ordenes as unknown as OrdenCompraLista[]}
+      proveedores={proveedores}
+      bodegas={bodegas}
+    />
+  );
 }

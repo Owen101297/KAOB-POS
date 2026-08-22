@@ -43,7 +43,14 @@ export interface ProductoPOS {
   activo: boolean;
   createdAt: Date;
   updatedAt: Date;
-  variantes: ({ color: { id: number; nombre: string; hex: string | null }; talla: { id: number; valor: string; orden: number } } & { stocks: { cantidad: number }[] })[];
+  variantes: ({
+    id: number;
+    sku: string;
+    precioOverride: number | null;
+    color: { id: number; nombre: string; hex: string | null };
+    talla: { id: number; valor: string; orden: number };
+    stocks: { cantidad: number }[];
+  })[];
 }
 
 export interface VentaLista {
@@ -168,7 +175,18 @@ export async function buscarProductosPOS(
     activo: boolean;
     createdAt: Date;
     updatedAt: Date;
-    variantes: ({ color: { id: number; nombre: string; hex: string | null }; talla: { id: number; valor: string; orden: number } } & { stocks: { cantidad: number }[] })[];
+    variantes: ({
+      id: number;
+      sku: string;
+      productoId: number;
+      colorId: number;
+      tallaId: number;
+      precioOverride: number | null;
+      activa: boolean;
+      color: { id: number; nombre: string; hex: string | null };
+      talla: { id: number; valor: string; orden: number };
+      stocks: { cantidad: number }[];
+    })[];
   }[];
 }
 

@@ -110,6 +110,8 @@ model Bodega {
   trasladosEntrada   Traslado[]             @relation("TrasladosDestino")
   ventas             Venta[]
   sesionesCaja       SesionCaja[]
+  compras            Compra[]
+  ordenesCompra      OrdenCompra[]
 
   @@map("bodegas")
 }
@@ -211,6 +213,8 @@ model Variante {
   movimientos    MovimientoInventario[]
   trasladosDetalle TrasladoDetalle[]
   ventaItems     VentaItem[]
+  compraItems    CompraItem[]
+  ordenCompraDetalles OrdenCompraDetalle[]
 
   @@unique([productoId, colorId, tallaId])
   @@map("variantes")
@@ -320,6 +324,9 @@ model Proveedor {
   activo    Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  compras       Compra[]
+  ordenesCompra OrdenCompra[]
 
   @@index([nombre])
   @@map("proveedores")
@@ -437,4 +444,86 @@ model MovimientoCaja {
 
   @@index([sesionId])
   @@map("movimientos_caja")
+}
+
+// ───────────────────────── COMPRAS Y PROVEEDORES ────────────────────────
+
+model Compra {
+  id             Int          @id @default(autoincrement())
+  consecutivo    Int          @unique
+  numeroFactura  String?
+  proveedorId    Int
+  proveedor      Proveedor    @relation(fields: [proveedorId], references: [id], onDelete: Restrict)
+  bodegaId       Int
+  bodega         Bodega       @relation(fields: [bodegaId], references: [id], onDelete: Restrict)
+  subtotal       Int          @default(0)
+  impuesto       Int          @default(0)
+  total          Int          @default(0)
+  estado         EstadoVenta  @default(COMPLETADA) // COMPLETADA, ANULADA
+  nota           String?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  items          CompraItem[]
+  pagos          PagoCompra[]
+
+  @@index([proveedorId])
+  @@index([createdAt])
+  @@map("compras")
+}
+
+model CompraItem {
+  id             Int      @id @default(autoincrement())
+  compraId       Int
+  compra         Compra   @relation(fields: [compraId], references: [id], onDelete: Cascade)
+  varianteId     Int
+  variante       Variante @relation(fields: [varianteId], references: [id], onDelete: Restrict)
+  cantidad       Int
+  costoUnitario  Int
+  subtotal       Int
+
+  @@map("compras_items")
+}
+
+model PagoCompra {
+  id         Int        @id @default(autoincrement())
+  compraId   Int
+  compra     Compra     @relation(fields: [compraId], references: [id], onDelete: Cascade)
+  metodo     MetodoPago
+  monto      Int
+  referencia String?
+  createdAt  DateTime   @default(now())
+
+  @@map("compras_pagos")
+}
+
+model OrdenCompra {
+  id          Int                  @id @default(autoincrement())
+  consecutivo Int                  @unique
+  proveedorId Int
+  proveedor   Proveedor            @relation(fields: [proveedorId], references: [id], onDelete: Restrict)
+  bodegaId    Int
+  bodega      Bodega               @relation(fields: [bodegaId], references: [id], onDelete: Restrict)
+  total       Int                  @default(0)
+  estado      String               @default("PENDIENTE") // PENDIENTE, RECIBIDA, CANCELADA
+  nota        String?
+  createdAt   DateTime             @default(now())
+  updatedAt   DateTime             @updatedAt
+
+  detalles    OrdenCompraDetalle[]
+
+  @@map("ordenes_compra")
+}
+
+model OrdenCompraDetalle {
+  id          Int         @id @default(autoincrement())
+  ordenId     Int
+  orden       OrdenCompra @relation(fields: [ordenId], references: [id], onDelete: Cascade)
+  varianteId  Int
+  variante    Variante    @relation(fields: [varianteId], references: [id], onDelete: Cascade)
+  cantidad    Int
+  costoEstimado Int
+  subtotal    Int
+
+  @@map("ordenes_compra_detalle")
 }

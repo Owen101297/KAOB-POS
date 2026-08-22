@@ -245,6 +245,48 @@ export const movimientoCajaSchema = z.object({
   ventaId: z.coerce.number().int().positive().nullable().optional(),
 });
 
+// ────────────────────────── COMPRAS ─────────────────────────────
+
+export const compraItemSchema = z.object({
+  varianteId: z.coerce.number().int().positive(),
+  cantidad: z.coerce.number().int().positive("La cantidad debe ser mayor a 0"),
+  costoUnitario: z.coerce.number().int().min(0, "El costo unitario no puede ser negativo"),
+});
+
+export const pagoCompraSchema = z.object({
+  metodo: z.enum(["EFECTIVO", "TRANSFERENCIA", "TARJETA", "PUNTOS", "OTRO"]),
+  monto: z.coerce.number().int().positive("El monto del pago debe ser mayor a 0"),
+  referencia: z.string().trim().max(120).optional().or(z.literal("")),
+});
+
+export const registrarCompraSchema = z.object({
+  numeroFactura: z.string().trim().max(50).optional().or(z.literal("")),
+  proveedorId: z.coerce.number().int().positive("Selecciona un proveedor"),
+  bodegaId: z.coerce.number().int().positive("Selecciona una bodega"),
+  items: z.array(compraItemSchema).min(1, "Agrega al menos un artículo"),
+  pagos: z.array(pagoCompraSchema).optional().default([]),
+  impuesto: z.coerce.number().int().min(0).default(0),
+  nota: z.string().trim().max(300).optional().or(z.literal("")),
+});
+
+export const anularCompraSchema = z.object({
+  id: z.coerce.number().int().positive(),
+  motivo: z.string().trim().min(3, "Describe el motivo").max(300),
+});
+
+export const ordenCompraDetalleSchema = z.object({
+  varianteId: z.coerce.number().int().positive(),
+  cantidad: z.coerce.number().int().positive(),
+  costoEstimado: z.coerce.number().int().min(0),
+});
+
+export const crearOrdenCompraSchema = z.object({
+  proveedorId: z.coerce.number().int().positive(),
+  bodegaId: z.coerce.number().int().positive(),
+  detalles: z.array(ordenCompraDetalleSchema).min(1, "Agrega al menos un artículo"),
+  nota: z.string().trim().max(300).optional().or(z.literal("")),
+});
+
 // ─────────────────────────── TIPOS ───────────────────────────
 
 export type ActionResult<T = undefined> =
@@ -260,3 +302,4 @@ export function errorDesconocido(e: unknown): string {
   }
   return "Error inesperado. Intenta de nuevo.";
 }
+
