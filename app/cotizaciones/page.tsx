@@ -1,6 +1,12 @@
-'use client';
-import DataTable from '@/components/ui/DataTable';
-const COLS = [{ key: 'fecha', label: 'Fecha' }, { key: 'numero', label: 'Numero' }, { key: 'cliente', label: 'Cliente' }, { key: 'total', label: 'Total' }, { key: 'estado', label: 'Estado' }];
-export default function Page() {
-  return <DataTable columns={COLS} data={[]} pageTitle="Cotizaciones" />;
+import { listarVentas, type VentaLista } from "@/lib/actions/ventas";
+import CotizacionesClient from "./CotizacionesClient";
+
+export const dynamic = "force-dynamic";
+
+export default async function CotizacionesPage() {
+  const cotizaciones = await listarVentas({ tipo: "COTIZACION" });
+
+  return (
+    <CotizacionesClient cotizacionesIniciales={cotizaciones as unknown as VentaLista[]} />
+  );
 }
