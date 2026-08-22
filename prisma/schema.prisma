@@ -23,3 +23,222 @@ model Configuracion {
 
   @@map("configuracion")
 }
+
+// ─────────────────────────── ENUMS ───────────────────────────
+
+enum Genero {
+  DAMA
+  CABALLERO
+  NINO
+  UNISEX
+
+  @@map("genero")
+}
+
+enum Calidad {
+  PREMIUM
+  ALTA
+  ESTANDAR
+  ECONOMICA
+
+  @@map("calidad")
+}
+
+enum TipoMovimiento {
+  INICIAL
+  AJUSTE_ENTRADA
+  AJUSTE_SALIDA
+  TRASLADO_SALIDA
+  TRASLADO_ENTRADA
+  COMPRA
+  DEVOLUCION
+
+  @@map("tipo_movimiento")
+}
+
+// ─────────────────────── CATÁLOGOS BASE ──────────────────────
+
+model Bodega {
+  id          Int      @id @default(autoincrement())
+  nombre      String   @unique
+  direccion   String?
+  esPrincipal Boolean  @default(false)
+  activa      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  stocks       StockBodega[]
+  movimientosOrigen  MovimientoInventario[] @relation("MovOrigen")
+  movimientosDestino MovimientoInventario[] @relation("MovDestino")
+  trasladosSalida    Traslado[]             @relation("TrasladosOrigen")
+  trasladosEntrada   Traslado[]             @relation("TrasladosDestino")
+
+  @@map("bodegas")
+}
+
+model Marca {
+  id     Int     @id @default(autoincrement())
+  nombre String  @unique
+  activa Boolean @default(true)
+
+  productos Producto[]
+
+  @@map("marcas")
+}
+
+model Categoria {
+  id     Int     @id @default(autoincrement())
+  nombre String  @unique
+  padreId Int?
+  padre  Categoria?  @relation("CategoriaJerarquia", fields: [padreId], references: [id])
+  hijas  Categoria[] @relation("CategoriaJerarquia")
+
+  productos Producto[]
+
+  @@map("categorias")
+}
+
+model GrupoTalla {
+  id     Int    @id @default(autoincrement())
+  nombre String @unique
+
+  tallas Talla[]
+
+  @@map("grupos_talla")
+}
+
+model Talla {
+  id     Int        @id @default(autoincrement())
+  grupoId Int
+  grupo  GrupoTalla @relation(fields: [grupoId], references: [id], onDelete: Restrict)
+  valor  String
+  orden  Int        @default(0)
+
+  variantes Variante[]
+
+  @@unique([grupoId, valor])
+  @@map("tallas")
+}
+
+model Color {
+  id     Int     @id @default(autoincrement())
+  nombre String  @unique
+  hex    String?
+
+  variantes Variante[]
+
+  @@map("colores")
+}
+
+// ───────────────────── PRODUCTOS Y VARIANTES ──────────────────
+
+model Producto {
+  id          Int      @id @default(autoincrement())
+  referencia  String   @unique
+  nombre      String
+  descripcion String?
+  categoriaId Int
+  categoria   Categoria @relation(fields: [categoriaId], references: [id], onDelete: Restrict)
+  marcaId     Int?
+  marca       Marca?    @relation(fields: [marcaId], references: [id], onDelete: SetNull)
+  genero      Genero?
+  material    String?
+  calidad     Calidad?
+  temporada   String?
+  costo       Int      @default(0)
+  precioBase  Int      @default(0)
+  activo      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  variantes Variante[]
+
+  @@map("productos")
+}
+
+model Variante {
+  id             Int      @id @default(autoincrement())
+  productoId     Int
+  producto       Producto  @relation(fields: [productoId], references: [id], onDelete: Cascade)
+  colorId        Int
+  color          Color     @relation(fields: [colorId], references: [id], onDelete: Restrict)
+  tallaId        Int
+  talla          Talla     @relation(fields: [tallaId], references: [id], onDelete: Restrict)
+  sku            String    @unique
+  precioOverride Int?
+  activa         Boolean   @default(true)
+  createdAt      DateTime  @default(now())
+
+  stocks      StockBodega[]
+  movimientos MovimientoInventario[]
+  trasladosDetalle TrasladoDetalle[]
+
+  @@unique([productoId, colorId, tallaId])
+  @@map("variantes")
+}
+
+model StockBodega {
+  id         Int     @id @default(autoincrement())
+  varianteId Int
+  variante   Variante @relation(fields: [varianteId], references: [id], onDelete: Cascade)
+  bodegaId   Int
+  bodega     Bodega   @relation(fields: [bodegaId], references: [id], onDelete: Cascade)
+  cantidad   Int     @default(0)
+  minimo     Int     @default(0)
+
+  @@unique([varianteId, bodegaId])
+  @@index([bodegaId])
+  @@map("stock_bodega")
+}
+
+// ───────────────── INVENTARIO: MOVIMIENTOS ────────────────────
+
+model MovimientoInventario {
+  id              Int            @id @default(autoincrement())
+  varianteId      Int
+  variante        Variante       @relation(fields: [varianteId], references: [id], onDelete: Cascade)
+  tipo            TipoMovimiento
+  cantidad        Int
+  bodegaOrigenId  Int?
+  bodegaOrigen    Bodega?        @relation("MovOrigen", fields: [bodegaOrigenId], references: [id], onDelete: SetNull)
+  bodegaDestinoId Int?
+  bodegaDestino   Bodega?        @relation("MovDestino", fields: [bodegaDestinoId], references: [id], onDelete: SetNull)
+  costoUnitario   Int?
+  nota            String?
+  trasladoId      Int?
+  refDocumento    String?
+  createdAt       DateTime       @default(now())
+
+  traslado Traslado? @relation(fields: [trasladoId], references: [id], onDelete: SetNull)
+
+  @@index([varianteId])
+  @@index([createdAt])
+  @@map("movimientos_inventario")
+}
+
+model Traslado {
+  id              Int      @id @default(autoincrement())
+  bodegaOrigenId  Int
+  bodegaOrigen    Bodega   @relation("TrasladosOrigen", fields: [bodegaOrigenId], references: [id], onDelete: Restrict)
+  bodegaDestinoId Int
+  bodegaDestino   Bodega   @relation("TrasladosDestino", fields: [bodegaDestinoId], references: [id], onDelete: Restrict)
+  nota            String?
+  createdAt       DateTime @default(now())
+
+  detalles    TrasladoDetalle[]
+  movimientos MovimientoInventario[]
+
+  @@map("traslados")
+}
+
+model TrasladoDetalle {
+  id         Int      @id @default(autoincrement())
+  trasladoId Int
+  traslado   Traslado @relation(fields: [trasladoId], references: [id], onDelete: Cascade)
+  varianteId Int
+  variante   Variante @relation(fields: [varianteId], references: [id], onDelete: Cascade)
+  cantidad   Int
+
+  @@unique([trasladoId, varianteId])
+  @@map("traslados_detalle")
+}

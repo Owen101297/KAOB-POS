@@ -1,0 +1,354 @@
+'use client';
+
+import { useMemo, useState, useTransition } from 'react';
+import { useRouter } from 'next/navigation';
+import { AlertTriangle, Download, PackageCheck, SlidersHorizontal, TrendingDown } from 'lucide-react';
+import type { StockFila } from '@/lib/actions/inventario';
+import type { Bodega } from '@prisma/client';
+import DataTable from '@/components/ui/DataTable';
+import { Button } from '@/components/ui/Button';
+import { Badge } from '@/components/ui/Badge';
+import { Input } from '@/components/ui/Input';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/Dialog';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/Select';
+import { StatCard } from '@/components/ui/StatCard';
+import { useBodega } from '@/components/providers/BodegaProvider';
+import { formatoCOP } from '@/lib/format';
+import BotonImportarExcel from './BotonImportarExcel';
+import { ajustarStock, actualizarMinimo } from '@/lib/actions/inventario';
+
+interface FilaStock {
+  varianteId: number;
+  bodegaId: number;
+  sku: string;
+  producto: string;
+  referencia: string;
+  color: string;
+  talla: string;
+  cantidad: number;
+  minimo: number;
+  estado: 'agotado' | 'bajo' | 'ok';
+  costo: number;
+  [key: string]: unknown;
+}
+
+export default function InventarioClient({
+  stock,
+  bodegas,
+}: {
+  stock: StockFila[];
+  bodegas: Bodega[];
+}) {
+  const router = useRouter();
+  const { bodegaActiva } = useBodega();
+  const [pending, startTransition] = useTransition();
+  const [bodegaFiltro, setBodegaFiltro] = useState('activa');
+  const [soloAlertas, setSoloAlertas] = useState(false);
+  const [ajustando, setAjustando] = useState<StockFila | null>(null);
+
+  const refrescar = () => startTransition(() => router.refresh());
+  const bodegaIdEfectiva =
+    bodegaFiltro === 'activa' ? bodegaActiva?.id : bodegaFiltro === 'todas' ? null : Number(bodegaFiltro);
+
+  const filas = useMemo<FilaStock[]>(() => {
+    let rows = stock;
+    if (bodegaIdEfectiva) rows = rows.filter((f) => f.bodegaId === bodegaIdEfectiva);
+    if (soloAlertas) rows = rows.filter((f) => f.cantidad === 0 || (f.minimo > 0 && f.cantidad <= f.minimo));
+    return rows.map((f) => ({
+      varianteId: f.varianteId,
+      bodegaId: f.bodegaId,
+      sku: f.variante.sku,
+      producto: f.variante.producto.nombre,
+      referencia: f.variante.producto.referencia,
+      color: f.variante.color.nombre,
+      talla: f.variante.talla.valor,
+      cantidad: f.cantidad,
+      minimo: f.minimo,
+      estado: f.cantidad === 0 ? 'agotado' : f.minimo > 0 && f.cantidad <= f.minimo ? 'bajo' : 'ok',
+      costo: f.variante.producto.costo,
+    }));
+  }, [stock, bodegaIdEfectiva, soloAlertas]);
+
+  const stats = useMemo(() => {
+    const unidades = filas.reduce((a, f) => a + f.cantidad, 0);
+    const valor = filas.reduce((a, f) => a + f.cantidad * f.costo, 0);
+    const alertas = filas.filter((f) => f.estado !== 'ok').length;
+    return { unidades, valor, alertas };
+  }, [filas]);
+
+  const columnas = [
+    {
+      key: 'sku',
+      label: 'SKU',
+      render: (row: FilaStock) => <span className="font-mono text-xs font-bold text-slate-800">{row.sku}</span>,
+    },
+    {
+      key: 'producto',
+      label: 'Producto',
+      render: (row: FilaStock) => (
+        <div>
+          <p className="font-medium text-slate-800">{row.producto}</p>
+          <p className="font-mono text-[11px] text-slate-400">{row.referencia}</p>
+        </div>
+      ),
+    },
+    { key: 'color', label: 'Color' },
+    { key: 'talla', label: 'Talla', align: 'center' as const },
+    ...(bodegaIdEfectiva
+      ? []
+      : [
+          {
+            key: 'bodega',
+            label: 'Bodega',
+            render: (row: FilaStock) =>
+              bodegas.find((b) => b.id === row.bodegaId)?.nombre ?? String(row.bodegaId),
+          },
+        ]),
+    {
+      key: 'cantidad',
+      label: 'Cantidad',
+      align: 'right' as const,
+      render: (row: FilaStock) => (
+        <span className={row.cantidad === 0 ? 'font-bold text-red-500' : 'font-bold text-slate-800'}>
+          {row.cantidad}
+        </span>
+      ),
+    },
+    {
+      key: 'minimo',
+      label: 'Mínimo',
+      align: 'right' as const,
+      render: (row: FilaStock) => (
+        <InlineMinimo fila={row} disabled={pending} onGuardado={refrescar} />
+      ),
+    },
+    {
+      key: 'estado',
+      label: 'Estado',
+      align: 'center' as const,
+      render: (row: FilaStock) =>
+        row.estado === 'agotado' ? (
+          <Badge variant="danger">Agotado</Badge>
+        ) : row.estado === 'bajo' ? (
+          <Badge variant="warning">Bajo</Badge>
+        ) : (
+          <Badge variant="success">OK</Badge>
+        ),
+    },
+    {
+      key: 'acciones',
+      label: '',
+      width: '70px',
+      render: (row: FilaStock) => {
+        const original = stock.find(
+          (f) => f.varianteId === row.varianteId && f.bodegaId === row.bodegaId
+        );
+        if (!original) return null;
+        return (
+          <Button size="icon" variant="ghost" aria-label={`Ajustar ${row.sku}`} onClick={() => setAjustando(original)}>
+            <SlidersHorizontal className="h-4 w-4" />
+          </Button>
+        );
+      },
+    },
+  ];
+
+  return (
+    <div>
+      <div className="mb-6 grid gap-4 sm:grid-cols-3">
+        <StatCard label="Unidades" value={String(stats.unidades)} icon={<PackageCheck className="h-4 w-4" />} />
+        <StatCard label="Valor a costo" value={formatoCOP(stats.valor)} icon={<TrendingDown className="h-4 w-4" />} color="sky" />
+        <StatCard
+          label="Alertas de stock"
+          value={String(stats.alertas)}
+          icon={<AlertTriangle className="h-4 w-4" />}
+          color={stats.alertas > 0 ? 'red' : 'brand'}
+        />
+      </div>
+
+      <DataTable
+        columns={columnas}
+        data={filas}
+        pageTitle="Inventario"
+        description="Existencias por variante y bodega. Ajusta cantidades con motivo obligatorio."
+        actions={
+          <>
+            <a
+              href="/api/excel/exportar"
+              className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3 text-[13px] font-semibold text-slate-600 transition-colors hover:bg-slate-50 hover:text-slate-900"
+            >
+              <Download className="h-4 w-4" /> Exportar
+            </a>
+            <BotonImportarExcel />
+          </>
+        }
+        filters={
+          <>
+            <Select value={bodegaFiltro} onValueChange={setBodegaFiltro}>
+              <SelectTrigger className="h-9 w-[170px]"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="activa">Bodega activa{bodegaActiva ? ` · ${bodegaActiva.nombre}` : ''}</SelectItem>
+                <SelectItem value="todas">Todas las bodegas</SelectItem>
+                {bodegas.map((b) => (
+                  <SelectItem key={b.id} value={String(b.id)}>{b.nombre}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Button
+              size="sm"
+              variant={soloAlertas ? 'primary' : 'outline'}
+              onClick={() => setSoloAlertas(!soloAlertas)}
+            >
+              <AlertTriangle className="h-4 w-4" /> Solo alertas
+            </Button>
+          </>
+        }
+        emptyTitle="Sin filas de inventario"
+        emptyDescription="Cuando crees productos con variantes verás su stock aquí."
+      />
+
+      <Dialog open={!!ajustando} onOpenChange={(v) => !v && setAjustando(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Ajustar stock</DialogTitle>
+            <DialogDescription>
+              {ajustando && `${ajustando.variante.sku} · ${ajustando.bodega.nombre}`}
+            </DialogDescription>
+          </DialogHeader>
+          {ajustando && (
+            <DialogAjuste
+              fila={ajustando}
+              disabled={pending}
+              onListo={() => {
+                setAjustando(null);
+                refrescar();
+              }}
+              onCancelar={() => setAjustando(null)}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
+
+// ─────────────────────── mínimo inline ─────────────────────────
+
+function InlineMinimo({
+  fila,
+  disabled,
+  onGuardado,
+}: {
+  fila: FilaStock;
+  disabled: boolean;
+  onGuardado: () => void;
+}) {
+  const [valor, setValor] = useState(String(fila.minimo));
+  const sucio = Number(valor) !== fila.minimo;
+
+  return (
+    <span className="inline-flex items-center justify-end gap-1">
+      <input
+        type="number"
+        min={0}
+        value={valor}
+        onChange={(e) => setValor(e.target.value)}
+        className="w-14 rounded-md border border-slate-200 px-2 py-1 text-right text-xs outline-none focus:border-brand-400"
+      />
+      {sucio && (
+        <Button
+          size="sm"
+          variant="outline"
+          disabled={disabled}
+          onClick={async () => {
+            await actualizarMinimo({
+              varianteId: fila.varianteId,
+              bodegaId: fila.bodegaId,
+              minimo: Number(valor) || 0,
+            });
+            onGuardado();
+          }}
+        >
+          ✓
+        </Button>
+      )}
+    </span>
+  );
+}
+
+// ───────────────────────── dialog ajuste ───────────────────────
+
+function DialogAjuste({
+  fila,
+  disabled,
+  onListo,
+  onCancelar,
+}: {
+  fila: StockFila;
+  disabled: boolean;
+  onListo: () => void;
+  onCancelar: () => void;
+}) {
+  const [nuevaCantidad, setNuevaCantidad] = useState(String(fila.cantidad));
+  const [motivo, setMotivo] = useState('');
+  const [error, setError] = useState<string | null>(null);
+
+  async function enviar(e: React.FormEvent) {
+    e.preventDefault();
+    setError(null);
+    const res = await ajustarStock({
+      varianteId: fila.varianteId,
+      bodegaId: fila.bodegaId,
+      nuevaCantidad: Number(nuevaCantidad),
+      motivo,
+    });
+    if (!res.ok) return setError(res.error);
+    onListo();
+  }
+
+  const delta = Number(nuevaCantidad) - fila.cantidad;
+
+  return (
+    <form onSubmit={enviar} className="grid gap-3">
+      <div className="rounded-lg bg-slate-50 px-4 py-3 text-[13px]">
+        <p className="font-bold text-slate-800">{fila.variante.producto.nombre}</p>
+        <p className="text-xs text-slate-500">
+          {fila.variante.color.nombre} · Talla {fila.variante.talla.valor} · {fila.bodega.nombre}
+        </p>
+      </div>
+      <label className="grid gap-1">
+        <span className="text-xs font-semibold text-slate-600">
+          Cantidad actual: <strong>{fila.cantidad}</strong>
+          {delta !== 0 && (
+            <span className={delta > 0 ? 'ml-2 text-emerald-600' : 'ml-2 text-red-500'}>
+              ({delta > 0 ? '+' : ''}{delta})
+            </span>
+          )}
+        </span>
+        <Input type="number" min={0} value={nuevaCantidad} onChange={(e) => setNuevaCantidad(e.target.value)} required autoFocus />
+      </label>
+      <label className="grid gap-1">
+        <span className="text-xs font-semibold text-slate-600">Motivo del ajuste *</span>
+        <Input value={motivo} onChange={(e) => setMotivo(e.target.value)} required minLength={3} maxLength={300} placeholder="Ej. Prenda dañada, conteo físico…" />
+      </label>
+      {error && <p className="text-xs font-semibold text-red-500">{error}</p>}
+      <DialogFooter>
+        <Button type="button" variant="outline" onClick={onCancelar}>Cancelar</Button>
+        <Button type="submit" disabled={disabled || motivo.trim().length < 3}>Registrar ajuste</Button>
+      </DialogFooter>
+    </form>
+  );
+}

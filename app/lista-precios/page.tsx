@@ -1,8 +1,10 @@
-'use client';
-import DataTable from '@/components/ui/DataTable';
-import { Button } from '@/components/ui/Button';
-const COLS = [{ key: 'nombre', label: 'Nombre' }, { key: 'descuento', label: 'Descuento' }];
-export default function Page() {
-  return <DataTable columns={COLS} data={[]}
-      actions={<Button variant="primary">+ Nuevo</Button>} pageTitle="Libro de Precios" />;
+import type { Metadata } from 'next';
+import { listarProductos } from '@/lib/actions/productos';
+import ListaPreciosClient from './ListaPreciosClient';
+
+export const metadata: Metadata = { title: 'Libro de Precios | POS System' };
+
+export default async function Page() {
+  const productos = await listarProductos(true);
+  return <ListaPreciosClient productos={productos} />;
 }

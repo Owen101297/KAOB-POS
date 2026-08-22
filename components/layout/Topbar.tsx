@@ -10,11 +10,34 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/DropdownMenu';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/Select';
+import { useBodega } from '@/components/providers/BodegaProvider';
 
 const NOTIFICATIONS = [
   { title: 'Stock bajo', detail: '2 productos por debajo del mínimo', time: 'Hace 5 min' },
   { title: 'Cierre de caja pendiente', detail: 'Turno de ayer sin cerrar', time: 'Hace 1 h' },
 ];
+
+function BodegaSelector() {
+  const { bodegas, bodegaActiva, setBodegaActivaId } = useBodega();
+  return (
+    <Select
+      value={bodegaActiva ? String(bodegaActiva.id) : undefined}
+      onValueChange={(v) => setBodegaActivaId(Number(v))}
+    >
+      <SelectTrigger className="w-[190px]">
+        <Package className="mr-1 h-4 w-4 text-slate-400" />
+        <SelectValue placeholder="Bodega..." />
+      </SelectTrigger>
+      <SelectContent>
+        {bodegas.map((b) => (
+          <SelectItem key={b.id} value={String(b.id)}>
+            {b.nombre}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
+  );
+}
 
 export default function Topbar({ onMenuClick }: { onMenuClick?: () => void }) {
   return (
@@ -38,16 +61,7 @@ export default function Topbar({ onMenuClick }: { onMenuClick?: () => void }) {
         </button>
 
         <div className="hidden items-center gap-2 sm:flex">
-          <Select defaultValue="general">
-            <SelectTrigger className="w-[170px]">
-              <Package className="mr-1 h-4 w-4 text-slate-400" />
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="general">Almacén General</SelectItem>
-              <SelectItem value="sede-norte">Sede Norte</SelectItem>
-            </SelectContent>
-          </Select>
+          <BodegaSelector />
         </div>
       </div>
 

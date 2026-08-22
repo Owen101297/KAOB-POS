@@ -9,6 +9,7 @@ import {
   Package,
   Receipt,
   ReceiptText,
+  Settings,
   ShoppingCart,
   Store,
   Truck,
@@ -52,8 +53,9 @@ const MENU: MenuItem[] = [
     icon: Package,
     sub: [
       { label: 'Productos', href: '/productos' },
-      { label: 'Categorías', href: '/categorias' },
-      { label: 'Movimientos', href: '/inventario' },
+      { label: 'Stock por Bodega', href: '/inventario' },
+      { label: 'Traslados', href: '/traslados' },
+      { label: 'Movimientos', href: '/movimientos' },
       { label: 'Libro de Precios', href: '/lista-precios' },
       { label: 'Producción', href: '/produccion' },
       { label: 'Auditoría Inventario', href: '/auditoria' },
@@ -93,6 +95,13 @@ const MENU: MenuItem[] = [
   },
   { label: 'Informes', icon: BarChart3, href: '/informes' },
   { label: 'Tienda', icon: Store, href: '/tienda' },
+  {
+    label: 'Configuración',
+    icon: Settings,
+    sub: [
+      { label: 'Catálogos', href: '/configuracion/catalogos' },
+    ],
+  },
 ];
 
 function matchHref(pathname: string, href: string) {
