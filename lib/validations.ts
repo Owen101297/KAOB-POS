@@ -287,6 +287,18 @@ export const crearOrdenCompraSchema = z.object({
   nota: z.string().trim().max(300).optional().or(z.literal("")),
 });
 
+// ────────────────────────── CRÉDITO Y CARTERA ─────────────────────
+
+export const registrarAbonoCreditoSchema = z.object({
+  creditoId: z.coerce.number().int().positive("Selecciona un crédito"),
+  monto: z.coerce.number().int().positive("El monto del abono debe ser mayor a 0"),
+  metodo: z.enum(["EFECTIVO", "TRANSFERENCIA", "TARJETA", "PUNTOS", "OTRO", "CREDITO"]),
+  referencia: z.string().trim().max(120).optional().or(z.literal("")),
+  nota: z.string().trim().max(300).optional().or(z.literal("")),
+  bodegaId: z.coerce.number().int().positive().optional(),
+});
+
+
 // ─────────────────────────── TIPOS ───────────────────────────
 
 export type ActionResult<T = undefined> =
