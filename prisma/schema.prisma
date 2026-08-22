@@ -52,8 +52,36 @@ enum TipoMovimiento {
   TRASLADO_ENTRADA
   COMPRA
   DEVOLUCION
+  VENTA
+  DEVOLUCION_CLIENTE
 
   @@map("tipo_movimiento")
+}
+
+enum TipoVenta {
+  VENTA
+  REMISION
+  COTIZACION
+
+  @@map("tipo_venta")
+}
+
+enum EstadoVenta {
+  COMPLETADA
+  PENDIENTE
+  ANULADA
+
+  @@map("estado_venta")
+}
+
+enum MetodoPago {
+  EFECTIVO
+  TRANSFERENCIA
+  TARJETA
+  PUNTOS
+  OTRO
+
+  @@map("metodo_pago")
 }
 
 enum TipoDocumento {
@@ -80,6 +108,8 @@ model Bodega {
   movimientosDestino MovimientoInventario[] @relation("MovDestino")
   trasladosSalida    Traslado[]             @relation("TrasladosOrigen")
   trasladosEntrada   Traslado[]             @relation("TrasladosDestino")
+  ventas             Venta[]
+  sesionesCaja       SesionCaja[]
 
   @@map("bodegas")
 }
@@ -177,9 +207,10 @@ model Variante {
   activa         Boolean   @default(true)
   createdAt      DateTime  @default(now())
 
-  stocks      StockBodega[]
-  movimientos MovimientoInventario[]
+  stocks         StockBodega[]
+  movimientos    MovimientoInventario[]
   trasladosDetalle TrasladoDetalle[]
+  ventaItems     VentaItem[]
 
   @@unique([productoId, colorId, tallaId])
   @@map("variantes")
@@ -269,6 +300,8 @@ model Cliente {
   createdAt    DateTime        @default(now())
   updatedAt    DateTime        @updatedAt
 
+  ventas       Venta[]
+
   @@unique([tipoDoc, documento])
   @@index([nombre])
   @@index([telefono])
@@ -301,6 +334,8 @@ model Vendedor {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
+  ventas      Venta[]
+
   @@index([nombre])
   @@map("vendedores")
 }
@@ -313,6 +348,93 @@ model Domiciliario {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  ventas    Venta[]
+
   @@index([nombre])
   @@map("domiciliarios")
+}
+
+// ───────────────────────── VENTAS Y CAJA ────────────────────────
+
+model Venta {
+  id           Int        @id @default(autoincrement())
+  consecutivo  Int        @unique
+  tipo         TipoVenta
+  estado       EstadoVenta @default(PENDIENTE)
+  clienteId    Int?
+  cliente      Cliente?    @relation(fields: [clienteId], references: [id], onDelete: SetNull)
+  vendedorId   Int?
+  vendedor     Vendedor?   @relation(fields: [vendedorId], references: [id], onDelete: SetNull)
+  domiciliarioId Int?
+  domiciliario Domiciliario? @relation(fields: [domiciliarioId], references: [id], onDelete: SetNull)
+  bodegaId     Int
+  bodega       Bodega      @relation(fields: [bodegaId], references: [id], onDelete: Restrict)
+  subtotal     Int        @default(0)
+  descuento    Int        @default(0)
+  total        Int        @default(0)
+  nota         String?
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  items        VentaItem[]
+  pagos        PagoVenta[]
+
+  @@index([createdAt])
+  @@index([clienteId])
+  @@index([estado])
+  @@map("ventas")
+}
+
+model VentaItem {
+  id             Int      @id @default(autoincrement())
+  ventaId        Int
+  venta          Venta    @relation(fields: [ventaId], references: [id], onDelete: Cascade)
+  varianteId     Int
+  variante       Variante @relation(fields: [varianteId], references: [id], onDelete: Restrict)
+  cantidad       Int
+  precioUnitario Int
+  costoUnitario  Int
+  descuento      Int      @default(0)
+  subtotal       Int
+
+  @@map("ventas_items")
+}
+
+model PagoVenta {
+  id         Int         @id @default(autoincrement())
+  ventaId    Int
+  venta      Venta       @relation(fields: [ventaId], references: [id], onDelete: Cascade)
+  metodo     MetodoPago
+  monto      Int
+  referencia String?
+  createdAt  DateTime    @default(now())
+
+  @@map("ventas_pagos")
+}
+
+model SesionCaja {
+  id             Int      @id @default(autoincrement())
+  baseInicial    Int      @default(0)
+  estado         String   @default("ABIERTA") // ABIERTA, CERRADA
+  bodegaId       Int?
+  bodega         Bodega?  @relation(fields: [bodegaId], references: [id], onDelete: SetNull)
+  openedAt       DateTime @default(now())
+  closedAt       DateTime?
+
+  movimientos    MovimientoCaja[]
+  @@map("sesiones_caja")
+}
+
+model MovimientoCaja {
+  id            Int      @id @default(autoincrement())
+  sesionId      Int
+  sesion        SesionCaja @relation(fields: [sesionId], references: [id], onDelete: Cascade)
+  tipo          String   // INGRESO_BASE, RETIRO, SUPLIDO, VENTA_EFECTIVO, OTRO
+  monto         Int
+  referencia    String?
+  ventaId       Int?
+  createdAt     DateTime @default(now())
+
+  @@index([sesionId])
+  @@map("movimientos_caja")
 }

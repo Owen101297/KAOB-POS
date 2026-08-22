@@ -36,6 +36,8 @@ export const TIPO_MOVIMIENTO_LABEL: Record<TipoMovimiento, string> = {
   TRASLADO_ENTRADA: "Traslado (entrada)",
   COMPRA: "Compra",
   DEVOLUCION: "Devolución",
+  VENTA: "Venta",
+  DEVOLUCION_CLIENTE: "Devolución cliente",
 };
 
 /** Tipos de movimiento que suman stock en destino */
@@ -45,6 +47,7 @@ export const MOVIMIENTOS_ENTRADA: TipoMovimiento[] = [
   "TRASLADO_ENTRADA",
   "COMPRA",
   "DEVOLUCION",
+  "DEVOLUCION_CLIENTE",
 ];
 
 /** Prefijo SKU por defecto cuando no hay referencia corta */

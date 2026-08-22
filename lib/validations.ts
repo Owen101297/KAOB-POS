@@ -189,6 +189,62 @@ export const trasladoSchema = z
     path: ["bodegaDestinoId"],
   });
 
+// ───────────────────────── VENTAS ──────────────────────────────
+
+export const ventaItemSchema = z.object({
+  varianteId: z.coerce.number().int().positive(),
+  cantidad: z.coerce.number().int().positive("Cantidad > 0"),
+  precioUnitario: z.coerce.number().int().min(0),
+  costoUnitario: z.coerce.number().int().min(0),
+  descuento: z.coerce.number().int().min(0).default(0),
+});
+
+export const pagoVentaSchema = z.object({
+  metodo: z.enum(["EFECTIVO", "TRANSFERENCIA", "TARJETA", "PUNTOS", "OTRO"]),
+  monto: z.coerce.number().int().positive("Monto > 0"),
+  referencia: z.string().trim().max(120).optional().or(z.literal("")),
+});
+
+export const registrarVentaSchema = z.object({
+  tipo: z.enum(["VENTA", "REMISION", "COTIZACION"]),
+  clienteId: z.coerce.number().int().positive().nullable().optional(),
+  vendedorId: z.coerce.number().int().positive().nullable().optional(),
+  domiciliarioId: z.coerce.number().int().positive().nullable().optional(),
+  bodegaId: z.coerce.number().int().positive(),
+  items: z.array(ventaItemSchema).min(1, "Agrega al menos un item"),
+  pagos: z.array(pagoVentaSchema).optional().default([]),
+  descuento: z.coerce.number().int().min(0).default(0),
+  nota: z.string().trim().max(300).optional().or(z.literal("")),
+}).refine((data) => {
+  if (data.tipo === "COTIZACION") return true;
+  const totalPagos = data.pagos.reduce((a, p) => a + p.monto, 0);
+  const totalVenta = data.items.reduce((a, i) => a + i.cantidad * i.precioUnitario - i.descuento, 0) - data.descuento;
+  return totalPagos >= totalVenta;
+}, {
+  message: "La suma de pagos debe cubrir el total de la venta",
+  path: ["pagos"],
+});
+
+export const anularVentaSchema = z.object({
+  id: z.coerce.number().int().positive(),
+  motivo: z.string().trim().min(3, "Describe el motivo").max(300),
+});
+
+// ────────────────────────── CAJA ──────────────────────────────
+
+export const abrirCajaSchema = z.object({
+  baseInicial: z.coerce.number().int().min(0).default(0),
+  bodegaId: z.coerce.number().int().positive().nullable().optional(),
+});
+
+export const movimientoCajaSchema = z.object({
+  sesionId: z.coerce.number().int().positive(),
+  tipo: z.enum(["INGRESO_BASE", "RETIRO", "SUPLIDO", "VENTA_EFECTIVO", "OTRO"]),
+  monto: z.coerce.number().int().positive("Monto > 0"),
+  referencia: z.string().trim().max(120).optional().or(z.literal("")),
+  ventaId: z.coerce.number().int().positive().nullable().optional(),
+});
+
 // ─────────────────────────── TIPOS ───────────────────────────
 
 export type ActionResult<T = undefined> =
