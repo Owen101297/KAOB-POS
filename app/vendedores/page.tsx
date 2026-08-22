@@ -1,8 +1,10 @@
-'use client';
-import DataTable from '@/components/ui/DataTable';
-import { Button } from '@/components/ui/Button';
-const COLS = [{ key: 'nombre', label: 'Nombre' }, { key: 'email', label: 'Email' }, { key: 'telefono', label: 'Telefono' }];
-export default function Page() {
-  return <DataTable columns={COLS} data={[]}
-      actions={<Button variant="primary">+ Nuevo</Button>} pageTitle="Vendedores" />;
+import type { Metadata } from "next";
+import { listarVendedores } from "@/lib/actions/contactos";
+import VendedoresClient from "./VendedoresClient";
+
+export const metadata: Metadata = { title: "Vendedores | POS System" };
+
+export default async function Page() {
+  const vendedores = await listarVendedores(false);
+  return <VendedoresClient vendedores={vendedores} />;
 }

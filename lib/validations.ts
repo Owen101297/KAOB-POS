@@ -48,6 +48,46 @@ export const tallaUnicaSchema = z.object({
   orden: z.coerce.number().int().min(0).default(0),
 });
 
+// ───────────────────────── CONTACTOS ───────────────────────────
+
+export const clienteSchema = z.object({
+  id: z.coerce.number().int().positive().optional(),
+  nombre: nombreSchema,
+  tipoDoc: z.enum(["CC", "NIT", "OTRO"]).default("CC"),
+  documento: z.string().trim().max(20).optional().or(z.literal("")),
+  telefono: z.string().trim().max(20).optional().or(z.literal("")),
+  direccion: z.string().trim().max(200).optional().or(z.literal("")),
+  ciudad: z.string().trim().max(80).optional().or(z.literal("")),
+  email: z.string().email("Email inválido").optional().or(z.literal("")),
+  cupoCredito: z.coerce.number().int().min(0).max(999999999).default(0),
+  diasCredito: z.coerce.number().int().min(0).max(365).default(0),
+  notas: z.string().trim().max(500).optional().or(z.literal("")),
+});
+
+export const proveedorSchema = z.object({
+  id: z.coerce.number().int().positive().optional(),
+  nombre: nombreSchema,
+  nit: z.string().trim().max(20).optional().or(z.literal("")),
+  contacto: z.string().trim().max(120).optional().or(z.literal("")),
+  telefono: z.string().trim().max(20).optional().or(z.literal("")),
+  email: z.string().email("Email inválido").optional().or(z.literal("")),
+  direccion: z.string().trim().max(200).optional().or(z.literal("")),
+  notas: z.string().trim().max(500).optional().or(z.literal("")),
+});
+
+export const vendedorSchema = z.object({
+  id: z.coerce.number().int().positive().optional(),
+  nombre: nombreSchema,
+  telefono: z.string().trim().max(20).optional().or(z.literal("")),
+  comisionPct: z.coerce.number().min(0).max(100).default(0),
+});
+
+export const domiciliarioSchema = z.object({
+  id: z.coerce.number().int().positive().optional(),
+  nombre: nombreSchema,
+  telefono: z.string().trim().max(20).optional().or(z.literal("")),
+});
+
 // ───────────────────────── PRODUCTOS ─────────────────────────
 
 export const productoBaseSchema = z.object({

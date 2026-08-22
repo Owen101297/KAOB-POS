@@ -1,8 +1,10 @@
-'use client';
-import DataTable from '@/components/ui/DataTable';
-import { Button } from '@/components/ui/Button';
-const COLS = [{ key: 'nombre', label: 'Nombre' }, { key: 'telefono', label: 'Telefono' }, { key: 'estado', label: 'Estado' }];
-export default function Page() {
-  return <DataTable columns={COLS} data={[]}
-      actions={<Button variant="primary">+ Nuevo</Button>} pageTitle="Domiciliarios" />;
+import type { Metadata } from "next";
+import { listarDomiciliarios } from "@/lib/actions/contactos";
+import DomiciliariosClient from "./DomiciliariosClient";
+
+export const metadata: Metadata = { title: "Domiciliarios | POS System" };
+
+export default async function Page() {
+  const domiciliarios = await listarDomiciliarios(false);
+  return <DomiciliariosClient domiciliarios={domiciliarios} />;
 }

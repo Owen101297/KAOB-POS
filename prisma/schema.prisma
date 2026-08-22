@@ -56,6 +56,14 @@ enum TipoMovimiento {
   @@map("tipo_movimiento")
 }
 
+enum TipoDocumento {
+  CC
+  NIT
+  OTRO
+
+  @@map("tipo_documento")
+}
+
 // ─────────────────────── CATÁLOGOS BASE ──────────────────────
 
 model Bodega {
@@ -241,4 +249,70 @@ model TrasladoDetalle {
 
   @@unique([trasladoId, varianteId])
   @@map("traslados_detalle")
+}
+
+// ───────────────────────── CONTACTOS ────────────────────────────
+
+model Cliente {
+  id           Int             @id @default(autoincrement())
+  nombre       String
+  tipoDoc      TipoDocumento   @default(CC)
+  documento    String?
+  telefono     String?
+  direccion    String?
+  ciudad       String?
+  email        String?
+  cupoCredito  Int             @default(0)
+  diasCredito  Int             @default(0)
+  notas        String?
+  activo       Boolean         @default(true)
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+
+  @@unique([tipoDoc, documento])
+  @@index([nombre])
+  @@index([telefono])
+  @@map("clientes")
+}
+
+model Proveedor {
+  id        Int      @id @default(autoincrement())
+  nombre    String   @unique
+  nit       String?
+  contacto  String?
+  telefono  String?
+  email     String?
+  direccion String?
+  notas     String?
+  activo    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([nombre])
+  @@map("proveedores")
+}
+
+model Vendedor {
+  id          Int      @id @default(autoincrement())
+  nombre      String
+  telefono    String?
+  comisionPct Float    @default(0)
+  activo      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([nombre])
+  @@map("vendedores")
+}
+
+model Domiciliario {
+  id        Int      @id @default(autoincrement())
+  nombre    String
+  telefono  String?
+  activo    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([nombre])
+  @@map("domiciliarios")
 }
