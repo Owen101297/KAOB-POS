@@ -113,6 +113,7 @@ model Bodega {
   sesionesCaja       SesionCaja[]
   compras            Compra[]
   ordenesCompra      OrdenCompra[]
+  planesSepare       PlanSepare[]
 
   @@map("bodegas")
 }
@@ -216,6 +217,7 @@ model Variante {
   ventaItems     VentaItem[]
   compraItems    CompraItem[]
   ordenCompraDetalles OrdenCompraDetalle[]
+  planSepareItems PlanSepareItem[]
 
   @@unique([productoId, colorId, tallaId])
   @@map("variantes")
@@ -305,8 +307,11 @@ model Cliente {
   createdAt    DateTime        @default(now())
   updatedAt    DateTime        @updatedAt
 
-  ventas       Venta[]
-  creditos     CreditoCliente[]
+  ventas             Venta[]
+  creditos           CreditoCliente[]
+  planesSepare       PlanSepare[]
+  movimientosPuntos  MovimientoPuntos[]
+  giftCards          GiftCard[]
 
   @@unique([tipoDoc, documento])
   @@index([nombre])
@@ -570,4 +575,107 @@ model AbonoCredito {
   @@index([creditoId])
   @@map("abonos_credito")
 }
+
+// ───────────────────────── PLAN SEPARE ─────────────────────────
+
+model PlanSepare {
+  id               Int                @id @default(autoincrement())
+  consecutivo      Int                @unique
+  clienteId        Int
+  cliente          Cliente            @relation(fields: [clienteId], references: [id], onDelete: Restrict)
+  bodegaId         Int
+  bodega           Bodega             @relation(fields: [bodegaId], references: [id], onDelete: Restrict)
+  total            Int
+  saldoPendiente   Int
+  fechaLimite      DateTime
+  estado           String             @default("ACTIVO") // ACTIVO, ENTREGADO, CANCELADO
+  nota             String?
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+
+  items            PlanSepareItem[]
+  abonos           AbonoPlanSepare[]
+
+  @@index([clienteId])
+  @@index([estado])
+  @@map("planes_separe")
+}
+
+model PlanSepareItem {
+  id             Int        @id @default(autoincrement())
+  planSepareId   Int
+  planSepare     PlanSepare @relation(fields: [planSepareId], references: [id], onDelete: Cascade)
+  varianteId     Int
+  variante       Variante   @relation(fields: [varianteId], references: [id], onDelete: Restrict)
+  cantidad       Int
+  precioUnitario Int
+  subtotal       Int
+
+  @@map("planes_separe_items")
+}
+
+model AbonoPlanSepare {
+  id           Int        @id @default(autoincrement())
+  planSepareId Int
+  planSepare   PlanSepare @relation(fields: [planSepareId], references: [id], onDelete: Cascade)
+  monto        Int
+  metodo       MetodoPago @default(EFECTIVO)
+  referencia   String?
+  nota         String?
+  createdAt    DateTime   @default(now())
+
+  @@index([planSepareId])
+  @@map("abonos_plan_separe")
+}
+
+// ───────────────────────── PUNTOS Y FIDELIZACIÓN ─────────────────────────
+
+model MovimientoPuntos {
+  id               Int      @id @default(autoincrement())
+  clienteId        Int
+  cliente          Cliente  @relation(fields: [clienteId], references: [id], onDelete: Cascade)
+  tipo             String   // ACUMULACION, REDENCION, AJUSTE
+  puntos           Int
+  saldoResultante  Int
+  referencia       String?
+  nota             String?
+  createdAt        DateTime @default(now())
+
+  @@index([clienteId])
+  @@map("movimientos_puntos")
+}
+
+// ───────────────────────── PROMOCIONES Y DESCUENTOS ─────────────────────────
+
+model Promocion {
+  id          Int       @id @default(autoincrement())
+  nombre      String    @unique
+  tipo        String    // PORCENTAJE, MONTO_FIJO
+  valor       Int
+  montoMinimo Int       @default(0)
+  activa      Boolean   @default(true)
+  fechaInicio DateTime?
+  fechaFin    DateTime?
+  createdAt   DateTime  @default(now())
+
+  @@map("promociones")
+}
+
+// ───────────────────────── TARJETAS DE REGALO (GIFT CARDS) ─────────────────────────
+
+model GiftCard {
+  id               Int       @id @default(autoincrement())
+  codigo           String    @unique
+  montoInicial     Int
+  saldoActual      Int
+  clienteId        Int?
+  cliente          Cliente?  @relation(fields: [clienteId], references: [id], onDelete: SetNull)
+  estado           String    @default("ACTIVA") // ACTIVA, AGOTADA, VENCIDA
+  fechaVencimiento DateTime?
+  createdAt        DateTime  @default(now())
+
+  @@index([codigo])
+  @@map("gift_cards")
+}
+
 

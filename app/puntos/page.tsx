@@ -1,6 +1,22 @@
-'use client';
-import DataTable from '@/components/ui/DataTable';
-const COLS = [{ key: 'cliente', label: 'Cliente' }, { key: 'puntos', label: 'Puntos' }];
-export default function Page() {
-  return <DataTable columns={COLS} data={[]} pageTitle="Puntos de Fidelizacion" />;
+import {
+  listarMovimientosPuntos,
+  type MovimientoPuntosLista,
+} from "@/lib/actions/fidelizacion";
+import { listarClientes } from "@/lib/actions/contactos";
+import PuntosClient from "./PuntosClient";
+
+export const dynamic = "force-dynamic";
+
+export default async function PuntosPage() {
+  const [movimientos, clientes] = await Promise.all([
+    listarMovimientosPuntos(),
+    listarClientes(true),
+  ]);
+
+  return (
+    <PuntosClient
+      movimientosIniciales={movimientos as unknown as MovimientoPuntosLista[]}
+      clientes={clientes}
+    />
+  );
 }

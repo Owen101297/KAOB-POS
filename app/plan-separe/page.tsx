@@ -1,6 +1,22 @@
-'use client';
-import DataTable from '@/components/ui/DataTable';
-const COLS = [{ key: 'fecha', label: 'Fecha' }, { key: 'cliente', label: 'Cliente' }, { key: 'total', label: 'Total' }, { key: 'estado', label: 'Estado' }];
-export default function Page() {
-  return <DataTable columns={COLS} data={[]} pageTitle="Plan Separe" />;
+import { listarPlanesSepare, type PlanSepareLista } from "@/lib/actions/fidelizacion";
+import { listarClientes } from "@/lib/actions/contactos";
+import { listarBodegas } from "@/lib/actions/catalogos";
+import PlanSepareClient from "./PlanSepareClient";
+
+export const dynamic = "force-dynamic";
+
+export default async function PlanSeparePage() {
+  const [planes, clientes, bodegas] = await Promise.all([
+    listarPlanesSepare(),
+    listarClientes(true),
+    listarBodegas(true),
+  ]);
+
+  return (
+    <PlanSepareClient
+      planesIniciales={planes as unknown as PlanSepareLista[]}
+      clientes={clientes}
+      bodegas={bodegas}
+    />
+  );
 }

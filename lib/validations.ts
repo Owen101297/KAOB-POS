@@ -298,6 +298,66 @@ export const registrarAbonoCreditoSchema = z.object({
   bodegaId: z.coerce.number().int().positive().optional(),
 });
 
+// ────────────────────────── PLAN SEPARE ─────────────────────────
+
+export const planSepareItemSchema = z.object({
+  varianteId: z.coerce.number().int().positive(),
+  cantidad: z.coerce.number().int().positive("La cantidad debe ser mayor a 0"),
+  precioUnitario: z.coerce.number().int().positive("El precio debe ser mayor a 0"),
+});
+
+export const crearPlanSepareSchema = z.object({
+  clienteId: z.coerce.number().int().positive("Selecciona un cliente"),
+  bodegaId: z.coerce.number().int().positive("Selecciona una bodega"),
+  diasLimite: z.coerce.number().int().min(1).default(30),
+  items: z.array(planSepareItemSchema).min(1, "Agrega al menos un artículo"),
+  abonoInicial: z.coerce.number().int().min(0).default(0),
+  metodoAbono: z.enum(["EFECTIVO", "TRANSFERENCIA", "TARJETA", "PUNTOS", "OTRO", "CREDITO"]).optional(),
+  referenciaAbono: z.string().trim().max(120).optional().or(z.literal("")),
+  nota: z.string().trim().max(300).optional().or(z.literal("")),
+});
+
+export const registrarAbonoSepareSchema = z.object({
+  planSepareId: z.coerce.number().int().positive(),
+  monto: z.coerce.number().int().positive("Monto debe ser mayor a 0"),
+  metodo: z.enum(["EFECTIVO", "TRANSFERENCIA", "TARJETA", "PUNTOS", "OTRO", "CREDITO"]),
+  referencia: z.string().trim().max(120).optional().or(z.literal("")),
+  nota: z.string().trim().max(300).optional().or(z.literal("")),
+  bodegaId: z.coerce.number().int().positive().optional(),
+});
+
+// ────────────────────────── PUNTOS Y FIDELIZACIÓN ───────────────
+
+export const ajustarPuntosSchema = z.object({
+  clienteId: z.coerce.number().int().positive("Selecciona un cliente"),
+  tipo: z.enum(["ACUMULACION", "REDENCION", "AJUSTE"]),
+  puntos: z.coerce.number().int().positive("Puntos > 0"),
+  nota: z.string().trim().max(300).optional().or(z.literal("")),
+});
+
+// ────────────────────────── PROMOCIONES ─────────────────────────
+
+export const promocionSchema = z.object({
+  id: z.coerce.number().int().positive().optional(),
+  nombre: z.string().trim().min(2, "Mínimo 2 caracteres").max(100),
+  tipo: z.enum(["PORCENTAJE", "MONTO_FIJO"]),
+  valor: z.coerce.number().int().positive("Valor > 0"),
+  montoMinimo: z.coerce.number().int().min(0).default(0),
+  activa: z.boolean().default(true),
+  fechaInicio: z.string().optional().or(z.literal("")),
+  fechaFin: z.string().optional().or(z.literal("")),
+});
+
+// ────────────────────────── TARJETAS DE REGALO ──────────────────
+
+export const emitirGiftCardSchema = z.object({
+  codigo: z.string().trim().min(3).max(30),
+  montoInicial: z.coerce.number().int().positive("Monto > 0"),
+  clienteId: z.coerce.number().int().positive().optional().nullable(),
+  fechaVencimiento: z.string().optional().or(z.literal("")),
+});
+
+
 
 // ─────────────────────────── TIPOS ───────────────────────────
 
