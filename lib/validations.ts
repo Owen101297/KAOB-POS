@@ -210,9 +210,21 @@ export const ventaItemSchema = z.object({
 });
 
 export const pagoVentaSchema = z.object({
-  metodo: z.enum(["EFECTIVO", "TRANSFERENCIA", "TARJETA", "PUNTOS", "OTRO", "CREDITO"]),
+  metodo: z.enum(["EFECTIVO", "TRANSFERENCIA", "TARJETA", "PUNTOS", "OTRO", "CREDITO", "ADDI", "SISTECREDITO"]),
   monto: z.coerce.number().int().positive("Monto > 0"),
   referencia: z.string().trim().max(120).optional().or(z.literal("")),
+});
+
+export const desembolsoPlataformaSchema = z.object({
+  plataforma: z.enum(["ADDI", "SISTECREDITO", "BOLD", "OTRO"]),
+  pagosIds: z.array(z.coerce.number().int().positive()).min(1, "Selecciona al menos una venta para liquidar"),
+  cuentaBancariaId: z.coerce.number().int().positive("Selecciona la cuenta bancaria de destino"),
+  comision: z.coerce.number().int().min(0).default(0),
+  retenciones: z.coerce.number().int().min(0).default(0),
+  montoNeto: z.coerce.number().int().positive("El monto neto a ingresar al banco debe ser mayor a 0"),
+  referenciaBancaria: z.string().trim().max(120).optional().or(z.literal("")),
+  fecha: z.coerce.date().optional(),
+  nota: z.string().trim().max(300).optional().or(z.literal("")),
 });
 
 export const registrarVentaSchema = z.object({

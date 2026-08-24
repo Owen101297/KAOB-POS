@@ -87,6 +87,8 @@ enum MetodoPago {
   PUNTOS
   OTRO
   CREDITO
+  ADDI
+  SISTECREDITO
 
   @@map("metodo_pago")
 }
@@ -422,14 +424,19 @@ model VentaItem {
 }
 
 model PagoVenta {
-  id         Int         @id @default(autoincrement())
-  ventaId    Int
-  venta      Venta       @relation(fields: [ventaId], references: [id], onDelete: Cascade)
-  metodo     MetodoPago
-  monto      Int
-  referencia String?
-  createdAt  DateTime    @default(now())
+  id           Int                   @id @default(autoincrement())
+  ventaId      Int
+  venta        Venta                 @relation(fields: [ventaId], references: [id], onDelete: Cascade)
+  metodo       MetodoPago
+  monto        Int
+  referencia   String?
+  desembolsado Boolean               @default(false)
+  desembolsoId Int?
+  desembolso   DesembolsoPlataforma? @relation(fields: [desembolsoId], references: [id], onDelete: SetNull)
+  createdAt    DateTime              @default(now())
 
+  @@index([metodo])
+  @@index([desembolsado])
   @@map("ventas_pagos")
 }
 
@@ -721,8 +728,34 @@ model CuentaBancaria {
   movimientos    MovimientoBancario[]
   conciliaciones ConciliacionBancaria[]
   gastos         Gasto[]
+  desembolsos    DesembolsoPlataforma[]
 
   @@map("cuentas_bancarias")
+}
+
+model DesembolsoPlataforma {
+  id                 Int             @id @default(autoincrement())
+  consecutivo        Int             @unique
+  plataforma         String          // ADDI, SISTECREDITO, BOLD, OTRO
+  fecha              DateTime        @default(now())
+  montoBruto         Int             // Total ventas cubiertas
+  comision           Int             @default(0) // Comisión descontada por la plataforma
+  retenciones        Int             @default(0) // ReteFuente/ReteICA
+  montoNeto          Int             // Dinero neto transferido al banco (montoBruto - comision - retenciones)
+  cuentaBancariaId   Int?
+  cuentaBancaria     CuentaBancaria? @relation(fields: [cuentaBancariaId], references: [id], onDelete: SetNull)
+  referenciaBancaria String?         // N° de transferencia o comprobante bancario
+  estado             String          @default("LIQUIDADO") // LIQUIDADO, ANULADO
+  nota               String?
+  createdAt          DateTime        @default(now())
+  updatedAt          DateTime        @updatedAt
+
+  pagos              PagoVenta[]
+
+  @@index([plataforma])
+  @@index([fecha])
+  @@index([estado])
+  @@map("desembolsos_plataforma")
 }
 
 model MovimientoBancario {

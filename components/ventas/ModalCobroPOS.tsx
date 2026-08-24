@@ -23,11 +23,13 @@ import {
   UserPlus,
   UserCheck,
   X,
+  Layers,
+  CircleDollarSign,
 } from "lucide-react";
 import { formatoCOP } from "@/lib/format";
 
 export interface PagoItem {
-  metodo: "EFECTIVO" | "TRANSFERENCIA" | "TARJETA" | "PUNTOS" | "CREDITO" | "OTRO";
+  metodo: "EFECTIVO" | "TRANSFERENCIA" | "TARJETA" | "PUNTOS" | "CREDITO" | "ADDI" | "SISTECREDITO" | "OTRO";
   monto: number;
   referencia?: string;
 }
@@ -74,7 +76,7 @@ export default function ModalCobroPOS({
   onAbrirRegistrarCliente,
 }: ModalCobroPOSProps) {
   const [metodoPrincipal, setMetodoPrincipal] = useState<
-    "EFECTIVO" | "TRANSFERENCIA" | "TARJETA" | "CREDITO" | "MIXTO"
+    "EFECTIVO" | "TRANSFERENCIA" | "TARJETA" | "ADDI" | "SISTECREDITO" | "CREDITO" | "MIXTO"
   >("EFECTIVO");
 
   // Efectivo directo
@@ -82,7 +84,11 @@ export default function ModalCobroPOS({
   const [referenciaTransferencia, setReferenciaTransferencia] = useState("");
   const [bancoSeleccionado, setBancoSeleccionado] = useState<string>("Nequi");
 
-  // Búsqueda de cliente en crédito
+  // Plataformas BNPL
+  const [referenciaAddi, setReferenciaAddi] = useState("");
+  const [referenciaSistecredito, setReferenciaSistecredito] = useState("");
+
+  // Búsqueda de cliente en crédito propio
   const [busquedaCredito, setBusquedaCredito] = useState("");
 
   // Pagos mixtos
@@ -96,6 +102,8 @@ export default function ModalCobroPOS({
       setEfectivoRecibido(totalVenta);
       setReferenciaTransferencia("");
       setBancoSeleccionado("Nequi");
+      setReferenciaAddi("");
+      setReferenciaSistecredito("");
       setBusquedaCredito("");
       setPagosMixtos([{ metodo: "EFECTIVO", monto: totalVenta }]);
     }
@@ -162,6 +170,22 @@ export default function ModalCobroPOS({
       ];
     } else if (metodoPrincipal === "TARJETA") {
       pagosFinales = [{ metodo: "TARJETA", monto: totalVenta }];
+    } else if (metodoPrincipal === "ADDI") {
+      pagosFinales = [
+        {
+          metodo: "ADDI",
+          monto: totalVenta,
+          referencia: referenciaAddi.trim() || "Aprobado Addi",
+        },
+      ];
+    } else if (metodoPrincipal === "SISTECREDITO") {
+      pagosFinales = [
+        {
+          metodo: "SISTECREDITO",
+          monto: totalVenta,
+          referencia: referenciaSistecredito.trim() || "Aprobado Sistecrédito",
+        },
+      ];
     } else if (metodoPrincipal === "CREDITO") {
       if (!clienteNombre) return;
       pagosFinales = [{ metodo: "CREDITO", monto: totalVenta }];
@@ -196,7 +220,12 @@ export default function ModalCobroPOS({
     const handleKeyDown = (e: KeyboardEvent) => {
       if (!open) return;
       if (e.key === "Enter" && !cargando) {
-        if (metodoPrincipal === "EFECTIVO" && esEfectivoCompleto) {
+        if (
+          (metodoPrincipal === "EFECTIVO" && esEfectivoCompleto) ||
+          metodoPrincipal === "ADDI" ||
+          metodoPrincipal === "SISTECREDITO" ||
+          metodoPrincipal === "TARJETA"
+        ) {
           e.preventDefault();
           handleConfirmar();
         }
@@ -204,7 +233,16 @@ export default function ModalCobroPOS({
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [open, cargando, metodoPrincipal, esEfectivoCompleto, totalVenta, efectivoRecibido]);
+  }, [
+    open,
+    cargando,
+    metodoPrincipal,
+    esEfectivoCompleto,
+    totalVenta,
+    efectivoRecibido,
+    referenciaAddi,
+    referenciaSistecredito,
+  ]);
 
   return (
     <Dialog open={open} onOpenChange={(val) => !val && onClose()}>
@@ -225,70 +263,96 @@ export default function ModalCobroPOS({
             )}
           </div>
 
-          {/* Selector de Método de Pago */}
-          <div className="flex items-center gap-1.5 p-1 bg-slate-800/80 rounded-xl border border-slate-700/60 self-start sm:self-center overflow-x-auto">
+          {/* Selector de Métodos de Pago */}
+          <div className="flex items-center gap-1.5 p-1 bg-slate-800/80 rounded-xl border border-slate-700/60 self-start sm:self-center overflow-x-auto max-w-full">
             <button
               type="button"
               onClick={() => setMetodoPrincipal("EFECTIVO")}
-              className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold transition-all ${
+              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all shrink-0 ${
                 metodoPrincipal === "EFECTIVO"
                   ? "bg-emerald-500 text-slate-950 shadow-md shadow-emerald-500/20"
                   : "text-slate-300 hover:text-white"
               }`}
             >
-              <DollarSign className="h-4 w-4" />
+              <DollarSign className="h-3.5 w-3.5" />
               Efectivo
             </button>
 
             <button
               type="button"
               onClick={() => setMetodoPrincipal("TRANSFERENCIA")}
-              className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold transition-all ${
+              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all shrink-0 ${
                 metodoPrincipal === "TRANSFERENCIA"
                   ? "bg-blue-500 text-white shadow-md shadow-blue-500/20"
                   : "text-slate-300 hover:text-white"
               }`}
             >
-              <Smartphone className="h-4 w-4" />
+              <Smartphone className="h-3.5 w-3.5" />
               Transferencia
             </button>
 
             <button
               type="button"
               onClick={() => setMetodoPrincipal("TARJETA")}
-              className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold transition-all ${
+              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all shrink-0 ${
                 metodoPrincipal === "TARJETA"
                   ? "bg-purple-500 text-white shadow-md shadow-purple-500/20"
                   : "text-slate-300 hover:text-white"
               }`}
             >
-              <CreditCard className="h-4 w-4" />
+              <CreditCard className="h-3.5 w-3.5" />
               Datáfono
             </button>
 
             <button
               type="button"
+              onClick={() => setMetodoPrincipal("ADDI")}
+              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all shrink-0 ${
+                metodoPrincipal === "ADDI"
+                  ? "bg-teal-500 text-slate-950 shadow-md shadow-teal-500/20 font-black"
+                  : "text-slate-300 hover:text-white"
+              }`}
+            >
+              <CircleDollarSign className="h-3.5 w-3.5 text-slate-950" />
+              Addi
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setMetodoPrincipal("SISTECREDITO")}
+              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all shrink-0 ${
+                metodoPrincipal === "SISTECREDITO"
+                  ? "bg-sky-500 text-white shadow-md shadow-sky-500/20 font-black"
+                  : "text-slate-300 hover:text-white"
+              }`}
+            >
+              <Zap className="h-3.5 w-3.5" />
+              Sistecrédito
+            </button>
+
+            <button
+              type="button"
               onClick={() => setMetodoPrincipal("CREDITO")}
-              className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold transition-all ${
+              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all shrink-0 ${
                 metodoPrincipal === "CREDITO"
                   ? "bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20"
                   : "text-slate-300 hover:text-white"
               }`}
             >
-              <Wallet className="h-4 w-4" />
-              Crédito
+              <Wallet className="h-3.5 w-3.5" />
+              Fiado / Cartera
             </button>
 
             <button
               type="button"
               onClick={() => setMetodoPrincipal("MIXTO")}
-              className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold transition-all ${
+              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all shrink-0 ${
                 metodoPrincipal === "MIXTO"
                   ? "bg-indigo-500 text-white shadow-md shadow-indigo-500/20"
                   : "text-slate-300 hover:text-white"
               }`}
             >
-              <Sparkles className="h-4 w-4" />
+              <Sparkles className="h-3.5 w-3.5" />
               Dividido
             </button>
           </div>
@@ -296,10 +360,9 @@ export default function ModalCobroPOS({
 
         {/* Cuerpo Dinámico según Método */}
         <div className="p-5 sm:p-6 bg-slate-50/50 space-y-5">
-          {/* 1. VISTA EFECTIVO INTERACTIVO (BILLETES + TECLADO TÁCTIL + CAMBIO) */}
+          {/* 1. VISTA EFECTIVO INTERACTIVO */}
           {metodoPrincipal === "EFECTIVO" && (
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
-              {/* Lado Izquierdo: Input Recibido + Billetes Rápidos + Banner Vueltas (7 cols) */}
               <div className="lg:col-span-7 space-y-4">
                 <div>
                   <label className="block text-xs font-black uppercase tracking-wider text-slate-700 mb-1.5">
@@ -317,7 +380,6 @@ export default function ModalCobroPOS({
                   </div>
                 </div>
 
-                {/* Botones de Denominaciones Rápidas de Billetes */}
                 <div>
                   <span className="text-[10.5px] font-bold uppercase tracking-wider text-slate-500 block mb-1.5">
                     Billetes Rápidos
@@ -343,7 +405,6 @@ export default function ModalCobroPOS({
                   </div>
                 </div>
 
-                {/* Banner de Cambio / Vueltas */}
                 <div
                   className={`p-4 rounded-xl border flex items-center justify-between transition-all ${
                     esEfectivoCompleto
@@ -375,7 +436,6 @@ export default function ModalCobroPOS({
                 </div>
               </div>
 
-              {/* Lado Derecho: Teclado Numérico Táctil Express (5 cols) */}
               <div className="lg:col-span-5 bg-white p-3 rounded-xl border border-slate-200 shadow-2xs">
                 <span className="text-[10.5px] font-bold uppercase tracking-wider text-slate-500 block mb-2 text-center">
                   Teclado Táctil Express
@@ -416,7 +476,7 @@ export default function ModalCobroPOS({
             </div>
           )}
 
-          {/* 2. VISTA TRANSFERENCIA BANCARIA (NEQUI, BANCOLOMBIA, DAVIPLATA) */}
+          {/* 2. VISTA TRANSFERENCIA BANCARIA */}
           {metodoPrincipal === "TRANSFERENCIA" && (
             <div className="space-y-4 max-w-xl mx-auto bg-white p-5 rounded-xl border border-slate-200 shadow-2xs">
               <div>
@@ -452,14 +512,79 @@ export default function ModalCobroPOS({
                   placeholder="Ej. M1928374 o N° de Aprobación"
                   className="w-full h-10 px-3 text-xs font-semibold rounded-lg border border-slate-300 bg-white text-slate-900 shadow-2xs focus:outline-none focus:ring-2 focus:ring-blue-500/20"
                 />
-                <p className="text-[11px] text-slate-500 mt-1 font-medium">
-                  El comprobante se vinculará a la venta para cuadre en caja y conciliación bancaria.
+              </div>
+            </div>
+          )}
+
+          {/* 3. VISTA ADDI (BNPL) */}
+          {metodoPrincipal === "ADDI" && (
+            <div className="p-5 max-w-xl mx-auto bg-white rounded-xl border border-teal-200 space-y-4 shadow-2xs">
+              <div className="flex items-center gap-3 border-b border-slate-100 pb-3">
+                <div className="h-10 w-10 rounded-xl bg-teal-500 text-slate-950 flex items-center justify-center font-black">
+                  <CircleDollarSign className="h-6 w-6" />
+                </div>
+                <div>
+                  <h4 className="text-sm font-black text-slate-900">Cobro con Addi (Cuotas)</h4>
+                  <p className="text-xs text-slate-500">
+                    Monto total de la compra: <strong className="text-slate-900">{formatoCOP(totalVenta)}</strong>
+                  </p>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
+                  Número de Aprobación / Transacción Addi *
+                </label>
+                <input
+                  type="text"
+                  value={referenciaAddi}
+                  onChange={(e) => setReferenciaAddi(e.target.value)}
+                  placeholder="Ej. AD-987452 o Código del cliente"
+                  className="w-full h-10 px-3 text-xs font-bold rounded-lg border border-teal-300 bg-white text-slate-900 shadow-2xs focus:outline-none focus:ring-2 focus:ring-teal-500/30"
+                  autoFocus
+                />
+                <p className="text-[11px] text-slate-500 mt-1.5 font-medium leading-tight">
+                  📌 Esta venta quedará registrada en <strong>Cuentas por Cobrar a Addi</strong> y se liquidará cuando la plataforma consigne el lote a tu banco.
                 </p>
               </div>
             </div>
           )}
 
-          {/* 3. VISTA DATÁFONO / TARJETA */}
+          {/* 4. VISTA SISTECRÉDITO (BNPL) */}
+          {metodoPrincipal === "SISTECREDITO" && (
+            <div className="p-5 max-w-xl mx-auto bg-white rounded-xl border border-sky-200 space-y-4 shadow-2xs">
+              <div className="flex items-center gap-3 border-b border-slate-100 pb-3">
+                <div className="h-10 w-10 rounded-xl bg-sky-500 text-white flex items-center justify-center font-black">
+                  <Zap className="h-6 w-6" />
+                </div>
+                <div>
+                  <h4 className="text-sm font-black text-slate-900">Cobro con Sistecrédito</h4>
+                  <p className="text-xs text-slate-500">
+                    Monto total de la compra: <strong className="text-slate-900">{formatoCOP(totalVenta)}</strong>
+                  </p>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
+                  Código de Crédito / Aprobación Sistecrédito *
+                </label>
+                <input
+                  type="text"
+                  value={referenciaSistecredito}
+                  onChange={(e) => setReferenciaSistecredito(e.target.value)}
+                  placeholder="Ej. SC-482910 o N° de Crédito"
+                  className="w-full h-10 px-3 text-xs font-bold rounded-lg border border-sky-300 bg-white text-slate-900 shadow-2xs focus:outline-none focus:ring-2 focus:ring-sky-500/30"
+                  autoFocus
+                />
+                <p className="text-[11px] text-slate-500 mt-1.5 font-medium leading-tight">
+                  📌 Esta venta quedará registrada en <strong>Cuentas por Cobrar a Sistecrédito</strong> para su posterior desembolso bancario consolidado.
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* 5. VISTA DATÁFONO / TARJETA */}
           {metodoPrincipal === "TARJETA" && (
             <div className="p-6 max-w-xl mx-auto bg-white rounded-xl border border-purple-200 text-center space-y-3 shadow-2xs">
               <div className="h-12 w-12 rounded-full bg-purple-50 text-purple-600 flex items-center justify-center mx-auto">
@@ -473,7 +598,7 @@ export default function ModalCobroPOS({
             </div>
           )}
 
-          {/* 4. VISTA CRÉDITO CLIENTE (CON BUSCADOR Y REGISTRO EN VIVO) */}
+          {/* 6. VISTA CRÉDITO CLIENTE (FIADO / CARTERA DIRECTA) */}
           {metodoPrincipal === "CREDITO" && (
             <div className="p-5 max-w-xl mx-auto bg-white rounded-xl border border-amber-200 space-y-4 shadow-2xs">
               {!clienteNombre ? (
@@ -481,14 +606,13 @@ export default function ModalCobroPOS({
                   <div className="p-3 bg-amber-50 rounded-xl border border-amber-200 text-amber-900 text-xs">
                     <p className="font-bold flex items-center gap-1.5">
                       <AlertCircle className="h-4 w-4 text-amber-600 shrink-0" />
-                      Selecciona o registra un cliente para venta a crédito
+                      Selecciona o registra un cliente para venta a crédito directo (fiado)
                     </p>
                     <p className="mt-1 text-[11px] text-amber-800">
                       Busca el cliente por cédula, NIT o nombre a continuación, o regístralo en 1 clic:
                     </p>
                   </div>
 
-                  {/* Buscador Integrado en la pestaña de Crédito */}
                   <div className="space-y-2">
                     <div className="flex items-center gap-2">
                       <div className="relative flex-1">
@@ -517,7 +641,6 @@ export default function ModalCobroPOS({
                       </Button>
                     </div>
 
-                    {/* Lista rápida de resultados de clientes */}
                     <div className="border border-slate-200 rounded-xl overflow-hidden max-h-48 overflow-y-auto bg-slate-50">
                       {clientesFiltradosCredito.length > 0 ? (
                         clientesFiltradosCredito.map((c) => (
@@ -593,7 +716,7 @@ export default function ModalCobroPOS({
             </div>
           )}
 
-          {/* 5. VISTA PAGO DIVIDIDO / MIXTO */}
+          {/* 7. VISTA PAGO DIVIDIDO / MIXTO */}
           {metodoPrincipal === "MIXTO" && (
             <div className="space-y-3 bg-white p-4 rounded-xl border border-slate-200 shadow-2xs">
               <div className="flex items-center justify-between text-xs font-bold">
@@ -614,7 +737,9 @@ export default function ModalCobroPOS({
                       <option value="EFECTIVO">Efectivo</option>
                       <option value="TRANSFERENCIA">Transferencia</option>
                       <option value="TARJETA">Datáfono</option>
-                      <option value="CREDITO">Crédito</option>
+                      <option value="ADDI">Addi</option>
+                      <option value="SISTECREDITO">Sistecrédito</option>
+                      <option value="CREDITO">Crédito Directo</option>
                     </select>
 
                     <div className="relative flex-1">

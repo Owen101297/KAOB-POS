@@ -16,6 +16,7 @@ import {
   Scale,
   FileText,
   History,
+  CircleDollarSign,
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -119,6 +120,12 @@ export default function ConciliacionesClient({
         description="Cruza los extractos bancarios oficiales contra los registros del sistema POS para evitar descuadres."
         actions={
           <div className="flex items-center gap-2">
+            <Link href="/bancos/plataformas">
+              <Button variant="outline" size="sm" className="flex items-center gap-2 font-bold bg-white text-teal-700 border-teal-200 hover:bg-teal-50">
+                <CircleDollarSign className="h-4 w-4 text-teal-600" />
+                Plataformas BNPL
+              </Button>
+            </Link>
             <Link href="/bancos">
               <Button variant="outline" size="sm" className="flex items-center gap-2 font-bold bg-white">
                 <Landmark className="h-4 w-4" />

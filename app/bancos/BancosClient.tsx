@@ -16,6 +16,7 @@ import {
   History,
   CheckCheck,
   Edit2,
+  CircleDollarSign,
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -166,6 +167,12 @@ export default function BancosClient({ cuentas }: BancosClientProps) {
         description="Administra cuentas de ahorros, corrientes, billeteras digitales (Nequi/Daviplata) y pasarelas de pago."
         actions={
           <div className="flex flex-wrap items-center gap-2">
+            <Link href="/bancos/plataformas">
+              <Button variant="outline" size="sm" className="flex items-center gap-2 font-bold bg-white text-teal-700 border-teal-200 hover:bg-teal-50">
+                <CircleDollarSign className="h-4 w-4 text-teal-600" />
+                Plataformas BNPL (Addi / Sistecrédito)
+              </Button>
+            </Link>
             <Link href="/bancos/movimientos">
               <Button variant="outline" size="sm" className="flex items-center gap-2 font-bold bg-white">
                 <History className="h-4 w-4" />
