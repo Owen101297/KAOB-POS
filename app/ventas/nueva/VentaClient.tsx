@@ -42,6 +42,7 @@ import {
   Percent,
   Keyboard,
   Info,
+  ArrowLeft,
 } from "lucide-react";
 import type { Vendedor } from "@prisma/client";
 import { Button } from "@/components/ui/Button";
@@ -152,6 +153,9 @@ export default function VentaClient() {
   const [descuentoGlobal, setDescuentoGlobal] = useState(0);
   const [descuentoPctSeleccionado, setDescuentoPctSeleccionado] = useState<number>(0);
   const [nota, setNota] = useState("");
+
+  // Pestaña activa en pantallas pequeñas (Tablet / Celular)
+  const [tabMovil, setTabMovil] = useState<"CATALOGO" | "CARRITO">("CATALOGO");
 
   // Búsqueda y Catálogo
   const [busqueda, setBusqueda] = useState("");
@@ -565,6 +569,7 @@ export default function VentaClient() {
 
       if (e.key === "F2") {
         e.preventDefault();
+        setTabMovil("CATALOGO");
         enfocarBuscador();
       } else if (e.key === "F4" && carrito.length > 0) {
         e.preventDefault();
@@ -583,47 +588,47 @@ export default function VentaClient() {
 
   return (
     <div className="flex flex-col h-[calc(100vh-4rem)] bg-slate-100 overflow-hidden select-none">
-      {/* ───────────────────────── 1. TOP COCKPIT BAR (Estilo 21st.dev) ───────────────────────── */}
-      <header className="h-14 bg-slate-900 text-white px-4 flex items-center justify-between border-b border-slate-800 shrink-0 z-20 shadow-md">
+      {/* ───────────────────────── 1. TOP COCKPIT BAR RESPONSIVE ───────────────────────── */}
+      <header className="min-h-12 py-1.5 sm:py-0 sm:h-14 bg-slate-900 text-white px-3 sm:px-4 flex flex-wrap items-center justify-between gap-2 border-b border-slate-800 shrink-0 z-20 shadow-md">
         {/* Lado Izquierdo: Estado de Caja & Modos de Venta */}
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2 pr-3 border-r border-slate-800">
+        <div className="flex items-center gap-2 sm:gap-3 overflow-x-auto scrollbar-none">
+          <div className="flex items-center gap-1.5 pr-2 sm:pr-3 border-r border-slate-800 shrink-0">
             <span
-              className={`h-2.5 w-2.5 rounded-full ${
+              className={`h-2 sm:h-2.5 w-2 sm:w-2.5 rounded-full ${
                 cajaAbierta ? "bg-emerald-400 animate-pulse" : "bg-red-500"
               }`}
             />
-            <span className="text-xs font-black tracking-tight text-white hidden sm:inline">
-              {cajaAbierta ? "CAJA ACTIVA" : "CAJA CERRADA"}
+            <span className="text-[11px] sm:text-xs font-black tracking-tight text-white hidden xs:inline">
+              {cajaAbierta ? "CAJA ACTIVA" : "CERRADA"}
             </span>
             {!cajaAbierta && (
               <button
                 type="button"
                 onClick={() => setMostrarAbrirCaja(true)}
-                className="text-[11px] font-bold px-2 py-0.5 rounded bg-red-600 hover:bg-red-500 text-white transition-colors"
+                className="text-[10px] sm:text-[11px] font-bold px-2 py-0.5 rounded bg-red-600 hover:bg-red-500 text-white transition-colors"
               >
-                Abrir Caja
+                Abrir
               </button>
             )}
           </div>
 
           {/* Selector de Modo: Venta / Remisión / Cotización */}
-          <div className="flex items-center bg-slate-800 p-1 rounded-xl border border-slate-700/80">
+          <div className="flex items-center bg-slate-800 p-0.5 sm:p-1 rounded-xl border border-slate-700/80 shrink-0">
             <button
               type="button"
               onClick={() => setTipoVenta("VENTA")}
-              className={`px-3 py-1 rounded-lg text-xs font-black transition-all ${
+              className={`px-2.5 sm:px-3 py-1 rounded-lg text-[11px] sm:text-xs font-black transition-all ${
                 tipoVenta === "VENTA"
                   ? "bg-blue-600 text-white shadow-2xs"
                   : "text-slate-400 hover:text-slate-200"
               }`}
             >
-              Venta Directa
+              Venta
             </button>
             <button
               type="button"
               onClick={() => setTipoVenta("REMISION")}
-              className={`px-3 py-1 rounded-lg text-xs font-black transition-all ${
+              className={`px-2 sm:px-3 py-1 rounded-lg text-[11px] sm:text-xs font-black transition-all ${
                 tipoVenta === "REMISION"
                   ? "bg-amber-600 text-white shadow-2xs"
                   : "text-slate-400 hover:text-slate-200"
@@ -634,7 +639,7 @@ export default function VentaClient() {
             <button
               type="button"
               onClick={() => setTipoVenta("COTIZACION")}
-              className={`px-3 py-1 rounded-lg text-xs font-black transition-all ${
+              className={`px-2 sm:px-3 py-1 rounded-lg text-[11px] sm:text-xs font-black transition-all ${
                 tipoVenta === "COTIZACION"
                   ? "bg-purple-600 text-white shadow-2xs"
                   : "text-slate-400 hover:text-slate-200"
@@ -646,17 +651,17 @@ export default function VentaClient() {
         </div>
 
         {/* Lado Derecho: Atajos, En Espera & Cámara */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
           {/* Botón de Cuentas Pausadas */}
           {cuentasPausadas.length > 0 && (
             <button
               type="button"
               onClick={() => setMostrarModalPausadas(true)}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-500/20 text-amber-300 hover:bg-amber-500/30 border border-amber-500/30 text-xs font-black transition-colors"
+              className="flex items-center gap-1 px-2.5 py-1 sm:py-1.5 rounded-xl bg-amber-500/20 text-amber-300 hover:bg-amber-500/30 border border-amber-500/30 text-xs font-black transition-colors"
             >
-              <PauseCircle className="h-4 w-4" />
-              <span>En Espera</span>
-              <span className="h-5 w-5 rounded-full bg-amber-400 text-slate-950 flex items-center justify-center text-[10px] font-black">
+              <PauseCircle className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+              <span className="hidden sm:inline">En Espera</span>
+              <span className="h-4 w-4 sm:h-5 sm:w-5 rounded-full bg-amber-400 text-slate-950 flex items-center justify-center text-[10px] font-black">
                 {cuentasPausadas.length}
               </span>
             </button>
@@ -666,15 +671,42 @@ export default function VentaClient() {
           <button
             type="button"
             onClick={() => setAbrirEscanerCamara(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold border border-slate-700 transition-colors"
-            title="Escanear con Cámara del Dispositivo"
+            className="flex items-center gap-1 px-2.5 py-1 sm:py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold border border-slate-700 transition-colors"
+            title="Escanear con Cámara"
           >
-            <Camera className="h-4 w-4 text-teal-400" />
+            <Camera className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-teal-400" />
             <span className="hidden md:inline">Cámara</span>
           </button>
 
-          {/* Atajos de Teclado Info */}
-          <div className="hidden lg:flex items-center gap-2 text-[11px] font-mono text-slate-400 bg-slate-800/80 px-2.5 py-1 rounded-lg border border-slate-700">
+          {/* Selector de Pantalla para Móvil / Tablet (< lg) */}
+          <div className="flex lg:hidden items-center bg-slate-800 p-0.5 rounded-xl border border-slate-700">
+            <button
+              type="button"
+              onClick={() => setTabMovil("CATALOGO")}
+              className={`px-2.5 py-1 rounded-lg text-xs font-black transition-all ${
+                tabMovil === "CATALOGO"
+                  ? "bg-slate-700 text-white"
+                  : "text-slate-400"
+              }`}
+            >
+              Catálogo
+            </button>
+            <button
+              type="button"
+              onClick={() => setTabMovil("CARRITO")}
+              className={`px-2.5 py-1 rounded-lg text-xs font-black transition-all flex items-center gap-1 ${
+                tabMovil === "CARRITO"
+                  ? "bg-emerald-600 text-white"
+                  : "text-slate-400"
+              }`}
+            >
+              <ShoppingCart className="h-3 w-3" />
+              <span>({totalItems})</span>
+            </button>
+          </div>
+
+          {/* Atajos de Teclado Info en Desktop */}
+          <div className="hidden xl:flex items-center gap-2 text-[11px] font-mono text-slate-400 bg-slate-800/80 px-2.5 py-1 rounded-lg border border-slate-700">
             <span><kbd className="text-white font-bold">F2</kbd> Buscar</span>
             <span>•</span>
             <span><kbd className="text-white font-bold">F4</kbd> Cobrar</span>
@@ -687,13 +719,13 @@ export default function VentaClient() {
       {/* Notificaciones Flotantes */}
       {exito && (
         <div className="absolute top-16 left-1/2 -translate-x-1/2 z-50 px-4 py-2 bg-emerald-600 text-white text-xs font-black rounded-xl shadow-xl flex items-center gap-2 animate-in fade-in slide-in-from-top-2">
-          <CheckCircle2 className="h-4 w-4" />
+          <CheckCircle2 className="h-4 w-4 shrink-0" />
           <span>{exito}</span>
         </div>
       )}
       {error && (
         <div className="absolute top-16 left-1/2 -translate-x-1/2 z-50 px-4 py-2 bg-red-600 text-white text-xs font-black rounded-xl shadow-xl flex items-center gap-2 animate-in fade-in slide-in-from-top-2">
-          <AlertCircle className="h-4 w-4" />
+          <AlertCircle className="h-4 w-4 shrink-0" />
           <span>{error}</span>
           <button type="button" onClick={() => setError(null)} className="ml-2 text-white/80 hover:text-white">
             <X className="h-3.5 w-3.5" />
@@ -701,16 +733,20 @@ export default function VentaClient() {
         </div>
       )}
 
-      {/* ───────────────────────── 2. CUERPO PRINCIPAL DIVIDIDO EN 2 PANELES ───────────────────────── */}
-      <div className="flex-1 flex overflow-hidden">
-        {/* ───────── PANEL IZQUIERDO: CATÁLOGO Y BUSCADOR (Flex-1) ───────── */}
-        <section className="flex-1 flex flex-col min-w-0 bg-slate-100 overflow-hidden">
+      {/* ───────────────────────── 2. CUERPO PRINCIPAL RESPONSIVE ───────────────────────── */}
+      <div className="flex-1 flex overflow-hidden relative">
+        {/* ───────── PANEL IZQUIERDO: CATÁLOGO Y BUSCADOR (Visible siempre en desktop, o cuando tabMovil === 'CATALOGO' en mobile/tablet) ───────── */}
+        <section
+          className={`flex-1 flex flex-col min-w-0 bg-slate-100 overflow-hidden ${
+            tabMovil === "CATALOGO" ? "flex" : "hidden lg:flex"
+          }`}
+        >
           {/* Barra de Búsqueda Inteligente */}
-          <div className="p-3.5 bg-white border-b border-slate-200 shadow-2xs space-y-2.5">
+          <div className="p-3 sm:p-3.5 bg-white border-b border-slate-200 shadow-2xs space-y-2 sm:space-y-2.5">
             <div className="relative">
-              <div className="absolute left-3.5 top-3 text-slate-400 flex items-center gap-1">
+              <div className="absolute left-3 sm:left-3.5 top-2.5 sm:top-3 text-slate-400 flex items-center gap-1">
                 <Search className="h-4 w-4" />
-                <Barcode className="h-4 w-4 text-blue-600" />
+                <Barcode className="h-4 w-4 text-blue-600 hidden xs:inline" />
               </div>
               <input
                 ref={inputBusquedaRef}
@@ -724,10 +760,10 @@ export default function VentaClient() {
                   }
                 }}
                 placeholder="Escanea el código de barras con la pistola o busca por nombre, ref, talla o color... (F2)"
-                className="w-full h-11 pl-16 pr-24 text-xs font-semibold rounded-xl border border-slate-300 bg-slate-50/50 text-slate-900 shadow-2xs focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all placeholder:text-slate-400"
+                className="w-full h-10 sm:h-11 pl-9 sm:pl-16 pr-16 sm:pr-24 text-xs font-semibold rounded-xl border border-slate-300 bg-slate-50/50 text-slate-900 shadow-2xs focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all placeholder:text-slate-400"
                 autoFocus
               />
-              <div className="absolute right-3 top-2.5 flex items-center gap-1">
+              <div className="absolute right-2 sm:right-3 top-2 sm:top-2.5 flex items-center gap-1">
                 {busqueda && (
                   <button
                     type="button"
@@ -737,10 +773,10 @@ export default function VentaClient() {
                     }}
                     className="p-1 text-slate-400 hover:text-slate-600 rounded-md"
                   >
-                    <X className="h-4 w-4" />
+                    <X className="h-3.5 w-3.5" />
                   </button>
                 )}
-                <span className="text-[10px] font-black px-1.5 py-0.5 rounded bg-slate-200 text-slate-600 font-mono">
+                <span className="text-[10px] font-black px-1.5 py-0.5 rounded bg-slate-200 text-slate-600 font-mono hidden sm:inline">
                   F2
                 </span>
               </div>
@@ -758,7 +794,7 @@ export default function VentaClient() {
                 }`}
               >
                 <Layers className="h-3.5 w-3.5" />
-                <span>Todos los Productos</span>
+                <span>Todos</span>
               </button>
               {categorias.map((cat) => (
                 <button
@@ -777,8 +813,8 @@ export default function VentaClient() {
             </div>
           </div>
 
-          {/* Grilla de Productos (Estilo 21st.dev) */}
-          <div className="flex-1 overflow-y-auto p-4 space-y-4">
+          {/* Grilla de Productos */}
+          <div className="flex-1 overflow-y-auto p-3 sm:p-4 space-y-4">
             {cargandoProductos ? (
               <div className="py-24 text-center space-y-3">
                 <Loader2 className="h-8 w-8 animate-spin mx-auto text-blue-600" />
@@ -793,7 +829,7 @@ export default function VentaClient() {
                 </p>
               </div>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3.5">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-3">
                 {productos.map((prod) => {
                   const stockTotal = prod.variantes.reduce((acc, v) => {
                     const st = Array.isArray(v.stocks) && v.stocks.length > 0
@@ -805,7 +841,7 @@ export default function VentaClient() {
                   return (
                     <div
                       key={prod.id}
-                      className="bg-white rounded-2xl border border-slate-200 p-4 shadow-2xs hover:shadow-md transition-all hover:border-slate-300 flex flex-col justify-between group"
+                      className="bg-white rounded-2xl border border-slate-200 p-3.5 sm:p-4 shadow-2xs hover:shadow-md transition-all hover:border-slate-300 flex flex-col justify-between group"
                     >
                       {/* Header de la Prenda */}
                       <div className="space-y-1.5">
@@ -825,11 +861,11 @@ export default function VentaClient() {
                         </h3>
 
                         <div className="flex items-baseline justify-between pt-1">
-                          <span className="text-base font-black text-slate-900">
+                          <span className="text-sm sm:text-base font-black text-slate-900">
                             {formatoCOP(prod.precioBase)}
                           </span>
                           <span
-                            className={`text-[10.5px] font-bold px-2 py-0.5 rounded-full ${
+                            className={`text-[10px] sm:text-[10.5px] font-bold px-2 py-0.5 rounded-full ${
                               stockTotal > 0
                                 ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
                                 : "bg-red-50 text-red-700 border border-red-200"
@@ -841,7 +877,7 @@ export default function VentaClient() {
                       </div>
 
                       {/* Selector Rápido de Tallas & Variantes en 1 Clic */}
-                      <div className="pt-3 mt-3 border-t border-slate-100 space-y-2">
+                      <div className="pt-2.5 mt-2.5 border-t border-slate-100 space-y-1.5">
                         <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
                           Tallas & Colores Disponibles:
                         </span>
@@ -884,12 +920,47 @@ export default function VentaClient() {
               </div>
             )}
           </div>
+
+          {/* Botón flotante para ver carrito en móviles cuando hay prendas */}
+          {totalItems > 0 && (
+            <div className="lg:hidden p-3 bg-white border-t border-slate-200 shadow-xl shrink-0">
+              <Button
+                onClick={() => setTabMovil("CARRITO")}
+                className="w-full h-11 bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs sm:text-sm flex items-center justify-between px-4 rounded-xl shadow-md shadow-emerald-600/20"
+              >
+                <div className="flex items-center gap-2">
+                  <ShoppingCart className="h-4 w-4" />
+                  <span>Ver Carrito ({totalItems} prendas)</span>
+                </div>
+                <span>{formatoCOP(total)} →</span>
+              </Button>
+            </div>
+          )}
         </section>
 
-        {/* ───────── PANEL DERECHO: COMANDO DE VENTA & CARRITO (420px Sticky) ───────── */}
-        <aside className="w-full max-w-[420px] bg-white border-l border-slate-200 flex flex-col justify-between shrink-0 shadow-lg z-10">
+        {/* ───────── PANEL DERECHO: COMANDO DE VENTA & CARRITO (Visible siempre en desktop, o cuando tabMovil === 'CARRITO' en mobile/tablet) ───────── */}
+        <aside
+          className={`w-full lg:w-[380px] xl:w-[420px] bg-white border-l border-slate-200 flex flex-col justify-between shrink-0 shadow-lg z-10 ${
+            tabMovil === "CARRITO" ? "flex" : "hidden lg:flex"
+          }`}
+        >
           {/* Header del Carrito: Cliente y Vendedor */}
-          <div className="p-4 border-b border-slate-200 bg-slate-50/70 space-y-3">
+          <div className="p-3.5 sm:p-4 border-b border-slate-200 bg-slate-50/70 space-y-2.5 sm:space-y-3 shrink-0">
+            {/* Botón Volver al Catálogo en Móvil */}
+            <div className="flex lg:hidden items-center justify-between pb-1 border-b border-slate-200">
+              <button
+                type="button"
+                onClick={() => setTabMovil("CATALOGO")}
+                className="text-xs font-bold text-slate-700 flex items-center gap-1.5 hover:text-slate-900"
+              >
+                <ArrowLeft className="h-4 w-4" />
+                <span>Volver al Catálogo</span>
+              </button>
+              <Badge variant="outline" className="text-[10px] font-bold">
+                {totalItems} prendas
+              </Badge>
+            </div>
+
             {/* Buscador Integrado de Cliente */}
             <div className="space-y-1.5 relative">
               <div className="flex items-center justify-between">
@@ -1107,9 +1178,9 @@ export default function VentaClient() {
           </div>
 
           {/* Sección de Totales, Descuentos & Cobro */}
-          <div className="p-4 bg-slate-50 border-t border-slate-200 space-y-3 shrink-0">
+          <div className="p-3.5 sm:p-4 bg-slate-50 border-t border-slate-200 space-y-2.5 sm:space-y-3 shrink-0">
             {/* Descuentos Rápidos */}
-            <div className="space-y-1.5">
+            <div className="space-y-1">
               <div className="flex items-center justify-between text-[11px] font-bold text-slate-600">
                 <span>Descuento Global:</span>
                 {descuentoGlobal > 0 && (
@@ -1122,7 +1193,7 @@ export default function VentaClient() {
                     key={pct}
                     type="button"
                     onClick={() => aplicarDescuentoRapido(pct)}
-                    className={`py-1 rounded-lg text-[10.5px] font-black transition-all ${
+                    className={`py-1 rounded-lg text-[10px] sm:text-[10.5px] font-black transition-all ${
                       descuentoPctSeleccionado === pct
                         ? "bg-slate-900 text-white shadow-2xs"
                         : "bg-white border border-slate-200 text-slate-700 hover:bg-slate-100"
@@ -1135,7 +1206,7 @@ export default function VentaClient() {
             </div>
 
             {/* Subtotales y Conteo */}
-            <div className="pt-2 border-t border-slate-200 space-y-1 text-xs font-bold text-slate-600">
+            <div className="pt-1.5 border-t border-slate-200 space-y-1 text-xs font-bold text-slate-600">
               <div className="flex items-center justify-between">
                 <span>Prendas en Carrito:</span>
                 <span className="font-black text-slate-900">{totalItems} uds</span>
@@ -1147,12 +1218,12 @@ export default function VentaClient() {
             </div>
 
             {/* Gran Total Card */}
-            <div className="p-3.5 bg-slate-900 text-white rounded-2xl flex items-center justify-between shadow-md">
+            <div className="p-3 sm:p-3.5 bg-slate-900 text-white rounded-2xl flex items-center justify-between shadow-md">
               <div>
                 <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
                   Total a Cobrar
                 </span>
-                <span className="text-2xl font-black text-white">
+                <span className="text-xl sm:text-2xl font-black text-white">
                   {formatoCOP(total)}
                 </span>
               </div>
@@ -1162,25 +1233,25 @@ export default function VentaClient() {
             </div>
 
             {/* Botones de Acción */}
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5 sm:gap-2">
               <button
                 type="button"
                 onClick={pausarVentaActual}
                 disabled={carrito.length === 0}
-                className="p-3 rounded-xl border border-slate-300 bg-white text-slate-700 hover:bg-slate-100 font-bold transition-colors disabled:opacity-50"
+                className="p-2.5 sm:p-3 rounded-xl border border-slate-300 bg-white text-slate-700 hover:bg-slate-100 font-bold transition-colors disabled:opacity-50"
                 title="Poner Venta en Espera (F9)"
               >
-                <PauseCircle className="h-5 w-5" />
+                <PauseCircle className="h-4 w-4 sm:h-5 sm:w-5" />
               </button>
 
               <button
                 type="button"
                 onClick={vaciarCarrito}
                 disabled={carrito.length === 0}
-                className="p-3 rounded-xl border border-slate-300 bg-white text-slate-700 hover:bg-red-50 hover:text-red-600 hover:border-red-200 font-bold transition-colors disabled:opacity-50"
+                className="p-2.5 sm:p-3 rounded-xl border border-slate-300 bg-white text-slate-700 hover:bg-red-50 hover:text-red-600 hover:border-red-200 font-bold transition-colors disabled:opacity-50"
                 title="Vaciar Carrito (F8)"
               >
-                <Trash2 className="h-5 w-5" />
+                <Trash2 className="h-4 w-4 sm:h-5 sm:w-5" />
               </button>
 
               {/* Botón Principal de Cobro */}
@@ -1188,9 +1259,9 @@ export default function VentaClient() {
                 size="lg"
                 disabled={carrito.length === 0 || pending}
                 onClick={() => setAbrirModalCobro(true)}
-                className="flex-1 h-12 bg-emerald-600 hover:bg-emerald-700 text-white font-black text-sm rounded-xl shadow-lg shadow-emerald-600/25 flex items-center justify-center gap-2 transition-all hover:scale-[1.01] active:scale-[0.99]"
+                className="flex-1 h-11 sm:h-12 bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs sm:text-sm rounded-xl shadow-lg shadow-emerald-600/25 flex items-center justify-center gap-1.5 sm:gap-2 transition-all hover:scale-[1.01] active:scale-[0.99]"
               >
-                <Receipt className="h-5 w-5" />
+                <Receipt className="h-4 w-4 sm:h-5 sm:w-5" />
                 <span>COBRAR ({formatoCOP(total)})</span>
                 <kbd className="hidden sm:inline text-[10px] font-mono bg-emerald-800/80 text-emerald-200 px-1.5 py-0.5 rounded">
                   F4
