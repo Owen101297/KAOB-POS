@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { Bell, ChevronDown, LayoutGrid, LogOut, Menu, Package, Settings, Store, User } from 'lucide-react';
 import {
   DropdownMenu,
@@ -44,9 +45,14 @@ export default function Topbar({ onMenuClick }: { onMenuClick?: () => void }) {
     <header className="fixed inset-x-0 top-0 z-[1300] flex h-16 items-stretch border-b border-slate-200/70 bg-white/90 backdrop-blur">
       {/* Marca — alineada con el rail */}
       <div className="flex w-[76px] shrink-0 items-center justify-center bg-slate-900">
-        <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-brand-400 to-brand-600 shadow-md shadow-brand-500/30">
+        <Link
+          href="/"
+          title="Ir al Inicio / Dashboard"
+          aria-label="Ir al Inicio"
+          className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-brand-400 to-brand-600 shadow-md shadow-brand-500/30 transition-transform hover:scale-110 active:scale-95 focus:outline-none focus:ring-2 focus:ring-brand-400"
+        >
           <Store className="h-[18px] w-[18px] text-white" />
-        </div>
+        </Link>
       </div>
 
       {/* Zona izquierda: menú móvil + selector de almacén */}
