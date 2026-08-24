@@ -527,9 +527,9 @@ export default function VentaClient() {
   }
 
   return (
-    <div className="h-[calc(100vh-4rem)] flex flex-col bg-slate-900 text-slate-100 select-none overflow-hidden">
+    <div className="h-[calc(100vh-4rem)] flex flex-col bg-slate-100 text-slate-900 select-none overflow-hidden">
       {/* 1. Header Cockpit del POS */}
-      <header className="h-14 px-4 bg-slate-950 border-b border-slate-800 flex items-center justify-between gap-4 shrink-0 shadow-md">
+      <header className="h-14 px-4 bg-white border-b border-slate-200 flex items-center justify-between gap-4 shrink-0 shadow-sm">
         {/* Lado Izquierdo: Marca + Tipo de Venta Switcher */}
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 px-3 py-1.5 rounded-xl text-white font-black text-xs tracking-wider shadow-md shadow-blue-500/20">
@@ -538,7 +538,7 @@ export default function VentaClient() {
           </div>
 
           {/* Selector de Tipo de Documento */}
-          <div className="flex items-center p-1 bg-slate-900 rounded-xl border border-slate-800 text-xs">
+          <div className="flex items-center p-1 bg-slate-100 rounded-xl border border-slate-200 text-xs">
             {(["VENTA", "REMISION", "COTIZACION"] as const).map((t) => (
               <button
                 key={t}
@@ -547,7 +547,7 @@ export default function VentaClient() {
                 className={`px-3 py-1 rounded-lg font-bold transition-all ${
                   tipoVenta === t
                     ? "bg-blue-600 text-white shadow-md shadow-blue-600/30"
-                    : "text-slate-400 hover:text-slate-200"
+                    : "text-slate-600 hover:text-slate-900"
                 }`}
               >
                 {t === "VENTA" ? "Venta Mostrador" : t === "REMISION" ? "Remisión" : "Cotización"}
@@ -564,18 +564,18 @@ export default function VentaClient() {
               variant="outline"
               size="sm"
               onClick={() => setMostrarModalPausadas(true)}
-              className="h-8 text-xs font-bold bg-amber-950/40 text-amber-300 border-amber-800/80 hover:bg-amber-900/50 flex items-center gap-1.5 animate-pulse"
+              className="h-8 text-xs font-bold bg-amber-50 text-amber-800 border-amber-300 hover:bg-amber-100 flex items-center gap-1.5 animate-pulse"
             >
-              <PauseCircle className="h-4 w-4" />
+              <PauseCircle className="h-4 w-4 text-amber-600" />
               <span>{cuentasPausadas.length} en espera</span>
             </Button>
           )}
 
           {/* Atajos de Teclado Chips */}
-          <div className="hidden xl:flex items-center gap-1.5 text-[11px] text-slate-400 font-mono">
-            <span className="px-2 py-0.5 rounded bg-slate-900 border border-slate-800">F2: Buscar</span>
-            <span className="px-2 py-0.5 rounded bg-slate-900 border border-slate-800">F4: Cobrar</span>
-            <span className="px-2 py-0.5 rounded bg-slate-900 border border-slate-800">F8: Pausar</span>
+          <div className="hidden xl:flex items-center gap-1.5 text-[11px] text-slate-500 font-mono">
+            <span className="px-2 py-0.5 rounded bg-white border border-slate-200 font-semibold shadow-2xs">F2: Buscar</span>
+            <span className="px-2 py-0.5 rounded bg-white border border-slate-200 font-semibold shadow-2xs">F4: Cobrar</span>
+            <span className="px-2 py-0.5 rounded bg-white border border-slate-200 font-semibold shadow-2xs">F8: Pausar</span>
           </div>
 
           {/* Estado de Turno de Caja */}
@@ -583,11 +583,11 @@ export default function VentaClient() {
             <span
               className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold ${
                 cajaAbierta
-                  ? "bg-emerald-950/60 text-emerald-300 border border-emerald-800/80"
-                  : "bg-red-950/60 text-red-300 border border-red-800/80"
+                  ? "bg-emerald-50 text-emerald-800 border border-emerald-300"
+                  : "bg-red-50 text-red-800 border border-red-300"
               }`}
             >
-              <span className={`h-2 w-2 rounded-full ${cajaAbierta ? "bg-emerald-400 animate-ping" : "bg-red-400"}`} />
+              <span className={`h-2 w-2 rounded-full ${cajaAbierta ? "bg-emerald-500 animate-ping" : "bg-red-500"}`} />
               {cajaAbierta ? "Caja Abierta" : "Caja Cerrada"}
             </span>
 
@@ -596,7 +596,7 @@ export default function VentaClient() {
                 variant="primary"
                 size="sm"
                 onClick={() => setMostrarAbrirCaja(true)}
-                className="h-8 text-xs font-bold bg-emerald-600 hover:bg-emerald-700"
+                className="h-8 text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white"
               >
                 Abrir Caja
               </Button>
@@ -605,12 +605,12 @@ export default function VentaClient() {
         </div>
       </header>
 
-      {/* 2. Cuerpo Principal: 2 Columnas (Catálogo Izquierda 60% / Carrito y Cobro Derecha 40%) */}
+      {/* 2. Cuerpo Principal: 2 Columnas (Catálogo Izquierda 60% / Carrito y Cobro Derecha 40% Fondo Blanco) */}
       <div className="flex-1 flex overflow-hidden">
         {/* COLUMNA IZQUIERDA: Catálogo de Productos y Buscador */}
-        <div className="flex-1 flex flex-col min-w-0 border-r border-slate-800 bg-slate-950/50">
+        <div className="flex-1 flex flex-col min-w-0 border-r border-slate-200 bg-slate-50">
           {/* Barra de Comandos y Escaneo */}
-          <div className="p-3 border-b border-slate-800 bg-slate-950 space-y-2.5">
+          <div className="p-3 border-b border-slate-200 bg-white space-y-2.5 shadow-2xs">
             <div className="flex items-center gap-2">
               <div className="relative flex-1">
                 <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
@@ -625,14 +625,14 @@ export default function VentaClient() {
                     }
                   }}
                   placeholder="Escanear código de barras o escribir nombre/referencia (F2)..."
-                  className="pl-10 pr-9 h-11 bg-slate-900 border-slate-800 text-white rounded-xl text-sm font-medium focus:ring-2 focus:ring-blue-500 shadow-inner"
+                  className="pl-10 pr-9 h-11 bg-white border-slate-300 text-slate-900 rounded-xl text-sm font-medium focus:ring-2 focus:ring-blue-500 shadow-xs"
                   autoFocus
                 />
                 {busqueda && (
                   <button
                     type="button"
                     onClick={() => handleBusqueda("")}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700"
                   >
                     <X className="h-4 w-4" />
                   </button>
@@ -643,7 +643,7 @@ export default function VentaClient() {
               <Button
                 variant="primary"
                 onClick={() => setAbrirEscanerCamara(true)}
-                className="h-11 px-4 rounded-xl bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-500 hover:to-blue-500 text-white font-bold text-xs flex items-center gap-2 shadow-lg shadow-indigo-600/20 shrink-0"
+                className="h-11 px-4 rounded-xl bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-500 hover:to-blue-500 text-white font-bold text-xs flex items-center gap-2 shadow-md shadow-indigo-600/20 shrink-0"
               >
                 <Camera className="h-4 w-4 text-white" />
                 <span>Escanear con Cámara</span>
@@ -657,8 +657,8 @@ export default function VentaClient() {
                 onClick={() => handleSeleccionarCategoria(null)}
                 className={`px-3 py-1.5 rounded-lg font-bold shrink-0 transition-all ${
                   categoriaSeleccionada === null
-                    ? "bg-slate-800 text-white border border-slate-700 shadow-sm"
-                    : "text-slate-400 hover:text-slate-200 hover:bg-slate-900"
+                    ? "bg-slate-900 text-white shadow-sm"
+                    : "text-slate-600 hover:text-slate-900 hover:bg-slate-100 border border-slate-200"
                 }`}
               >
                 🏷️ Todas las Prendas
@@ -671,8 +671,8 @@ export default function VentaClient() {
                   onClick={() => handleSeleccionarCategoria(cat.id)}
                   className={`px-3 py-1.5 rounded-lg font-semibold shrink-0 transition-all ${
                     categoriaSeleccionada === cat.id
-                      ? "bg-blue-600 text-white border border-blue-500 shadow-md shadow-blue-600/30"
-                      : "text-slate-400 hover:text-slate-200 hover:bg-slate-900 border border-transparent"
+                      ? "bg-blue-600 text-white shadow-md shadow-blue-600/20"
+                      : "text-slate-600 hover:text-slate-900 hover:bg-slate-100 border border-slate-200 bg-white"
                   }`}
                 >
                   {cat.nombre}
@@ -685,15 +685,15 @@ export default function VentaClient() {
           <div className="flex-1 overflow-y-auto p-4">
             {cargandoProductos ? (
               <div className="py-24 text-center space-y-2 text-slate-400">
-                <Loader2 className="h-8 w-8 mx-auto animate-spin text-blue-500" />
-                <p className="text-xs">Cargando catálogo...</p>
+                <Loader2 className="h-8 w-8 mx-auto animate-spin text-blue-600" />
+                <p className="text-xs font-semibold text-slate-600">Cargando catálogo...</p>
               </div>
             ) : productos.length === 0 ? (
               <EmptyState
                 icon={Search}
                 title="Sin resultados"
                 description="No se encontraron prendas con esa búsqueda o categoría"
-                className="py-24 text-slate-400"
+                className="py-24 text-slate-500"
               />
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3.5">
@@ -709,13 +709,13 @@ export default function VentaClient() {
           </div>
         </div>
 
-        {/* COLUMNA DERECHA: Carrito de Compra & Cockpit de Cobro (40% Width) */}
-        <div className="w-full lg:w-[440px] xl:w-[480px] flex flex-col bg-slate-950 border-l border-slate-800 shadow-2xl shrink-0">
+        {/* COLUMNA DERECHA: Carrito de Compra & Cockpit de Cobro (Fondo Blanco Limpio y Elegante) */}
+        <div className="w-full lg:w-[440px] xl:w-[480px] flex flex-col bg-white border-l border-slate-200 shadow-xl shrink-0">
           {/* Header del Carrito: Cliente y Vendedor */}
-          <div className="p-3.5 border-b border-slate-800 bg-slate-900/60 space-y-2.5">
+          <div className="p-3.5 border-b border-slate-200 bg-slate-50 space-y-2.5">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-black uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
-                <ShoppingCart className="h-4 w-4 text-blue-400" />
+              <span className="text-xs font-black uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
+                <ShoppingCart className="h-4 w-4 text-blue-600" />
                 Orden Actual ({totalItems} prendas)
               </span>
 
@@ -726,9 +726,9 @@ export default function VentaClient() {
                     size="sm"
                     onClick={pausarVentaActual}
                     title="Pausar venta para atender a otro cliente (F8)"
-                    className="h-7 text-xs text-amber-400 hover:text-amber-300 hover:bg-amber-950/40 px-2"
+                    className="h-7 text-xs text-amber-700 hover:text-amber-900 hover:bg-amber-100 px-2"
                   >
-                    <PauseCircle className="h-3.5 w-3.5 mr-1" />
+                    <PauseCircle className="h-3.5 w-3.5 mr-1 text-amber-600" />
                     Pausar
                   </Button>
                   <Button
@@ -737,7 +737,7 @@ export default function VentaClient() {
                     onClick={() => {
                       if (confirm("¿Vaciar todo el carrito?")) setCarrito([]);
                     }}
-                    className="h-7 text-xs text-red-400 hover:text-red-300 hover:bg-red-950/40 px-2"
+                    className="h-7 text-xs text-red-600 hover:text-red-800 hover:bg-red-50 px-2"
                   >
                     <Trash2 className="h-3.5 w-3.5 mr-1" />
                     Vaciar
@@ -760,11 +760,11 @@ export default function VentaClient() {
                     if (cli) setCliente(cli);
                   }}
                 >
-                  <SelectTrigger className="h-9 bg-slate-900 border-slate-800 text-xs text-white">
-                    <UserCheck className="h-3.5 w-3.5 mr-1.5 text-blue-400" />
+                  <SelectTrigger className="h-9 bg-white border-slate-300 text-xs text-slate-900">
+                    <UserCheck className="h-3.5 w-3.5 mr-1.5 text-blue-600" />
                     <SelectValue placeholder="Cliente General (Mostrador)" />
                   </SelectTrigger>
-                  <SelectContent className="bg-slate-900 border-slate-800 text-white">
+                  <SelectContent className="bg-white border-slate-200 text-slate-900">
                     <SelectItem value="">Cliente General (Sin registrar)</SelectItem>
                     {clientes.map((c) => (
                       <SelectItem key={c.id} value={String(c.id)}>
@@ -788,7 +788,7 @@ export default function VentaClient() {
                   });
                   setAbrirClienteModal(true);
                 }}
-                className="h-9 w-9 border-slate-800 bg-slate-900 text-blue-400 hover:bg-slate-800 hover:text-blue-300 shrink-0"
+                className="h-9 w-9 border-slate-300 bg-white text-blue-600 hover:bg-blue-50 shrink-0"
                 title="Nuevo cliente rápido"
               >
                 <UserPlus className="h-4 w-4" />
@@ -796,13 +796,13 @@ export default function VentaClient() {
             </div>
           </div>
 
-          {/* Lista de Artículos en Carrito */}
-          <div className="flex-1 overflow-y-auto p-3 space-y-2">
+          {/* Lista de Artículos en Carrito (Fondo Blanco) */}
+          <div className="flex-1 overflow-y-auto p-3 space-y-2 bg-white">
             {carrito.length === 0 ? (
-              <div className="py-24 text-center space-y-3 text-slate-500">
-                <ShoppingCart className="h-16 w-16 mx-auto text-slate-800 stroke-[1.2]" />
-                <p className="font-bold text-sm text-slate-400">Carrito sin productos</p>
-                <p className="text-xs text-slate-500 max-w-xs mx-auto">
+              <div className="py-24 text-center space-y-3 text-slate-400">
+                <ShoppingCart className="h-16 w-16 mx-auto text-slate-300 stroke-[1.2]" />
+                <p className="font-bold text-sm text-slate-600">Carrito sin productos</p>
+                <p className="text-xs text-slate-400 max-w-xs mx-auto">
                   Haz clic en las tallas del catálogo o escanea con el lector de código de barras.
                 </p>
               </div>
@@ -810,14 +810,14 @@ export default function VentaClient() {
               carrito.map((item, idx) => (
                 <div
                   key={item.varianteId}
-                  className="p-2.5 rounded-xl bg-slate-900 border border-slate-800/80 hover:border-slate-700 transition-all space-y-2"
+                  className="p-3 rounded-xl bg-slate-50 border border-slate-200 hover:border-slate-300 transition-all space-y-2 shadow-2xs"
                 >
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex-1 min-w-0">
-                      <p className="font-bold text-xs text-white truncate">{item.nombre}</p>
+                      <p className="font-bold text-xs text-slate-900 truncate">{item.nombre}</p>
                       <div className="flex items-center gap-2 mt-0.5">
-                        <span className="font-mono text-[10px] text-slate-400">{item.sku}</span>
-                        <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-slate-800 text-slate-300">
+                        <span className="font-mono text-[10px] text-slate-500">{item.sku}</span>
+                        <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-slate-200 text-slate-800">
                           {item.color} • Talla {item.talla}
                         </span>
                       </div>
@@ -826,31 +826,31 @@ export default function VentaClient() {
                     <button
                       type="button"
                       onClick={() => eliminarDelCarrito(item.varianteId)}
-                      className="p-1 text-slate-500 hover:text-red-400 transition-colors"
+                      className="p-1 text-slate-400 hover:text-red-600 transition-colors"
                     >
                       <Trash2 className="h-3.5 w-3.5" />
                     </button>
                   </div>
 
-                  <div className="flex items-center justify-between pt-1 border-t border-slate-800/60">
+                  <div className="flex items-center justify-between pt-1 border-t border-slate-200">
                     {/* Stepper de Cantidad */}
                     <div className="flex items-center gap-1">
                       <button
                         type="button"
                         onClick={() => actualizarCantidad(item.varianteId, -1)}
                         disabled={item.cantidad <= 1}
-                        className="h-6 w-6 rounded bg-slate-800 hover:bg-slate-700 text-white flex items-center justify-center disabled:opacity-40"
+                        className="h-6 w-6 rounded bg-white border border-slate-300 hover:bg-slate-100 text-slate-800 flex items-center justify-center disabled:opacity-40 shadow-2xs font-bold"
                       >
                         <Minus className="h-3 w-3" />
                       </button>
-                      <span className="w-7 text-center font-black text-xs text-white">
+                      <span className="w-7 text-center font-black text-xs text-slate-900">
                         {item.cantidad}
                       </span>
                       <button
                         type="button"
                         onClick={() => actualizarCantidad(item.varianteId, 1)}
                         disabled={item.cantidad >= item.stock}
-                        className="h-6 w-6 rounded bg-slate-800 hover:bg-slate-700 text-white flex items-center justify-center disabled:opacity-40"
+                        className="h-6 w-6 rounded bg-white border border-slate-300 hover:bg-slate-100 text-slate-800 flex items-center justify-center disabled:opacity-40 shadow-2xs font-bold"
                       >
                         <Plus className="h-3 w-3" />
                       </button>
@@ -858,10 +858,10 @@ export default function VentaClient() {
 
                     {/* Precio y Subtotal */}
                     <div className="text-right">
-                      <span className="text-[10px] text-slate-400 block">
+                      <span className="text-[10px] text-slate-500 block">
                         {formatoCOP(item.precio)} c/u
                       </span>
-                      <span className="font-black text-sm text-emerald-400">
+                      <span className="font-black text-sm text-emerald-700">
                         {formatoCOP(item.cantidad * item.precio - item.descuento)}
                       </span>
                     </div>
@@ -871,11 +871,11 @@ export default function VentaClient() {
             )}
           </div>
 
-          {/* Cockpit de Totales y Cobro (Bottom Fixed) */}
-          <div className="p-4 border-t border-slate-800 bg-slate-900/90 space-y-3 shrink-0">
+          {/* Cockpit de Totales y Cobro (Fondo Blanco Limpio con Total Destacado) */}
+          <div className="p-4 border-t border-slate-200 bg-slate-50 space-y-3 shrink-0">
             {/* Descuentos Rápidos Porcentuales */}
             <div className="flex items-center justify-between gap-2">
-              <span className="text-[11px] font-bold text-slate-400">Descuento Global:</span>
+              <span className="text-[11px] font-bold text-slate-600">Descuento Global:</span>
               <div className="flex items-center gap-1">
                 {DESCUENTOS_RAPIDOS.map((pct) => (
                   <button
@@ -884,8 +884,8 @@ export default function VentaClient() {
                     onClick={() => aplicarDescuentoPorcentaje(pct)}
                     className={`px-2 py-0.5 rounded text-[10px] font-bold transition-all ${
                       descuentoPctSeleccionado === pct && descuentoGlobal > 0
-                        ? "bg-amber-500 text-slate-950 font-black shadow-sm"
-                        : "bg-slate-800 text-slate-400 hover:text-white"
+                        ? "bg-amber-500 text-slate-950 font-black shadow-xs"
+                        : "bg-white border border-slate-300 text-slate-700 hover:bg-slate-100"
                     }`}
                   >
                     {pct === 0 ? "0%" : `${pct}%`}
@@ -895,7 +895,7 @@ export default function VentaClient() {
             </div>
 
             {/* Total Grande */}
-            <div className="p-3.5 rounded-2xl bg-gradient-to-r from-slate-900 via-indigo-950 to-blue-950 border border-slate-800 text-white flex items-center justify-between shadow-xl">
+            <div className="p-3.5 rounded-2xl bg-gradient-to-r from-slate-900 via-indigo-950 to-blue-950 border border-slate-800 text-white flex items-center justify-between shadow-lg">
               <div>
                 <span className="text-[10px] font-bold uppercase tracking-widest text-indigo-300 block">
                   Total a Pagar
@@ -907,8 +907,8 @@ export default function VentaClient() {
 
               {descuentoGlobal > 0 && (
                 <div className="text-right text-xs">
-                  <span className="text-slate-400 block">Subtotal: {formatoCOP(subtotal)}</span>
-                  <span className="text-red-400 font-bold">-{formatoCOP(descuentoGlobal)}</span>
+                  <span className="text-slate-300 block">Subtotal: {formatoCOP(subtotal)}</span>
+                  <span className="text-amber-300 font-bold">-{formatoCOP(descuentoGlobal)}</span>
                 </div>
               )}
             </div>
@@ -919,7 +919,7 @@ export default function VentaClient() {
               disabled={
                 pending || carrito.length === 0 || (!cajaAbierta && tipoVenta !== "COTIZACION")
               }
-              className="w-full h-13 py-3.5 text-base font-black tracking-wider uppercase bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-white shadow-xl shadow-emerald-500/25 rounded-2xl flex items-center justify-center gap-2 transition-all transform active:scale-[0.99]"
+              className="w-full h-13 py-3.5 text-base font-black tracking-wider uppercase bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white shadow-lg shadow-emerald-600/25 rounded-2xl flex items-center justify-center gap-2 transition-all transform active:scale-[0.99]"
             >
               <DollarSign className="h-5 w-5" />
               <span>
@@ -964,13 +964,13 @@ export default function VentaClient() {
 
       {/* Modal: Cuentas Pausadas en Espera */}
       <Dialog open={mostrarModalPausadas} onOpenChange={setMostrarModalPausadas}>
-        <DialogContent className="max-w-md bg-slate-900 text-white border-slate-800">
+        <DialogContent className="max-w-md bg-white text-slate-900 border-slate-200 shadow-xl">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-amber-400">
-              <PauseCircle className="h-5 w-5" />
+            <DialogTitle className="flex items-center gap-2 text-amber-700">
+              <PauseCircle className="h-5 w-5 text-amber-600" />
               Cuentas Pausadas en Espera
             </DialogTitle>
-            <DialogDescription className="text-slate-400">
+            <DialogDescription className="text-slate-500">
               Selecciona una cuenta para reanudar su cobro en el carrito.
             </DialogDescription>
           </DialogHeader>
@@ -979,23 +979,23 @@ export default function VentaClient() {
             {cuentasPausadas.map((cuenta) => (
               <div
                 key={cuenta.id}
-                className="p-3 rounded-xl bg-slate-800 border border-slate-700 flex items-center justify-between hover:border-blue-500 transition-all"
+                className="p-3 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between hover:border-blue-400 transition-all shadow-2xs"
               >
                 <div>
-                  <p className="font-bold text-sm text-white">
+                  <p className="font-bold text-sm text-slate-900">
                     {cuenta.cliente?.nombre || "Cliente General"}
                   </p>
-                  <p className="text-xs text-slate-400">
+                  <p className="text-xs text-slate-500">
                     {cuenta.carrito.length} prendas • {new Date(cuenta.fecha).toLocaleTimeString("es-CO")}
                   </p>
-                  <p className="font-bold text-xs text-emerald-400">{formatoCOP(cuenta.total)}</p>
+                  <p className="font-bold text-xs text-emerald-700">{formatoCOP(cuenta.total)}</p>
                 </div>
 
                 <Button
                   size="sm"
                   variant="primary"
                   onClick={() => reanudarVentaPausada(cuenta)}
-                  className="h-8 text-xs font-bold bg-blue-600 hover:bg-blue-700"
+                  className="h-8 text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white"
                 >
                   <PlayCircle className="h-4 w-4 mr-1" /> Reanudar
                 </Button>
@@ -1007,13 +1007,13 @@ export default function VentaClient() {
 
       {/* Modal: Abrir Caja */}
       <Dialog open={mostrarAbrirCaja} onOpenChange={setMostrarAbrirCaja}>
-        <DialogContent className="max-w-md bg-slate-900 text-white border-slate-800">
+        <DialogContent className="max-w-md bg-white text-slate-900 border-slate-200 shadow-xl">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-emerald-400">
-              <Building2 className="h-5 w-5" />
+            <DialogTitle className="flex items-center gap-2 text-emerald-700">
+              <Building2 className="h-5 w-5 text-emerald-600" />
               Apertura de Turno de Caja
             </DialogTitle>
-            <DialogDescription className="text-slate-400">
+            <DialogDescription className="text-slate-500">
               Ingresa el monto de base inicial en efectivo para iniciar las ventas.
             </DialogDescription>
           </DialogHeader>
@@ -1038,7 +1038,7 @@ export default function VentaClient() {
             className="space-y-4 py-2"
           >
             <div>
-              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">
+              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1">
                 Base Inicial de Efectivo (COP)
               </label>
               <Input
@@ -1047,23 +1047,23 @@ export default function VentaClient() {
                 step={5000}
                 value={baseInicial}
                 onChange={(e) => setBaseInicial(e.target.value)}
-                className="bg-slate-800 border-slate-700 text-white text-lg font-bold"
+                className="bg-white border-slate-300 text-slate-900 text-lg font-bold"
                 autoFocus
               />
             </div>
 
-            {error && <p className="text-xs font-semibold text-red-400">{error}</p>}
+            {error && <p className="text-xs font-semibold text-red-600">{error}</p>}
 
             <DialogFooter>
               <Button
                 type="button"
                 variant="outline"
                 onClick={() => setMostrarAbrirCaja(false)}
-                className="text-white border-slate-700 hover:bg-slate-800"
+                className="text-slate-700 border-slate-300 hover:bg-slate-100"
               >
                 Cancelar
               </Button>
-              <Button type="submit" variant="primary" disabled={pending} className="bg-emerald-600 hover:bg-emerald-700">
+              <Button type="submit" variant="primary" disabled={pending} className="bg-emerald-600 hover:bg-emerald-700 text-white">
                 Iniciar Turno
               </Button>
             </DialogFooter>
@@ -1073,9 +1073,9 @@ export default function VentaClient() {
 
       {/* Modal: Crear Cliente Rápido */}
       <Dialog open={abrirClienteModal} onOpenChange={setAbrirClienteModal}>
-        <DialogContent className="max-w-md bg-slate-900 text-white border-slate-800">
+        <DialogContent className="max-w-md bg-white text-slate-900 border-slate-200 shadow-xl">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-blue-400">
+            <DialogTitle className="flex items-center gap-2 text-blue-600">
               <UserPlus className="h-5 w-5" />
               Nuevo Cliente Rápido
             </DialogTitle>
@@ -1098,7 +1098,7 @@ export default function VentaClient() {
             className="space-y-3 py-2"
           >
             <div>
-              <label className="block text-xs font-semibold uppercase text-slate-400 mb-1">
+              <label className="block text-xs font-semibold uppercase text-slate-600 mb-1">
                 Nombre Completo *
               </label>
               <Input
@@ -1106,7 +1106,7 @@ export default function VentaClient() {
                 onChange={(e) =>
                   setNuevoCliente({ ...nuevoCliente, nombre: e.target.value })
                 }
-                className="bg-slate-800 border-slate-700 text-white"
+                className="bg-white border-slate-300 text-slate-900"
                 required
                 minLength={2}
               />
@@ -1114,7 +1114,7 @@ export default function VentaClient() {
 
             <div className="grid grid-cols-3 gap-2">
               <div>
-                <label className="block text-xs font-semibold uppercase text-slate-400 mb-1">
+                <label className="block text-xs font-semibold uppercase text-slate-600 mb-1">
                   Tipo
                 </label>
                 <Select
@@ -1123,10 +1123,10 @@ export default function VentaClient() {
                     setNuevoCliente({ ...nuevoCliente, tipoDoc: v as any })
                   }
                 >
-                  <SelectTrigger className="bg-slate-800 border-slate-700 text-white h-9">
+                  <SelectTrigger className="bg-white border-slate-300 text-slate-900 h-9">
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent className="bg-slate-900 border-slate-800 text-white">
+                  <SelectContent className="bg-white border-slate-200 text-slate-900">
                     <SelectItem value="CC">CC</SelectItem>
                     <SelectItem value="NIT">NIT</SelectItem>
                     <SelectItem value="OTRO">Otro</SelectItem>
@@ -1135,7 +1135,7 @@ export default function VentaClient() {
               </div>
 
               <div className="col-span-2">
-                <label className="block text-xs font-semibold uppercase text-slate-400 mb-1">
+                <label className="block text-xs font-semibold uppercase text-slate-600 mb-1">
                   N° Documento
                 </label>
                 <Input
@@ -1143,13 +1143,13 @@ export default function VentaClient() {
                   onChange={(e) =>
                     setNuevoCliente({ ...nuevoCliente, documento: e.target.value })
                   }
-                  className="bg-slate-800 border-slate-700 text-white"
+                  className="bg-white border-slate-300 text-slate-900"
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-xs font-semibold uppercase text-slate-400 mb-1">
+              <label className="block text-xs font-semibold uppercase text-slate-600 mb-1">
                 Teléfono / WhatsApp
               </label>
               <Input
@@ -1157,22 +1157,22 @@ export default function VentaClient() {
                 onChange={(e) =>
                   setNuevoCliente({ ...nuevoCliente, telefono: e.target.value })
                 }
-                className="bg-slate-800 border-slate-700 text-white"
+                className="bg-white border-slate-300 text-slate-900"
               />
             </div>
 
-            {error && <p className="text-xs font-semibold text-red-400">{error}</p>}
+            {error && <p className="text-xs font-semibold text-red-600">{error}</p>}
 
             <DialogFooter>
               <Button
                 type="button"
                 variant="outline"
                 onClick={() => setAbrirClienteModal(false)}
-                className="text-white border-slate-700 hover:bg-slate-800"
+                className="text-slate-700 border-slate-300 hover:bg-slate-100"
               >
                 Cancelar
               </Button>
-              <Button type="submit" variant="primary" disabled={pending} className="bg-blue-600 hover:bg-blue-700">
+              <Button type="submit" variant="primary" disabled={pending} className="bg-blue-600 hover:bg-blue-700 text-white">
                 Crear y Seleccionar
               </Button>
             </DialogFooter>
@@ -1215,33 +1215,33 @@ function ProductoCardPOS({
   onAgregar: (v: any) => void;
 }) {
   return (
-    <div className="rounded-2xl border border-slate-800/80 bg-slate-900/90 p-3.5 transition-all hover:border-blue-500 hover:shadow-xl hover:shadow-blue-500/5 space-y-3 flex flex-col justify-between">
+    <div className="rounded-2xl border border-slate-200 bg-white p-3.5 transition-all hover:border-blue-400 hover:shadow-md space-y-3 flex flex-col justify-between shadow-2xs">
       <div>
         <div className="flex items-start justify-between gap-2">
           <div className="truncate">
-            <p className="font-bold text-sm text-white truncate leading-tight">
+            <p className="font-bold text-sm text-slate-900 truncate leading-tight">
               {producto.nombre}
             </p>
             <div className="flex items-center gap-1.5 mt-1">
-              <span className="font-mono text-[10px] text-slate-400 bg-slate-800/80 px-1.5 py-0.5 rounded">
+              <span className="font-mono text-[10px] text-slate-600 bg-slate-100 px-1.5 py-0.5 rounded">
                 {producto.referencia}
               </span>
               {producto.categoria && (
-                <span className="text-[10px] text-slate-400 truncate">
+                <span className="text-[10px] text-slate-500 truncate">
                   {producto.categoria.nombre}
                 </span>
               )}
             </div>
           </div>
 
-          <span className="font-black text-sm text-emerald-400 shrink-0">
+          <span className="font-black text-sm text-emerald-700 shrink-0">
             {formatoCOP(producto.precioBase)}
           </span>
         </div>
       </div>
 
       {/* Matriz de Variantes Tallas / Colores */}
-      <div className="space-y-1.5 pt-1">
+      <div className="space-y-1.5 pt-1 border-t border-slate-100">
         <span className="text-[10px] uppercase font-bold text-slate-500 block">
           Selecciona Talla / Color:
         </span>
@@ -1259,19 +1259,19 @@ function ProductoCardPOS({
                 disabled={cantStock <= 0}
                 className={`flex items-center gap-1.5 rounded-xl border px-2.5 py-1.5 text-xs font-semibold transition-all transform active:scale-95 ${
                   cantStock > 0
-                    ? "border-slate-700 bg-slate-800 hover:bg-blue-600 hover:border-blue-500 text-slate-200 hover:text-white shadow-sm cursor-pointer"
-                    : "border-slate-800/40 bg-slate-900/40 text-slate-600 opacity-50 cursor-not-allowed"
+                    ? "border-slate-200 bg-slate-50 hover:bg-blue-600 hover:border-blue-500 text-slate-800 hover:text-white shadow-2xs cursor-pointer"
+                    : "border-slate-200/50 bg-slate-100/50 text-slate-400 opacity-50 cursor-not-allowed"
                 }`}
               >
                 {/* Indicador de Color */}
                 <span
-                  className="h-2 w-2 rounded-full border border-slate-500"
+                  className="h-2 w-2 rounded-full border border-slate-300"
                   style={{ backgroundColor: v.color.hex || "#94a3b8" }}
                 />
                 <span className="font-black">{v.talla.valor}</span>
                 <span
                   className={`text-[10px] font-bold ${
-                    cantStock > 0 ? "text-emerald-400" : "text-slate-600"
+                    cantStock > 0 ? "text-emerald-700" : "text-slate-400"
                   }`}
                 >
                   {cantStock > 0 ? `(${cantStock})` : "0"}

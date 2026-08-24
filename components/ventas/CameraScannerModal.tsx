@@ -144,10 +144,10 @@ export default function CameraScannerModal({ open, onClose, onScan }: CameraScan
 
   return (
     <Dialog open={open} onOpenChange={(val) => !val && onClose()}>
-      <DialogContent className="max-w-md p-0 overflow-hidden bg-slate-950 text-white border-slate-800">
-        <DialogHeader className="p-4 bg-slate-900 border-b border-slate-800 flex flex-row items-center justify-between">
-          <DialogTitle className="text-sm font-bold flex items-center gap-2 text-white">
-            <Camera className="h-4 w-4 text-blue-400" />
+      <DialogContent className="max-w-md p-0 overflow-hidden bg-white text-slate-900 border-slate-200 shadow-2xl">
+        <DialogHeader className="p-4 bg-slate-50 border-b border-slate-200 flex flex-row items-center justify-between">
+          <DialogTitle className="text-sm font-bold flex items-center gap-2 text-slate-900">
+            <Camera className="h-4 w-4 text-blue-600" />
             Lector de Código de Barras Móvil
           </DialogTitle>
           <div className="flex items-center gap-2">
@@ -161,7 +161,7 @@ export default function CameraScannerModal({ open, onClose, onScan }: CameraScan
 
         <div className="p-4 space-y-4">
           {/* Contenedor del visor de cámara */}
-          <div className="relative rounded-2xl overflow-hidden bg-black aspect-[4/3] flex items-center justify-center border-2 border-slate-800 shadow-2xl">
+          <div className="relative rounded-2xl overflow-hidden bg-black aspect-[4/3] flex items-center justify-center border-2 border-slate-300 shadow-lg">
             <div id="camera-barcode-reader" className="w-full h-full" />
 
             {/* Animación de línea láser de escaneo */}
@@ -172,10 +172,10 @@ export default function CameraScannerModal({ open, onClose, onScan }: CameraScan
             )}
 
             {cameraError && (
-              <div className="p-4 text-center text-xs text-red-400 max-w-xs space-y-2">
+              <div className="p-4 text-center text-xs text-red-500 max-w-xs space-y-2">
                 <p className="font-semibold">Permiso de Cámara Requerido</p>
-                <p className="text-[11px] text-slate-400">{cameraError}</p>
-                <p className="text-[10px] text-slate-500">
+                <p className="text-[11px] text-slate-300">{cameraError}</p>
+                <p className="text-[10px] text-slate-400">
                   En Chrome/Safari, presiona el candado en la barra de direcciones y activa la cámara.
                 </p>
               </div>
@@ -184,12 +184,12 @@ export default function CameraScannerModal({ open, onClose, onScan }: CameraScan
 
           {/* Último código detectado */}
           {lastScanned && (
-            <div className="flex items-center justify-between p-3 rounded-xl bg-slate-900 border border-slate-800 text-xs">
+            <div className="flex items-center justify-between p-3 rounded-xl bg-slate-50 border border-slate-200 text-xs">
               <div className="flex items-center gap-2">
-                <Check className="h-4 w-4 text-emerald-400 shrink-0" />
+                <Check className="h-4 w-4 text-emerald-600 shrink-0" />
                 <div>
-                  <span className="text-slate-400 block text-[10px]">Último código escaneado:</span>
-                  <span className="font-mono font-bold text-white">{lastScanned}</span>
+                  <span className="text-slate-500 block text-[10px]">Último código escaneado:</span>
+                  <span className="font-mono font-bold text-slate-900">{lastScanned}</span>
                 </div>
               </div>
               <Badge variant="info">Agregado</Badge>
@@ -198,12 +198,12 @@ export default function CameraScannerModal({ open, onClose, onScan }: CameraScan
 
           {/* Opciones y Controles */}
           <div className="flex items-center justify-between text-xs pt-1">
-            <label className="flex items-center gap-2 text-slate-300 cursor-pointer select-none">
+            <label className="flex items-center gap-2 text-slate-700 cursor-pointer select-none font-medium">
               <input
                 type="checkbox"
                 checked={continuous}
                 onChange={(e) => setContinuous(e.target.checked)}
-                className="rounded border-slate-700 bg-slate-800 text-blue-500 focus:ring-blue-400"
+                className="rounded border-slate-300 bg-white text-blue-600 focus:ring-blue-500"
               />
               <span>Modo continuo (múltiples prendas)</span>
             </label>
@@ -222,12 +222,12 @@ export default function CameraScannerModal({ open, onClose, onScan }: CameraScan
           </div>
         </div>
 
-        <DialogFooter className="p-4 bg-slate-900 border-t border-slate-800 flex justify-between">
-          <div className="text-[11px] text-slate-400 flex items-center gap-1">
-            <Volume2 className="h-3.5 w-3.5 text-slate-500" />
+        <DialogFooter className="p-4 bg-slate-50 border-t border-slate-200 flex justify-between">
+          <div className="text-[11px] text-slate-500 flex items-center gap-1 font-medium">
+            <Volume2 className="h-3.5 w-3.5 text-slate-400" />
             Emite sonido BEEP al detectar
           </div>
-          <Button variant="outline" onClick={onClose} className="text-white border-slate-700 hover:bg-slate-800">
+          <Button variant="outline" onClick={onClose} className="text-slate-700 border-slate-300 hover:bg-slate-100">
             Terminar y Volver
           </Button>
         </DialogFooter>
