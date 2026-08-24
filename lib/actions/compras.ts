@@ -9,6 +9,7 @@ import {
   registrarCompraSchema,
   type ActionResult,
 } from "@/lib/validations";
+import { registrarAuditoria } from "@/lib/actions/auditoria";
 
 const COMPRA_PATHS = [
   "/compras/documento-soporte",
@@ -16,6 +17,7 @@ const COMPRA_PATHS = [
   "/ordenes-compra",
   "/inventario",
   "/movimientos",
+  "/auditoria",
 ];
 
 function revalidarCompras() {
@@ -279,6 +281,20 @@ export async function anularCompra(input: unknown): Promise<ActionResult> {
           nota: (compra.nota ? compra.nota + "\n" : "") + `ANULADA: ${data.motivo}`,
         },
       });
+    });
+
+    await registrarAuditoria({
+      modulo: "COMPRAS",
+      accion: "ANULACION",
+      entidad: `Compra FC-${String(compra.consecutivo).padStart(4, "0")}`,
+      entidadId: compra.id,
+      descripcion: `Anulación de compra a proveedor por valor de $${compra.total.toLocaleString("es-CO")}. Motivo: ${data.motivo}`,
+      detalles: {
+        consecutivo: compra.consecutivo,
+        total: compra.total,
+        motivo: data.motivo,
+        itemsCount: compra.items.length,
+      },
     });
 
     revalidarCompras();

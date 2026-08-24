@@ -1,8 +1,18 @@
-'use client';
-import DataTable from '@/components/ui/DataTable';
-import { Button } from '@/components/ui/Button';
-const COLS = [{ key: 'fecha', label: 'Fecha' }, { key: 'concepto', label: 'Concepto' }, { key: 'valor', label: 'Valor' }];
-export default function Page() {
-  return <DataTable columns={COLS} data={[]}
-      actions={<Button variant="primary">+ Nuevo</Button>} pageTitle="Gastos" />;
+import { listarGastos } from "@/lib/actions/gastos";
+import { listarCuentasBancarias } from "@/lib/actions/bancos";
+import { listarBodegas } from "@/lib/actions/catalogos";
+import GastosClient from "./GastosClient";
+
+export const metadata = {
+  title: "Gastos Operativos | KAOB POS",
+};
+
+export default async function GastosPage() {
+  const [gastos, cuentas, bodegas] = await Promise.all([
+    listarGastos(),
+    listarCuentasBancarias({ soloActivas: true }),
+    listarBodegas(true),
+  ]);
+
+  return <GastosClient gastos={gastos} cuentas={cuentas} bodegas={bodegas} />;
 }

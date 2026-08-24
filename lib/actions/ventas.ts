@@ -9,8 +9,9 @@ import {
   registrarVentaSchema,
   type ActionResult,
 } from "@/lib/validations";
+import { registrarAuditoria } from "@/lib/actions/auditoria";
 
-const VENTA_PATHS = ["/ventas/nueva", "/ventas", "/remisiones", "/cotizaciones", "/inventario", "/movimientos"];
+const VENTA_PATHS = ["/ventas/nueva", "/ventas", "/remisiones", "/cotizaciones", "/inventario", "/movimientos", "/auditoria"];
 
 // ─────────────────────────── TIPOS PARA CLIENTE ──────────────────
 
@@ -391,6 +392,20 @@ export async function anularVenta(input: unknown): Promise<ActionResult> {
         where: { id: data.id },
         data: { estado: "ANULADA", nota: (venta.nota ? venta.nota + "\n" : "") + `ANULADA: ${data.motivo}` },
       });
+    });
+
+    await registrarAuditoria({
+      modulo: "VENTAS",
+      accion: "ANULACION",
+      entidad: `${venta.tipo} #${venta.consecutivo}`,
+      entidadId: venta.id,
+      descripcion: `Anulación de ${venta.tipo} por valor de $${venta.total.toLocaleString("es-CO")}. Motivo: ${data.motivo}`,
+      detalles: {
+        tipo: venta.tipo,
+        total: venta.total,
+        motivo: data.motivo,
+        itemsCount: venta.items.length,
+      },
     });
 
     revalidatePath("/ventas/nueva");

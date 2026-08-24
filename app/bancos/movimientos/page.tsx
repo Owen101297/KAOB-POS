@@ -1,6 +1,15 @@
-'use client';
-import DataTable from '@/components/ui/DataTable';
-const COLS = [{ key: 'fecha', label: 'Fecha' }, { key: 'banco', label: 'Banco' }, { key: 'tipo', label: 'Tipo' }, { key: 'valor', label: 'Valor' }];
-export default function Page() {
-  return <DataTable columns={COLS} data={[]} pageTitle="Movimientos Bancarios" />;
+import { listarCuentasBancarias, listarMovimientosBancarios } from "@/lib/actions/bancos";
+import MovimientosClient from "./MovimientosClient";
+
+export const metadata = {
+  title: "Movimientos Bancarios | KAOB POS",
+};
+
+export default async function MovimientosPage() {
+  const [movimientos, cuentas] = await Promise.all([
+    listarMovimientosBancarios({ take: 200 }),
+    listarCuentasBancarias(),
+  ]);
+
+  return <MovimientosClient movimientos={movimientos} cuentas={cuentas} />;
 }

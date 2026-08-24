@@ -359,6 +359,85 @@ export const emitirGiftCardSchema = z.object({
 
 
 
+// ────────────────────────── CONFIGURACIÓN DE TIENDA ──────────────
+
+export const configuracionSchema = z.object({
+  nombreTienda: z.string().trim().min(2, "Nombre de tienda obligatorio").max(100),
+  nit: z.string().trim().max(30).optional().or(z.literal("")),
+  direccion: z.string().trim().max(200).optional().or(z.literal("")),
+  telefono: z.string().trim().max(30).optional().or(z.literal("")),
+  ciudad: z.string().trim().max(80).optional().or(z.literal("")),
+  email: z.string().email("Email inválido").optional().or(z.literal("")),
+  regimen: z.string().trim().max(100).optional().or(z.literal("")),
+  mensajeTicket: z.string().trim().max(200).optional().or(z.literal("")),
+  pieTicket: z.string().trim().max(300).optional().or(z.literal("")),
+  logoUrl: z.string().trim().optional().or(z.literal("")),
+  metaDiaria: z.coerce.number().int().min(0).default(1000000),
+  puntosPorMonto: z.coerce.number().int().min(100).default(10000),
+});
+
+// ────────────────────────── BANCOS Y TESORERÍA ──────────────────
+
+export const cuentaBancariaSchema = z.object({
+  id: z.coerce.number().int().positive().optional(),
+  nombre: z.string().trim().min(2, "Nombre obligatorio").max(80),
+  tipo: z.enum(["AHORROS", "CORRIENTE", "BILLETERA_DIGITAL", "TARJETA"]).default("AHORROS"),
+  numeroCuenta: z.string().trim().max(40).optional().or(z.literal("")),
+  titular: z.string().trim().max(100).optional().or(z.literal("")),
+  saldoInicial: z.coerce.number().int().min(0).default(0),
+  color: z.string().trim().max(20).optional().default("#2563eb"),
+  activa: z.boolean().default(true),
+});
+
+export const movimientoBancarioSchema = z.object({
+  cuentaBancariaId: z.coerce.number().int().positive("Selecciona una cuenta"),
+  tipo: z.enum(["INGRESO", "EGRESO", "COMISION_BANCARIA", "AJUSTE"]),
+  monto: z.coerce.number().int().positive("El monto debe ser mayor a 0"),
+  concepto: z.string().trim().min(2, "Concepto obligatorio").max(200),
+  referencia: z.string().trim().max(100).optional().or(z.literal("")),
+  categoria: z.string().trim().max(50).default("OTRO"),
+});
+
+export const transferenciaBancariaSchema = z.object({
+  cuentaOrigenId: z.coerce.number().int().positive("Selecciona la cuenta de origen"),
+  cuentaDestinoId: z.coerce.number().int().positive("Selecciona la cuenta de destino"),
+  monto: z.coerce.number().int().positive("El monto debe ser mayor a 0"),
+  referencia: z.string().trim().max(100).optional().or(z.literal("")),
+  nota: z.string().trim().max(200).optional().or(z.literal("")),
+});
+
+export const conciliacionBancariaSchema = z.object({
+  cuentaBancariaId: z.coerce.number().int().positive("Selecciona una cuenta"),
+  fechaCorte: z.string().min(1, "Fecha de corte obligatoria"),
+  saldoExtracto: z.coerce.number().int(),
+  movimientoIds: z.array(z.coerce.number().int().positive()).optional(),
+  notas: z.string().trim().max(500).optional().or(z.literal("")),
+});
+
+// ────────────────────────── GASTOS OPERATIVOS ───────────────────
+
+export const gastoSchema = z.object({
+  concepto: z.string().trim().min(2, "Concepto obligatorio").max(200),
+  categoria: z.enum([
+    "ARRIENDO",
+    "SERVICIOS",
+    "NOMINA",
+    "SUMINISTROS",
+    "MANTENIMIENTO",
+    "TRANSPORTE",
+    "PUBLICIDAD",
+    "IMPUESTOS",
+    "VARIOS",
+  ]),
+  monto: z.coerce.number().int().positive("Monto debe ser mayor a 0"),
+  metodoPago: z.enum(["EFECTIVO", "TRANSFERENCIA", "TARJETA", "OTRO"]).default("EFECTIVO"),
+  cuentaBancariaId: z.coerce.number().int().positive().optional().nullable(),
+  bodegaId: z.coerce.number().int().positive().optional(),
+  comprobante: z.string().trim().max(100).optional().or(z.literal("")),
+  fecha: z.string().optional().or(z.literal("")),
+  nota: z.string().trim().max(400).optional().or(z.literal("")),
+});
+
 // ─────────────────────────── TIPOS ───────────────────────────
 
 export type ActionResult<T = undefined> =
@@ -374,4 +453,5 @@ export function errorDesconocido(e: unknown): string {
   }
   return "Error inesperado. Intenta de nuevo.";
 }
+
 

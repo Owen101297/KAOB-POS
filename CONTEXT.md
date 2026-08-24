@@ -84,13 +84,22 @@
 - **UI `/promociones`**: Descuentos automáticos por porcentaje o monto fijo con vigencias y switch de activación en vivo.
 - **UI `/gift-cards`**: Emisión de tarjetas de regalo con código aleatorio y vale imprimible de 80mm.
 
+### ✅ Fase 10 - Auditoría, Bancos, Conciliaciones, Gastos y Configuración de Tienda
+- **Schema**: Auditoria, CuentaBancaria, MovimientoBancario, ConciliacionBancaria, Gasto, ampliación de Configuracion (regimen, ciudad, pieTicket, etc.).
+- **Acciones**: `auditoria.ts`, `bancos.ts`, `gastos.ts`, `configuracion.ts` e instrumentación en anulaciones de ventas, compras, apertura/cierre de caja y gastos.
+- **UI `/configuracion`**: Configuración de razón social, NIT, régimen fiscal, metas diarias, reglas de puntos y simulador/preview en vivo de ticket térmico 80mm.
+- **UI `/auditoria`**: Bitácora inmutable de eventos con estadísticas de seguridad, filtros multicriterio y modal de inspección JSON de metadatos.
+- **UI `/bancos`**: Panel consolidado de cuentas bancarias y billeteras virtuales, creación/edición con colores identificadores y transferencias interbancarias directas.
+- **UI `/bancos/movimientos`**: Extracto detallado con registro de notas débito/crédito, comisiones e ingresos.
+- **UI `/bancos/conciliaciones`**: Asistente de conciliación contra extractos bancarios con cotejo de movimientos y cálculo automático de descuadre.
+- **UI `/gastos`**: Módulo de egresos operativos categorizados con afectación directa a caja activa o débito en cuenta bancaria y opción de anulación con reversión.
+
 ---
 
-## ⏭️ Siguiente Paso: Fase 10 — Auditoría, Bancos y Configuración Avanzada
+## ⏭️ Siguiente Paso: Fase 11 — Producción / Ensamble de Prendas y Ventas Online
 **Prioridad Inmediata**:
-1. **Auditoría (`/auditoria`)**: Bitácora de auditoría (*Audit Log*) para rastrear anulaciones, modificaciones de precios y eventos críticos.
-2. **Bancos y Conciliaciones (`/bancos`, `/bancos/movimientos`, `/bancos/conciliaciones`)**: Registro de cuentas bancarias y movimientos.
-3. **Configuración de Tienda (`/configuracion`)**: Datos fiscales de la tienda (Nombre, NIT, Dirección, Teléfono, Logotipo y pie de página de tickets).
+1. **Producción (`/produccion`)**: Órdenes de confección/corte, consumo de insumos/telas y costeo de producto terminado.
+2. **Ventas Online / E-commerce (`/ventas-online`, `/tienda`)**: Integración de catálogo para tienda web y sincronización de stock omnicanal.
 
 ---
 

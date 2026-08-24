@@ -15,6 +15,12 @@ model Configuracion {
   nit            String?
   direccion      String?
   telefono       String?
+  ciudad         String?  @default("Bogotá")
+  email          String?
+  regimen        String?  @default("Responsable de IVA")
+  mensajeTicket  String?  @default("¡Gracias por su compra!")
+  pieTicket      String?  @default("Conserve este ticket para cambios o garantías (plazo máximo 30 días).")
+  logoUrl        String?
   // Meta de ventas diaria en COP
   metaDiaria     Int      @default(1000000)
   // Regla de puntos: cada X pesos gastados = 1 punto
@@ -677,5 +683,110 @@ model GiftCard {
   @@index([codigo])
   @@map("gift_cards")
 }
+
+// ───────────────────────── AUDITORÍA DEL SISTEMA ─────────────────────────
+
+model Auditoria {
+  id          Int      @id @default(autoincrement())
+  modulo      String   // VENTAS, COMPRAS, INVENTARIO, CAJA, PRECIOS, CONTACTOS, BANCOS, GASTOS, CONFIGURACION, FIDELIZACION
+  accion      String   // CREAR, EDITAR, ANULAR, AJUSTE, CIERRE, ELIMINAR, RESTAURAR
+  entidad     String   // Ej: "Venta #1004", "Variante REF-01 Rojo M"
+  entidadId   String?
+  descripcion String
+  detalles    String?  // JSON string con metadata o diferencias antes/después
+  usuario     String   @default("Administrador")
+  ip          String?
+  createdAt   DateTime @default(now())
+
+  @@index([modulo])
+  @@index([accion])
+  @@index([createdAt])
+  @@map("auditorias")
+}
+
+// ───────────────────────── BANCOS Y TESORERÍA ─────────────────────────
+
+model CuentaBancaria {
+  id           Int      @id @default(autoincrement())
+  nombre       String   @unique // Ej: Bancolombia Ahorros, Nequi Negocio, Daviplata
+  tipo         String   @default("AHORROS") // AHORROS, CORRIENTE, BILLETERA_DIGITAL, TARJETA
+  numeroCuenta String?
+  titular      String?
+  saldoActual  Int      @default(0) // En COP
+  activa       Boolean  @default(true)
+  color        String?  @default("#2563eb")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  movimientos    MovimientoBancario[]
+  conciliaciones ConciliacionBancaria[]
+  gastos         Gasto[]
+
+  @@map("cuentas_bancarias")
+}
+
+model MovimientoBancario {
+  id               Int            @id @default(autoincrement())
+  cuentaBancariaId Int
+  cuentaBancaria   CuentaBancaria @relation(fields: [cuentaBancariaId], references: [id], onDelete: Cascade)
+  tipo             String         // INGRESO, EGRESO, TRANSFERENCIA_ENTRADA, TRANSFERENCIA_SALIDA, COMISION_BANCARIA, AJUSTE
+  monto            Int            // Monto absoluto > 0
+  saldoResultante  Int
+  fecha            DateTime       @default(now())
+  referencia       String?
+  concepto         String
+  categoria        String         @default("OTRO") // VENTA, COMPRA, GASTO, TRASLADO, COMISION, AJUSTE, OTRO
+  conciliado       Boolean        @default(false)
+  conciliacionId   Int?
+  conciliacion     ConciliacionBancaria? @relation(fields: [conciliacionId], references: [id], onDelete: SetNull)
+  createdAt        DateTime       @default(now())
+
+  @@index([cuentaBancariaId])
+  @@index([fecha])
+  @@index([conciliado])
+  @@map("movimientos_bancarios")
+}
+
+model ConciliacionBancaria {
+  id               Int            @id @default(autoincrement())
+  cuentaBancariaId Int
+  cuentaBancaria   CuentaBancaria @relation(fields: [cuentaBancariaId], references: [id], onDelete: Cascade)
+  fechaCorte       DateTime
+  saldoExtracto    Int            // Saldo según el banco
+  saldoLibros      Int            // Saldo registrado en el sistema
+  diferencia       Int            // saldoLibros - saldoExtracto
+  estado           String         @default("PENDIENTE") // PENDIENTE, CUADRADA, CON_DIFERENCIA
+  notas            String?
+  cerradaEn        DateTime?
+  createdAt        DateTime       @default(now())
+
+  movimientos      MovimientoBancario[]
+
+  @@index([cuentaBancariaId])
+  @@map("conciliaciones_bancarias")
+}
+
+// ───────────────────────── GASTOS OPERATIVOS ─────────────────────────
+
+model Gasto {
+  id               Int             @id @default(autoincrement())
+  concepto         String
+  categoria        String          @default("VARIOS") // ARRIENDO, SERVICIOS, NOMINA, SUMINISTROS, MANTENIMIENTO, TRANSPORTE, PUBLICIDAD, IMPUESTOS, VARIOS
+  monto            Int
+  metodoPago       MetodoPago      @default(EFECTIVO)
+  cuentaBancariaId Int?
+  cuentaBancaria   CuentaBancaria? @relation(fields: [cuentaBancariaId], references: [id], onDelete: SetNull)
+  comprobante      String?
+  fecha            DateTime        @default(now())
+  nota             String?
+  estado           String          @default("REGISTRADO") // REGISTRADO, ANULADO
+  createdAt        DateTime        @default(now())
+
+  @@index([categoria])
+  @@index([fecha])
+  @@index([estado])
+  @@map("gastos")
+}
+
 
 

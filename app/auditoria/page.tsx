@@ -1,6 +1,15 @@
-'use client';
-import DataTable from '@/components/ui/DataTable';
-const COLS = [{ key: 'fecha', label: 'Fecha' }, { key: 'usuario', label: 'Usuario' }, { key: 'accion', label: 'Accion' }];
-export default function Page() {
-  return <DataTable columns={COLS} data={[]} pageTitle="Auditoria de Inventario" />;
+import { listarAuditoria, obtenerEstadisticasAuditoria } from "@/lib/actions/auditoria";
+import AuditoriaClient from "./AuditoriaClient";
+
+export const metadata = {
+  title: "Auditoría de Operaciones | KAOB POS",
+};
+
+export default async function AuditoriaPage() {
+  const [data, stats] = await Promise.all([
+    listarAuditoria({ take: 200 }),
+    obtenerEstadisticasAuditoria(),
+  ]);
+
+  return <AuditoriaClient initialData={data} stats={stats} />;
 }

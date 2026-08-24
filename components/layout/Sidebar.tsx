@@ -99,6 +99,7 @@ const MENU: MenuItem[] = [
     label: 'Configuración',
     icon: Settings,
     sub: [
+      { label: 'General y Tickets', href: '/configuracion' },
       { label: 'Catálogos', href: '/configuracion/catalogos' },
     ],
   },

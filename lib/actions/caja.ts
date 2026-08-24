@@ -8,14 +8,12 @@ import {
   movimientoCajaSchema,
   type ActionResult,
 } from "@/lib/validations";
+import { registrarAuditoria } from "@/lib/actions/auditoria";
 
-const CAJA_PATHS = ["/caja/apertura", "/caja/cerrar", "/caja/cierres", "/ventas/nueva"];
+const CAJA_PATHS = ["/caja/apertura", "/caja/cerrar", "/caja/cierres", "/ventas/nueva", "/auditoria"];
 
 function revalidarCaja() {
-  revalidatePath("/caja/apertura");
-  revalidatePath("/caja/cerrar");
-  revalidatePath("/caja/cierres");
-  revalidatePath("/ventas/nueva");
+  CAJA_PATHS.forEach((p) => revalidatePath(p));
 }
 
 // ─────────────────────────── SESIONES ──────────────────────────
@@ -78,6 +76,14 @@ export async function abrirCaja(input: unknown): Promise<ActionResult<{ id: numb
       });
     }
 
+    await registrarAuditoria({
+      modulo: "CAJA",
+      accion: "CREACION",
+      entidad: `Sesión de Caja #${sesion.id}`,
+      entidadId: sesion.id,
+      descripcion: `Apertura de caja con base inicial de $${data.baseInicial.toLocaleString("es-CO")}`,
+    });
+
     revalidarCaja();
     return { ok: true, data: { id: sesion.id } };
   } catch (e) {
@@ -85,32 +91,24 @@ export async function abrirCaja(input: unknown): Promise<ActionResult<{ id: numb
   }
 }
 
-export async function cerrarCaja(sesionId: number, totalesContados: Record<string, number>): Promise<ActionResult<{ id: number }>> {
+export async function cerrarCaja(
+  sesionId: number,
+  totalesContados: Record<string, number>
+): Promise<ActionResult<{ id: number }>> {
   try {
-    const sesion = await db.sesionCaja.findUniqueOrThrow({
+    const sesion = await db.sesionCaja.findUnique({
       where: { id: sesionId },
-      include: { movimientos: true },
+      include: { movimientos: true, bodega: true },
     });
+    if (!sesion) return { ok: false, error: "La sesión no existe." };
     if (sesion.estado !== "ABIERTA") return { ok: false, error: "La caja ya está cerrada." };
 
-    // Calcular totales esperados por método
-    const ventasEfectivo = await db.pagoVenta.aggregate({
-      where: { metodo: "EFECTIVO", venta: { createdAt: { gte: sesion.openedAt } } },
-      _sum: { monto: true },
-    });
-    const movimientos = sesion.movimientos;
-    const ingresoBase = movimientos.filter((m) => m.tipo === "INGRESO_BASE").reduce((a, m) => a + m.monto, 0);
-    const retiros = movimientos.filter((m) => m.tipo === "RETIRO").reduce((a, m) => a + m.monto, 0);
-    const suplidos = movimientos.filter((m) => m.tipo === "SUPLIDO").reduce((a, m) => a + m.monto, 0);
-    const ventasEfectivoMov = movimientos.filter((m) => m.tipo === "VENTA_EFECTIVO").reduce((a, m) => a + m.monto, 0);
-    const otros = movimientos.filter((m) => m.tipo === "OTRO").reduce((a, m) => a + m.monto, 0);
-
-    const esperadoEfectivo = ingresoBase + ventasEfectivoMov - retiros - suplidos + otros;
+    const esperadoEfectivo = (await resumenCajaActual(sesion.bodegaId ?? undefined))?.esperadoEfectivo ?? 0;
+    const contadoEfectivo = totalesContados.EFECTIVO ?? 0;
+    const diffEfectivo = contadoEfectivo - esperadoEfectivo;
 
     await db.$transaction(async (tx) => {
       // Registrar diferencias como movimientos de ajuste
-      const contadoEfectivo = totalesContados.EFECTIVO ?? 0;
-      const diffEfectivo = contadoEfectivo - esperadoEfectivo;
       if (diffEfectivo !== 0) {
         await tx.movimientoCaja.create({
           data: {
@@ -126,6 +124,19 @@ export async function cerrarCaja(sesionId: number, totalesContados: Record<strin
         where: { id: sesionId },
         data: { estado: "CERRADA", closedAt: new Date() },
       });
+    });
+
+    await registrarAuditoria({
+      modulo: "CAJA",
+      accion: "CIERRE",
+      entidad: `Sesión de Caja #${sesionId}`,
+      entidadId: sesionId,
+      descripcion: `Cierre de caja. Efectivo contado: $${contadoEfectivo.toLocaleString("es-CO")}, Esperado: $${esperadoEfectivo.toLocaleString("es-CO")}, Diferencia: $${diffEfectivo.toLocaleString("es-CO")}`,
+      detalles: {
+        contado: contadoEfectivo,
+        esperado: esperadoEfectivo,
+        diferencia: diffEfectivo,
+      },
     });
 
     revalidarCaja();
