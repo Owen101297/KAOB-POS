@@ -39,10 +39,15 @@ export default function DashboardClient({ initialData }: DashboardClientProps) {
   const [data, setData] = useState<DashboardData>(initialData);
   const [pending, startTransition] = useTransition();
   const [ultimaActualizacion, setUltimaActualizacion] = useState<Date>(new Date());
+  const [mounted, setMounted] = useState(false);
 
   const chartHoraRef = useRef<HTMLCanvasElement>(null);
   const chartDiaRef = useRef<HTMLCanvasElement>(null);
   const instances = useRef<Chart[]>([]);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Recargar datos
   const refrescarDatos = () => {
@@ -55,8 +60,10 @@ export default function DashboardClient({ initialData }: DashboardClientProps) {
 
   // Recargar cuando cambia la bodega activa
   useEffect(() => {
-    refrescarDatos();
-  }, [bodegaActiva?.id]);
+    if (mounted) {
+      refrescarDatos();
+    }
+  }, [bodegaActiva?.id, mounted]);
 
   // Auto-refresco en vivo cada 30 segundos
   useEffect(() => {
@@ -206,9 +213,9 @@ export default function DashboardClient({ initialData }: DashboardClientProps) {
               En Vivo
             </Badge>
           </div>
-          <p className="text-xs text-slate-500 mt-1 flex items-center gap-1.5">
+          <p className="text-xs text-slate-500 mt-1 flex items-center gap-1.5" suppressHydrationWarning>
             <Clock className="h-3.5 w-3.5" />
-            Última sincronización: {ultimaActualizacion.toLocaleTimeString("es-CO")}
+            Última sincronización: {mounted ? ultimaActualizacion.toLocaleTimeString("es-CO") : "--:--"}
             {bodegaActiva && (
               <span className="font-semibold text-slate-700 dark:text-slate-300">
                 • Bodega: {bodegaActiva.nombre}
