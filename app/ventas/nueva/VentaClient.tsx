@@ -265,32 +265,29 @@ export default function VentaClient() {
     }
   };
 
-  function agregarAlCarrito(v: {
-    id: number;
-    activa: boolean;
-    createdAt: Date;
-    productoId: number;
-    colorId: number;
-    tallaId: number;
-    sku: string;
-    precioOverride: number | null;
-    color: { id: number; nombre: string; hex: string | null };
-    talla: { id: number; valor: string; orden: number };
-    stocks: { cantidad: number }[];
-    producto: { nombre: string; costo: number; precioBase: number };
-  }) {
-    const stock = v.stocks[0]?.cantidad ?? 0;
+  function agregarAlCarrito(v: any, prod?: any) {
+    const p = prod || v.producto;
+    const stock = Array.isArray(v.stocks) && v.stocks.length > 0
+      ? v.stocks.reduce((acc: number, s: any) => acc + (s?.cantidad || 0), 0)
+      : (typeof v.stock === "number" ? v.stock : 999);
+
     if (stock <= 0) {
-      setError("Sin stock disponible");
+      setError(`Sin stock disponible para esta talla/color (${v.sku || "prenda"})`);
       playScanBeep(false);
       return;
     }
 
+    const nombre = p?.nombre || v.producto?.nombre || v.nombre || "Prenda";
+    const color = v.color?.nombre || (typeof v.color === "string" ? v.color : "Único");
+    const talla = v.talla?.valor || (typeof v.talla === "string" ? v.talla : "U");
+    const precio = v.precioOverride ?? p?.precioBase ?? v.producto?.precioBase ?? v.precio ?? 0;
+    const costo = p?.costo ?? v.producto?.costo ?? v.costo ?? 0;
+
     setCarrito((prev) => {
       const existe = prev.find((i) => i.varianteId === v.id);
       if (existe) {
-        if (existe.cantidad >= stock) {
-          setError("Stock máximo alcanzado");
+        if (existe.cantidad >= stock && stock < 999) {
+          setError(`Stock máximo disponible alcanzado (${stock} unidades)`);
           playScanBeep(false);
           return prev;
         }
@@ -304,12 +301,12 @@ export default function VentaClient() {
         ...prev,
         {
           varianteId: v.id,
-          sku: v.sku,
-          nombre: v.producto.nombre,
-          color: v.color.nombre,
-          talla: v.talla.valor,
-          precio: v.precioOverride ?? v.producto.precioBase,
-          costo: v.producto.costo,
+          sku: v.sku || `VAR-${v.id}`,
+          nombre,
+          color,
+          talla,
+          precio,
+          costo,
           stock,
           cantidad: 1,
           descuento: 0,
@@ -317,6 +314,7 @@ export default function VentaClient() {
       ];
     });
 
+    setError(null);
     setBusqueda("");
     setResultados([]);
     enfocarBuscador();
@@ -563,7 +561,11 @@ export default function VentaClient() {
             ) : (
               <div className="space-y-2.5">
                 {resultados.map((p) => (
-                  <ProductoPOSCard key={p.id} producto={p} onAgregar={agregarAlCarrito} />
+                  <ProductoPOSCard
+                    key={p.id}
+                    producto={p}
+                    onAgregar={(v) => agregarAlCarrito(v, p)}
+                  />
                 ))}
               </div>
             )}
@@ -1068,14 +1070,21 @@ function ProductoPOSCard({
       </div>
 
       <div className="mt-2.5 flex flex-wrap gap-1.5">
-        {producto.variantes
-          .filter((v) => (v.stocks[0]?.cantidad ?? 0) > 0)
-          .map((v) => (
+        {producto.variantes.map((v) => {
+          const cantStock = Array.isArray(v.stocks) && v.stocks.length > 0
+            ? v.stocks.reduce((a: number, s: any) => a + (s?.cantidad || 0), 0)
+            : 0;
+
+          return (
             <button
               key={v.id}
               type="button"
               onClick={() => onAgregar(v)}
-              className="flex items-center gap-1 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-2 py-1 text-[11px] hover:bg-blue-50 dark:hover:bg-blue-950/40 hover:border-blue-400 transition-all font-medium"
+              className={`flex items-center gap-1 rounded-lg border px-2 py-1 text-[11px] font-medium transition-all ${
+                cantStock > 0
+                  ? "border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 hover:bg-blue-50 dark:hover:bg-blue-950/40 hover:border-blue-400 cursor-pointer"
+                  : "border-slate-100 dark:border-slate-800/40 bg-slate-50/50 text-slate-400 opacity-60"
+              }`}
             >
               <span className="font-bold text-slate-800 dark:text-slate-200">
                 {v.color.nombre}
@@ -1084,11 +1093,16 @@ function ProductoPOSCard({
               <span className="font-mono font-bold text-blue-600 dark:text-blue-400">
                 T.{v.talla.valor}
               </span>
-              <span className="text-emerald-600 font-bold ml-1">
-                ×{v.stocks[0]?.cantidad ?? 0}
+              <span
+                className={`font-bold ml-1 ${
+                  cantStock > 0 ? "text-emerald-600" : "text-amber-500"
+                }`}
+              >
+                {cantStock > 0 ? `×${cantStock}` : "0 disp."}
               </span>
             </button>
-          ))}
+          );
+        })}
       </div>
     </div>
   );
