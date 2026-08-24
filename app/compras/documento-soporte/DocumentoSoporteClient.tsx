@@ -242,45 +242,48 @@ export default function DocumentoSoporteClient({
 
             <CardContent className="space-y-4 text-xs">
               <div>
-                <label className="block font-semibold text-slate-700 mb-1">
-                  Proveedor *
-                </label>
-                <Select
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block font-bold text-slate-700">
+                    Proveedor *
+                  </label>
+                  {proveedores.length === 0 && (
+                    <a
+                      href="/proveedores"
+                      className="text-[11px] font-bold text-brand-600 hover:underline"
+                    >
+                      + Crear Proveedor
+                    </a>
+                  )}
+                </div>
+                <select
                   value={proveedorId ? String(proveedorId) : ""}
-                  onValueChange={(v) => setProveedorId(v ? Number(v) : "")}
+                  onChange={(e) => setProveedorId(e.target.value ? Number(e.target.value) : "")}
+                  className="h-9 w-full rounded-lg border border-slate-300 bg-white px-3 text-xs font-semibold text-slate-800 shadow-2xs focus:outline-none focus:ring-2 focus:ring-brand-500/20 cursor-pointer"
                 >
-                  <SelectTrigger className="h-9">
-                    <SelectValue placeholder="Seleccionar proveedor…" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {proveedores.map((p) => (
-                      <SelectItem key={p.id} value={String(p.id)}>
-                        {p.nombre} {p.nit ? `(NIT ${p.nit})` : ""}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                  <option value="">Seleccionar proveedor…</option>
+                  {proveedores.map((p) => (
+                    <option key={p.id} value={String(p.id)}>
+                      {p.nombre} {p.nit ? `(NIT ${p.nit})` : ""}
+                    </option>
+                  ))}
+                </select>
               </div>
 
               <div>
-                <label className="block font-semibold text-slate-700 mb-1">
+                <label className="block font-bold text-slate-700 mb-1">
                   Bodega Destino *
                 </label>
-                <Select
+                <select
                   value={String(bodegaId)}
-                  onValueChange={(v) => setBodegaId(Number(v))}
+                  onChange={(e) => setBodegaId(Number(e.target.value))}
+                  className="h-9 w-full rounded-lg border border-slate-300 bg-white px-3 text-xs font-semibold text-slate-800 shadow-2xs focus:outline-none focus:ring-2 focus:ring-brand-500/20 cursor-pointer"
                 >
-                  <SelectTrigger className="h-9">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {bodegas.map((b) => (
-                      <SelectItem key={b.id} value={String(b.id)}>
-                        {b.nombre}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                  {bodegas.map((b) => (
+                    <option key={b.id} value={String(b.id)}>
+                      {b.nombre}
+                    </option>
+                  ))}
+                </select>
               </div>
 
               <div>
