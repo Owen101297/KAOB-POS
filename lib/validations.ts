@@ -54,38 +54,48 @@ export const clienteSchema = z.object({
   id: z.coerce.number().int().positive().optional(),
   nombre: nombreSchema,
   tipoDoc: z.enum(["CC", "NIT", "OTRO"]).default("CC"),
-  documento: z.string().trim().max(20).optional().or(z.literal("")),
-  telefono: z.string().trim().max(20).optional().or(z.literal("")),
-  direccion: z.string().trim().max(200).optional().or(z.literal("")),
-  ciudad: z.string().trim().max(80).optional().or(z.literal("")),
-  email: z.string().email("Email inválido").optional().or(z.literal("")),
+  documento: z.string().trim().max(20).nullish().transform((v) => v || null),
+  telefono: z.string().trim().max(20).nullish().transform((v) => v || null),
+  direccion: z.string().trim().max(200).nullish().transform((v) => v || null),
+  ciudad: z.string().trim().max(80).nullish().transform((v) => v || null),
+  email: z
+    .string()
+    .trim()
+    .nullish()
+    .transform((v) => v || null)
+    .refine((val) => !val || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val), "Email inválido"),
   cupoCredito: z.coerce.number().int().min(0).max(999999999).default(0),
   diasCredito: z.coerce.number().int().min(0).max(365).default(0),
-  notas: z.string().trim().max(500).optional().or(z.literal("")),
+  notas: z.string().trim().max(500).nullish().transform((v) => v || null),
 });
 
 export const proveedorSchema = z.object({
   id: z.coerce.number().int().positive().optional(),
   nombre: nombreSchema,
-  nit: z.string().trim().max(20).optional().or(z.literal("")),
-  contacto: z.string().trim().max(120).optional().or(z.literal("")),
-  telefono: z.string().trim().max(20).optional().or(z.literal("")),
-  email: z.string().email("Email inválido").optional().or(z.literal("")),
-  direccion: z.string().trim().max(200).optional().or(z.literal("")),
-  notas: z.string().trim().max(500).optional().or(z.literal("")),
+  nit: z.string().trim().max(20).nullish().transform((v) => v || null),
+  contacto: z.string().trim().max(120).nullish().transform((v) => v || null),
+  telefono: z.string().trim().max(20).nullish().transform((v) => v || null),
+  email: z
+    .string()
+    .trim()
+    .nullish()
+    .transform((v) => v || null)
+    .refine((val) => !val || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val), "Email inválido"),
+  direccion: z.string().trim().max(200).nullish().transform((v) => v || null),
+  notas: z.string().trim().max(500).nullish().transform((v) => v || null),
 });
 
 export const vendedorSchema = z.object({
   id: z.coerce.number().int().positive().optional(),
   nombre: nombreSchema,
-  telefono: z.string().trim().max(20).optional().or(z.literal("")),
+  telefono: z.string().trim().max(20).nullish().transform((v) => v || null),
   comisionPct: z.coerce.number().min(0).max(100).default(0),
 });
 
 export const domiciliarioSchema = z.object({
   id: z.coerce.number().int().positive().optional(),
   nombre: nombreSchema,
-  telefono: z.string().trim().max(20).optional().or(z.literal("")),
+  telefono: z.string().trim().max(20).nullish().transform((v) => v || null),
 });
 
 // ───────────────────────── PRODUCTOS ─────────────────────────
@@ -445,10 +455,26 @@ export type ActionResult<T = undefined> =
   | { ok: false; error: string };
 
 export function errorDesconocido(e: unknown): string {
-  if (e instanceof Error) {
-    if (e.message.includes("Unique constraint")) {
-      return "Ya existe un registro con ese nombre/código.";
+  if (e && typeof e === "object" && "issues" in e && Array.isArray((e as any).issues)) {
+    const issues = (e as any).issues;
+    if (issues.length > 0) {
+      const first = issues[0];
+      const campo = first.path?.length ? `Campo "${first.path.join(".")}": ` : "";
+      return `${campo}${first.message || "Valor inválido"}`;
     }
+  }
+  if (e instanceof Error) {
+    if (e.message.includes("Unique constraint") || e.message.includes("unique")) {
+      return "Ya existe un registro con ese documento, código o nombre.";
+    }
+    try {
+      const parsed = JSON.parse(e.message);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        const first = parsed[0];
+        const campo = first.path?.length ? `Campo "${first.path.join(".")}": ` : "";
+        return `${campo}${first.message || "Valor inválido"}`;
+      }
+    } catch {}
     return e.message;
   }
   return "Error inesperado. Intenta de nuevo.";
