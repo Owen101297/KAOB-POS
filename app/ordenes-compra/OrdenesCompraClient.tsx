@@ -99,21 +99,17 @@ export default function OrdenesCompraClient({
   const handleBusquedaVar = (value: string) => {
     setBusquedaVar(value);
     if (debounceRef.current) clearTimeout(debounceRef.current);
-    if (!value || value.length < 2) {
-      setResultadosVar([]);
-      return;
-    }
     debounceRef.current = setTimeout(async () => {
       setCargandoVar(true);
       try {
-        const res = (await buscarProductosPOS(value, bodegaId, false)) as ProductoPOS[];
+        const res = (await buscarProductosPOS(value, bodegaId)) as ProductoPOS[];
         setResultadosVar(res);
       } catch {
         setResultadosVar([]);
       } finally {
         setCargandoVar(false);
       }
-    }, 250);
+    }, 150);
   };
 
   function agregarDetalle(

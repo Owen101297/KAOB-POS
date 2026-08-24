@@ -148,21 +148,17 @@ export default function PlanSepareClient({
   const handleBusquedaProd = (value: string) => {
     setBusquedaProd(value);
     if (debounceRef.current) clearTimeout(debounceRef.current);
-    if (!value || value.length < 2) {
-      setResultadosProd([]);
-      return;
-    }
     debounceRef.current = setTimeout(async () => {
       setCargandoProd(true);
       try {
-        const res = (await buscarProductosPOS(value, bodegaId, false)) as ProductoPOS[];
+        const res = (await buscarProductosPOS(value, bodegaId)) as ProductoPOS[];
         setResultadosProd(res);
       } catch {
         setResultadosProd([]);
       } finally {
         setCargandoProd(false);
       }
-    }, 250);
+    }, 150);
   };
 
   function agregarItemNuevo(v: ProductoPOS["variantes"][number], p: ProductoPOS) {

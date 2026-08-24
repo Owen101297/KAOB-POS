@@ -108,17 +108,12 @@ export default function DocumentoSoporteClient({
   const handleBusqueda = (value: string) => {
     setBusqueda(value);
     if (debounceRef.current) clearTimeout(debounceRef.current);
-    if (!value || value.length < 2) {
-      setResultados([]);
-      return;
-    }
     debounceRef.current = setTimeout(async () => {
       setCargandoProductos(true);
       try {
         const res = (await buscarProductosPOS(
           value,
-          bodegaId,
-          false
+          bodegaId
         )) as ProductoPOS[];
         setResultados(res);
       } catch {
@@ -126,7 +121,7 @@ export default function DocumentoSoporteClient({
       } finally {
         setCargandoProductos(false);
       }
-    }, 250);
+    }, 150);
   };
 
   function agregarItem(

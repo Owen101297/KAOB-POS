@@ -157,21 +157,12 @@ export async function buscarVariantePorSku(sku: string, bodegaId?: number) {
 export async function buscarProductosPOS(
   q?: string,
   bodegaId?: number,
-  categoriaIdOrSoloActivos?: number | boolean,
+  categoriaId?: number,
   soloActivos = true
 ) {
   const query = q?.trim();
-  let categoriaId: number | undefined;
-  let soloAct = soloActivos;
-
-  if (typeof categoriaIdOrSoloActivos === "boolean") {
-    soloAct = categoriaIdOrSoloActivos;
-  } else if (typeof categoriaIdOrSoloActivos === "number") {
-    categoriaId = categoriaIdOrSoloActivos;
-  }
-
   const where: any = {
-    activo: soloAct,
+    activo: soloActivos,
   };
 
   if (categoriaId) {
