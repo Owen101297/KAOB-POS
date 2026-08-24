@@ -1050,6 +1050,26 @@ export default function VentaClient() {
         cargando={pending}
         clienteNombre={cliente?.nombre}
         cupoCredito={cliente?.cupoCredito}
+        clientes={clientes}
+        onSeleccionarCliente={(c) => {
+          if (!c) {
+            setCliente(null);
+            return;
+          }
+          const cliCompleto = clientes.find((item) => item.id === c.id);
+          if (cliCompleto) setCliente(cliCompleto);
+        }}
+        onAbrirRegistrarCliente={(prefill) => {
+          const esNumero = prefill ? /^\d+$/.test(prefill.trim()) : false;
+          setNuevoCliente({
+            nombre: !esNumero && prefill ? prefill.trim() : "",
+            telefono: "",
+            documento: esNumero && prefill ? prefill.trim() : "",
+            tipoDoc: "CC",
+            cupoCredito: 0,
+          });
+          setAbrirClienteModal(true);
+        }}
       />
 
       {/* Modal: Ticket Térmico 80mm */}

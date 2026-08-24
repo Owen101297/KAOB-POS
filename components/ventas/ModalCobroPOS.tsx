@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/Dialog";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
@@ -19,6 +19,10 @@ import {
   Zap,
   Smartphone,
   Check,
+  Search,
+  UserPlus,
+  UserCheck,
+  X,
 } from "lucide-react";
 import { formatoCOP } from "@/lib/format";
 
@@ -26,6 +30,14 @@ export interface PagoItem {
   metodo: "EFECTIVO" | "TRANSFERENCIA" | "TARJETA" | "PUNTOS" | "CREDITO" | "OTRO";
   monto: number;
   referencia?: string;
+}
+
+export interface ClienteItem {
+  id: number;
+  nombre: string;
+  documento?: string | null;
+  telefono?: string | null;
+  cupoCredito?: number;
 }
 
 interface ModalCobroPOSProps {
@@ -36,6 +48,9 @@ interface ModalCobroPOSProps {
   cargando: boolean;
   clienteNombre?: string;
   cupoCredito?: number;
+  clientes?: ClienteItem[];
+  onSeleccionarCliente?: (cliente: ClienteItem | null) => void;
+  onAbrirRegistrarCliente?: (prefill?: string) => void;
 }
 
 const DENOMINACIONES = [
@@ -54,6 +69,9 @@ export default function ModalCobroPOS({
   cargando,
   clienteNombre,
   cupoCredito = 0,
+  clientes = [],
+  onSeleccionarCliente,
+  onAbrirRegistrarCliente,
 }: ModalCobroPOSProps) {
   const [metodoPrincipal, setMetodoPrincipal] = useState<
     "EFECTIVO" | "TRANSFERENCIA" | "TARJETA" | "CREDITO" | "MIXTO"
@@ -63,6 +81,9 @@ export default function ModalCobroPOS({
   const [efectivoRecibido, setEfectivoRecibido] = useState<number>(totalVenta);
   const [referenciaTransferencia, setReferenciaTransferencia] = useState("");
   const [bancoSeleccionado, setBancoSeleccionado] = useState<string>("Nequi");
+
+  // Búsqueda de cliente en crédito
+  const [busquedaCredito, setBusquedaCredito] = useState("");
 
   // Pagos mixtos
   const [pagosMixtos, setPagosMixtos] = useState<PagoItem[]>([
@@ -75,6 +96,7 @@ export default function ModalCobroPOS({
       setEfectivoRecibido(totalVenta);
       setReferenciaTransferencia("");
       setBancoSeleccionado("Nequi");
+      setBusquedaCredito("");
       setPagosMixtos([{ metodo: "EFECTIVO", monto: totalVenta }]);
     }
   }, [open, totalVenta]);
@@ -86,6 +108,20 @@ export default function ModalCobroPOS({
   const totalMixto = pagosMixtos.reduce((a, p) => a + (p.monto || 0), 0);
   const faltanteMixto = Math.max(0, totalVenta - totalMixto);
   const esMixtoCompleto = Math.abs(totalVenta - totalMixto) < 1;
+
+  // Filtrado de clientes para crédito
+  const clientesFiltradosCredito = useMemo(() => {
+    if (!busquedaCredito.trim()) return clientes.slice(0, 5);
+    const q = busquedaCredito.toLowerCase().trim();
+    return clientes
+      .filter(
+        (c) =>
+          c.nombre.toLowerCase().includes(q) ||
+          (c.documento && c.documento.toLowerCase().includes(q)) ||
+          (c.telefono && c.telefono.includes(q))
+      )
+      .slice(0, 6);
+  }, [clientes, busquedaCredito]);
 
   // Atajos de Teclado Numérico Táctil
   const presionarNumero = (num: string) => {
@@ -127,6 +163,7 @@ export default function ModalCobroPOS({
     } else if (metodoPrincipal === "TARJETA") {
       pagosFinales = [{ metodo: "TARJETA", monto: totalVenta }];
     } else if (metodoPrincipal === "CREDITO") {
+      if (!clienteNombre) return;
       pagosFinales = [{ metodo: "CREDITO", monto: totalVenta }];
     } else {
       if (!esMixtoCompleto) return;
@@ -436,33 +473,122 @@ export default function ModalCobroPOS({
             </div>
           )}
 
-          {/* 4. VISTA CRÉDITO CLIENTE */}
+          {/* 4. VISTA CRÉDITO CLIENTE (CON BUSCADOR Y REGISTRO EN VIVO) */}
           {metodoPrincipal === "CREDITO" && (
-            <div className="p-5 max-w-xl mx-auto bg-white rounded-xl border border-amber-200 space-y-3 shadow-2xs">
+            <div className="p-5 max-w-xl mx-auto bg-white rounded-xl border border-amber-200 space-y-4 shadow-2xs">
               {!clienteNombre ? (
-                <div className="p-3 bg-amber-50 rounded-lg border border-amber-300 text-amber-900 text-xs">
-                  <p className="font-bold flex items-center gap-1.5">
-                    <AlertCircle className="h-4 w-4 text-amber-600 shrink-0" />
-                    Se requiere un cliente para venta a crédito
-                  </p>
-                  <p className="mt-1 text-[11px] font-medium">
-                    Debes seleccionar o buscar un cliente en la pantalla de ventas antes de poder fiar o cargar esta compra a crédito.
-                  </p>
+                <div className="space-y-3">
+                  <div className="p-3 bg-amber-50 rounded-xl border border-amber-200 text-amber-900 text-xs">
+                    <p className="font-bold flex items-center gap-1.5">
+                      <AlertCircle className="h-4 w-4 text-amber-600 shrink-0" />
+                      Selecciona o registra un cliente para venta a crédito
+                    </p>
+                    <p className="mt-1 text-[11px] text-amber-800">
+                      Busca el cliente por cédula, NIT o nombre a continuación, o regístralo en 1 clic:
+                    </p>
+                  </div>
+
+                  {/* Buscador Integrado en la pestaña de Crédito */}
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <div className="relative flex-1">
+                        <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
+                        <input
+                          type="text"
+                          value={busquedaCredito}
+                          onChange={(e) => setBusquedaCredito(e.target.value)}
+                          placeholder="Escribe Cédula, NIT o Nombre del cliente..."
+                          className="w-full h-10 pl-9 pr-3 text-xs font-semibold rounded-xl border border-slate-300 bg-white text-slate-900 shadow-2xs focus:outline-none focus:ring-2 focus:ring-amber-500/30"
+                          autoFocus
+                        />
+                      </div>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          if (onAbrirRegistrarCliente) {
+                            onAbrirRegistrarCliente(busquedaCredito);
+                          }
+                        }}
+                        className="h-10 text-xs font-bold border-amber-300 bg-amber-50 text-amber-900 hover:bg-amber-100 shrink-0 px-3 flex items-center gap-1.5"
+                      >
+                        <UserPlus className="h-4 w-4 text-amber-700" />
+                        + Registrar
+                      </Button>
+                    </div>
+
+                    {/* Lista rápida de resultados de clientes */}
+                    <div className="border border-slate-200 rounded-xl overflow-hidden max-h-48 overflow-y-auto bg-slate-50">
+                      {clientesFiltradosCredito.length > 0 ? (
+                        clientesFiltradosCredito.map((c) => (
+                          <button
+                            key={c.id}
+                            type="button"
+                            onClick={() => {
+                              if (onSeleccionarCliente) onSeleccionarCliente(c);
+                            }}
+                            className="w-full text-left px-3.5 py-2.5 text-xs hover:bg-amber-100/70 transition-colors border-b border-slate-200/70 last:border-0 flex items-center justify-between"
+                          >
+                            <div>
+                              <p className="font-bold text-slate-900">{c.nombre}</p>
+                              <p className="text-[10.5px] text-slate-500">
+                                {c.documento ? `Doc: ${c.documento}` : "Sin Documento"}{" "}
+                                {c.telefono ? `• Tel: ${c.telefono}` : ""}
+                              </p>
+                            </div>
+                            <span className="text-[10px] font-black text-amber-800 bg-amber-100 px-2 py-0.5 rounded-full border border-amber-200">
+                              Cupo: {formatoCOP(c.cupoCredito || 0)}
+                            </span>
+                          </button>
+                        ))
+                      ) : (
+                        <div className="p-4 text-center space-y-2">
+                          <p className="text-xs text-slate-500">No encontramos coincidencias para &quot;{busquedaCredito}&quot;</p>
+                          <Button
+                            size="sm"
+                            onClick={() => {
+                              if (onAbrirRegistrarCliente) {
+                                onAbrirRegistrarCliente(busquedaCredito);
+                              }
+                            }}
+                            className="text-xs font-bold bg-amber-600 hover:bg-amber-700 text-white"
+                          >
+                            <UserPlus className="h-3.5 w-3.5 mr-1" /> Registrar cliente con este dato
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 </div>
               ) : (
-                <>
-                  <div className="flex items-center justify-between border-b border-slate-100 pb-2">
-                    <span className="text-xs font-bold text-slate-700">Cliente Asignado:</span>
-                    <span className="text-xs font-black text-slate-900">{clienteNombre}</span>
+                <div className="space-y-3">
+                  <div className="p-3.5 bg-amber-50 rounded-xl border border-amber-200 flex items-center justify-between">
+                    <div className="flex items-center gap-2.5">
+                      <div className="h-9 w-9 rounded-xl bg-amber-500 text-slate-950 flex items-center justify-center font-bold">
+                        <UserCheck className="h-5 w-5" />
+                      </div>
+                      <div>
+                        <p className="text-xs font-black text-slate-900">{clienteNombre}</p>
+                        <p className="text-[11px] text-amber-900 font-bold">
+                          Cupo Disponible: {formatoCOP(cupoCredito)}
+                        </p>
+                      </div>
+                    </div>
+                    {onSeleccionarCliente && (
+                      <button
+                        type="button"
+                        onClick={() => onSeleccionarCliente(null)}
+                        className="text-xs font-bold text-amber-900 hover:text-red-700 px-2 py-1 bg-white/80 rounded-lg border border-amber-200 transition-colors"
+                      >
+                        Cambiar Cliente
+                      </button>
+                    )}
                   </div>
-                  <div className="flex items-center justify-between border-b border-slate-100 pb-2">
-                    <span className="text-xs font-bold text-slate-700">Cupo de Crédito:</span>
-                    <span className="text-sm font-black text-amber-700">{formatoCOP(cupoCredito)}</span>
-                  </div>
-                  <p className="text-xs text-slate-600 font-medium">
-                    Esta compra se registrará automáticamente en el módulo de Cartera y Créditos del cliente con plazo a 30 días.
+
+                  <p className="text-xs text-slate-600 font-medium leading-relaxed">
+                    Esta venta por valor de <strong>{formatoCOP(totalVenta)}</strong> se cargará automáticamente como saldo pendiente en la cartera del cliente con plazo de vencimiento a 30 días.
                   </p>
-                </>
+                </div>
               )}
             </div>
           )}
