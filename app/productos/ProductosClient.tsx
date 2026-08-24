@@ -11,6 +11,7 @@ import {
   Pencil,
   Plus,
   Printer,
+  Trash2,
 } from 'lucide-react';
 import type { ProductoLista } from '@/lib/actions/productos';
 import type { CatalogosCompletos } from '@/lib/actions/catalogos';
@@ -42,6 +43,7 @@ import {
   actualizarProducto,
   agregarVariantes,
   crearProducto,
+  eliminarProducto,
   toggleProductoActivo,
 } from '@/lib/actions/productos';
 
@@ -230,12 +232,32 @@ export default function ProductosClient({ productos, catalogos }: Props) {
               size="icon"
               variant="ghost"
               aria-label={row.activo ? `Desactivar ${row.nombre}` : `Activar ${row.nombre}`}
+              title={row.activo ? "Desactivar producto" : "Activar producto"}
               onClick={async () => {
                 await toggleProductoActivo(row.id);
                 refrescar();
               }}
             >
-              {row.activo ? <Archive className="h-4 w-4" /> : <ArchiveRestore className="h-4 w-4" />}
+              {row.activo ? <Archive className="h-4 w-4 text-slate-500" /> : <ArchiveRestore className="h-4 w-4 text-emerald-600" />}
+            </Button>
+            <Button
+              size="icon"
+              variant="ghost"
+              aria-label={`Eliminar ${row.nombre}`}
+              title="Eliminar producto y variantes"
+              onClick={async () => {
+                if (!confirm(`¿Estás seguro de eliminar el producto "${row.nombre}" (${row.referencia})?\nEsta acción eliminará el producto, sus variantes y stock.`)) {
+                  return;
+                }
+                const res = await eliminarProducto(row.id);
+                if (!res.ok) {
+                  alert(res.error || "No se pudo eliminar el producto.");
+                } else {
+                  refrescar();
+                }
+              }}
+            >
+              <Trash2 className="h-4 w-4 text-red-500 hover:text-red-700" />
             </Button>
           </div>
         );

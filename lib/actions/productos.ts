@@ -240,10 +240,74 @@ export async function actualizarPrecios(input: unknown): Promise<ActionResult> {
   }
 }
 
-export async function toggleProductoActivo(id: number): Promise<ActionResult> {  try {
+export async function toggleProductoActivo(id: number): Promise<ActionResult> {
+  try {
     const p = await db.producto.findUniqueOrThrow({ where: { id } });
     await db.producto.update({ where: { id }, data: { activo: !p.activo } });
     revalidatePath("/productos");
+    return { ok: true };
+  } catch (e) {
+    return { ok: false as const, error: errorDesconocido(e) };
+  }
+}
+
+export async function eliminarProducto(id: number): Promise<ActionResult> {
+  try {
+    const producto = await db.producto.findUnique({
+      where: { id },
+      include: {
+        variantes: {
+          include: {
+            ventaItems: { select: { id: true } },
+            compraItems: { select: { id: true } },
+          },
+        },
+      },
+    });
+    if (!producto) return { ok: false, error: "El producto no existe." };
+
+    const tieneVentas = producto.variantes.some((v) => v.ventaItems.length > 0);
+    if (tieneVentas) {
+      return {
+        ok: false,
+        error: "No se puede eliminar el producto porque tiene ventas registradas en el historial. Puedes desactivarlo.",
+      };
+    }
+
+    const tieneCompras = producto.variantes.some((v) => v.compraItems.length > 0);
+    if (tieneCompras) {
+      return {
+        ok: false,
+        error: "No se puede eliminar el producto porque tiene compras/documentos soporte asociados. Puedes desactivarlo.",
+      };
+    }
+
+    const varianteIds = producto.variantes.map((v) => v.id);
+
+    await db.$transaction(async (tx) => {
+      // 1. Eliminar movimientos de inventario asociados
+      if (varianteIds.length > 0) {
+        await tx.movimientoInventario.deleteMany({
+          where: { varianteId: { in: varianteIds } },
+        });
+        // 2. Eliminar stock en bodegas
+        await tx.stockBodega.deleteMany({
+          where: { varianteId: { in: varianteIds } },
+        });
+        // 3. Eliminar variantes
+        await tx.variante.deleteMany({
+          where: { id: { in: varianteIds } },
+        });
+      }
+      // 4. Eliminar producto
+      await tx.producto.delete({
+        where: { id },
+      });
+    });
+
+    revalidatePath("/productos");
+    revalidatePath("/inventario");
+    revalidatePath("/ventas/nueva");
     return { ok: true };
   } catch (e) {
     return { ok: false as const, error: errorDesconocido(e) };
