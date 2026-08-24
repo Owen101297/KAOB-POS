@@ -39,7 +39,7 @@ const SelectContent = React.forwardRef<
       position={position}
       sideOffset={6}
       className={cn(
-        'z-[2000] max-h-80 min-w-[8rem] overflow-hidden rounded-xl border border-slate-100 bg-white p-1.5 shadow-menu animate-slide-up',
+        'z-[9999] max-h-80 min-w-[8rem] overflow-hidden rounded-xl border border-slate-200 bg-white p-1.5 shadow-xl animate-slide-up',
         position === 'popper' && 'w-full min-w-[var(--radix-select-trigger-width)]',
         className
       )}
