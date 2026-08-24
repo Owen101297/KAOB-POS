@@ -14,7 +14,7 @@ import {
   Clock,
   ArrowUpRight,
   ArrowDownRight,
-  AlertTriangle,
+  Download,
   Building2,
   Package,
   Users,
@@ -23,7 +23,8 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
-import { Badge } from "@/components/ui/Badge";
+import { PageHeader } from "@/components/ui/PageHeader";
+import { StatCard } from "@/components/ui/StatCard";
 import { useBodega } from "@/components/providers/BodegaProvider";
 import { formatoCOP } from "@/lib/format";
 import { obtenerDatosDashboard, type DashboardData } from "@/lib/actions/dashboard";
@@ -33,6 +34,16 @@ Chart.register(...registerables);
 interface DashboardClientProps {
   initialData: DashboardData;
 }
+
+const STEPS = [
+  "Configuración inicial del almacén",
+  "Medios de pago",
+  "Creación de usuarios",
+  "Información general",
+  "Impuestos",
+  "Impresión de factura",
+  "Control de inventario inicial",
+];
 
 export default function DashboardClient({ initialData }: DashboardClientProps) {
   const { bodegaActiva } = useBodega();
@@ -49,7 +60,7 @@ export default function DashboardClient({ initialData }: DashboardClientProps) {
     setMounted(true);
   }, []);
 
-  // Recargar datos
+  // Recargar datos en vivo
   const refrescarDatos = () => {
     startTransition(async () => {
       const res = await obtenerDatosDashboard(bodegaActiva?.id);
@@ -58,7 +69,6 @@ export default function DashboardClient({ initialData }: DashboardClientProps) {
     });
   };
 
-  // Recargar cuando cambia la bodega activa
   useEffect(() => {
     if (mounted) {
       refrescarDatos();
@@ -73,7 +83,7 @@ export default function DashboardClient({ initialData }: DashboardClientProps) {
     return () => clearInterval(interval);
   }, [bodegaActiva?.id]);
 
-  // Renderizado de Gráficos de Chart.js
+  // Renderizado de Gráficos de Chart.js con paleta limpia blanca/slate
   useEffect(() => {
     Chart.defaults.font.family =
       "'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif";
@@ -83,12 +93,18 @@ export default function DashboardClient({ initialData }: DashboardClientProps) {
     instances.current.forEach((c) => c.destroy());
     instances.current = [];
 
+    const tooltipStyle = {
+      backgroundColor: "#0f172a",
+      padding: 10,
+      cornerRadius: 8,
+    };
+
     // 1. Gráfico Ventas por Hora
     if (chartHoraRef.current) {
       const ctx = chartHoraRef.current.getContext("2d");
       const gradient = ctx?.createLinearGradient(0, 0, 0, 190);
-      gradient?.addColorStop(0, "rgba(16, 185, 129, 0.25)");
-      gradient?.addColorStop(1, "rgba(16, 185, 129, 0)");
+      gradient?.addColorStop(0, "rgba(98, 203, 49, 0.25)");
+      gradient?.addColorStop(1, "rgba(98, 203, 49, 0)");
 
       const labels = data.ventasPorHora.map((v) => v.hora);
       const values = data.ventasPorHora.map((v) => v.total);
@@ -101,13 +117,13 @@ export default function DashboardClient({ initialData }: DashboardClientProps) {
             datasets: [
               {
                 data: values,
-                borderColor: "#10b981",
-                backgroundColor: gradient ?? "rgba(16, 185, 129, 0.08)",
-                borderWidth: 2.5,
+                borderColor: "#62cb31",
+                backgroundColor: gradient ?? "rgba(98, 203, 49, 0.08)",
+                borderWidth: 2,
                 tension: 0.35,
                 pointRadius: 3,
-                pointHoverRadius: 6,
-                pointBackgroundColor: "#10b981",
+                pointHoverRadius: 5,
+                pointBackgroundColor: "#62cb31",
                 fill: true,
               },
             ],
@@ -119,21 +135,20 @@ export default function DashboardClient({ initialData }: DashboardClientProps) {
             plugins: {
               legend: { display: false },
               tooltip: {
-                backgroundColor: "#0f172a",
-                padding: 10,
-                cornerRadius: 10,
+                ...tooltipStyle,
                 callbacks: {
                   label: (ctx) => `Ventas: ${formatoCOP(Number(ctx.raw) || 0)}`,
                 },
               },
             },
             scales: {
-              x: { grid: { display: false } },
+              x: { grid: { display: false }, border: { display: false } },
               y: {
                 beginAtZero: true,
                 grid: { color: "#f1f5f9" },
+                border: { display: false },
                 ticks: {
-                  callback: (v) => `$${Number(v) >= 1000 ? `${Number(v) / 1000}k` : v}`,
+                  callback: (value) => `$${Number(value) >= 1000 ? `${Number(value) / 1000}k` : value}`,
                 },
               },
             },
@@ -155,9 +170,10 @@ export default function DashboardClient({ initialData }: DashboardClientProps) {
             datasets: [
               {
                 data: values,
-                backgroundColor: "#3b82f6",
+                backgroundColor: "#62cb31",
+                hoverBackgroundColor: "#4aad21",
                 borderRadius: 6,
-                hoverBackgroundColor: "#2563eb",
+                maxBarThickness: 28,
               },
             ],
           },
@@ -167,21 +183,20 @@ export default function DashboardClient({ initialData }: DashboardClientProps) {
             plugins: {
               legend: { display: false },
               tooltip: {
-                backgroundColor: "#0f172a",
-                padding: 10,
-                cornerRadius: 10,
+                ...tooltipStyle,
                 callbacks: {
                   label: (ctx) => `Total: ${formatoCOP(Number(ctx.raw) || 0)}`,
                 },
               },
             },
             scales: {
-              x: { grid: { display: false } },
+              x: { grid: { display: false }, border: { display: false } },
               y: {
                 beginAtZero: true,
                 grid: { color: "#f1f5f9" },
+                border: { display: false },
                 ticks: {
-                  callback: (v) => `$${Number(v) >= 1000 ? `${Number(v) / 1000}k` : v}`,
+                  callback: (value) => `$${Number(value) >= 1000 ? `${Number(value) / 1000}k` : value}`,
                 },
               },
             },
@@ -196,351 +211,282 @@ export default function DashboardClient({ initialData }: DashboardClientProps) {
     };
   }, [data]);
 
-  // Variación Ventas Hoy vs Ayer
-  const difVentas = data.ventasHoy - data.ventasAyer;
-  const pctVentas = data.ventasAyer > 0 ? Math.round((difVentas / data.ventasAyer) * 100) : 0;
+  // Metas del día
+  const metaDia = 500000;
+  const progresoMetaPct = Math.min(100, Math.round((data.ventasHoy / metaDia) * 100));
+
+  const STATS = [
+    {
+      label: "Ventas de hoy",
+      value: formatoCOP(data.ventasHoy),
+      color: "brand" as const,
+      icon: <CircleDollarSign />,
+      hint: `Ayer: ${formatoCOP(data.ventasAyer)}`,
+    },
+    {
+      label: "Facturas de hoy",
+      value: `# ${data.transaccionesHoy}`,
+      color: "sky" as const,
+      icon: <Receipt />,
+      hint: `Ayer: # ${data.transaccionesAyer}`,
+    },
+    {
+      label: "Gastos de hoy",
+      value: formatoCOP(data.gastosHoy),
+      color: "amber" as const,
+      icon: <Wallet />,
+      hint: `Ayer: ${formatoCOP(data.gastosAyer)}`,
+    },
+    {
+      label: "Utilidad de hoy",
+      value: formatoCOP(data.utilidadHoy),
+      color: "violet" as const,
+      icon: <TrendingUp />,
+      hint: `Margen: ${data.margenUtilidadHoy}%`,
+    },
+  ];
 
   return (
-    <div className="space-y-6 pb-12">
-      {/* Cabecera del Dashboard */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 dark:border-slate-800 pb-4">
-        <div>
-          <div className="flex items-center gap-2.5">
-            <h1 className="text-2xl font-black tracking-tight text-slate-900 dark:text-white">
-              Dashboard General
-            </h1>
-            <Badge variant="info" className="text-xs font-semibold">
-              En Vivo
-            </Badge>
-          </div>
-          <p className="text-xs text-slate-500 mt-1 flex items-center gap-1.5" suppressHydrationWarning>
-            <Clock className="h-3.5 w-3.5" />
-            Última sincronización: {mounted ? ultimaActualizacion.toLocaleTimeString("es-CO") : "--:--"}
-            {bodegaActiva && (
-              <span className="font-semibold text-slate-700 dark:text-slate-300">
-                • Bodega: {bodegaActiva.nombre}
-              </span>
-            )}
-          </p>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={refrescarDatos}
-            disabled={pending}
-            className="text-xs flex items-center gap-1.5 h-9"
-          >
-            <RefreshCw className={`h-3.5 w-3.5 ${pending ? "animate-spin text-blue-600" : ""}`} />
-            Actualizar
-          </Button>
-
-          <Link href="/ventas/nueva">
+    <div>
+      <PageHeader
+        title="Resumen"
+        description={
+          mounted
+            ? `Sincronizado: ${ultimaActualizacion.toLocaleTimeString("es-CO")} ${bodegaActiva ? `• Bodega: ${bodegaActiva.nombre}` : ""}`
+            : "Cargando datos en vivo..."
+        }
+        actions={
+          <>
             <Button
-              variant="primary"
+              variant="outline"
               size="sm"
-              className="h-9 text-xs font-bold flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white shadow-md shadow-emerald-600/20"
+              onClick={refrescarDatos}
+              disabled={pending}
+              className="flex items-center gap-1.5"
             >
-              <ShoppingCart className="h-4 w-4" />
-              Terminal POS
+              <RefreshCw className={`h-3.5 w-3.5 ${pending ? "animate-spin text-brand-600" : ""}`} />
+              Actualizar
             </Button>
-          </Link>
-        </div>
+            <Link href="/ventas/nueva">
+              <Button size="sm">
+                <Plus className="h-4 w-4" /> Nueva venta
+              </Button>
+            </Link>
+          </>
+        }
+      />
+
+      {/* 4 KPIs Clave con Componente StatCard Blanco */}
+      <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        {STATS.map((s) => (
+          <StatCard
+            key={s.label}
+            label={s.label}
+            value={s.value}
+            color={s.color}
+            icon={s.icon}
+            hint={s.hint}
+          />
+        ))}
       </div>
 
-      {/* 4 KPI Cards Principales */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* 1. Ventas de Hoy */}
-        <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm space-y-2">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
-              Ventas de Hoy
-            </span>
-            <div className="p-2 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600">
-              <CircleDollarSign className="h-5 w-5" />
-            </div>
-          </div>
-          <div className="space-y-0.5">
-            <h3 className="text-2xl font-black text-slate-900 dark:text-white">
-              {formatoCOP(data.ventasHoy)}
-            </h3>
-            <p className="text-xs text-slate-500 flex items-center gap-1">
-              {difVentas >= 0 ? (
-                <span className="text-emerald-600 font-semibold flex items-center">
-                  <ArrowUpRight className="h-3.5 w-3.5" /> +{formatoCOP(difVentas)}
-                </span>
-              ) : (
-                <span className="text-red-500 font-semibold flex items-center">
-                  <ArrowDownRight className="h-3.5 w-3.5" /> {formatoCOP(difVentas)}
-                </span>
-              )}
-              <span>vs ayer ({formatoCOP(data.ventasAyer)})</span>
-            </p>
-          </div>
-        </div>
+      <div className="flex flex-col gap-5 xl:flex-row">
+        {/* Columna principal */}
+        <div className="min-w-0 flex-1 space-y-5">
+          <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
+            {/* Ventas por hora */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Ventas por hora</CardTitle>
+                <p className="text-xs text-slate-400">Hoy</p>
+              </CardHeader>
+              <CardContent>
+                <div className="h-[190px]">
+                  <canvas ref={chartHoraRef} />
+                </div>
+              </CardContent>
+            </Card>
 
-        {/* 2. Facturas de Hoy */}
-        <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm space-y-2">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
-              Facturas / Tickets
-            </span>
-            <div className="p-2 rounded-xl bg-blue-50 dark:bg-blue-950/50 text-blue-600">
-              <Receipt className="h-5 w-5" />
-            </div>
-          </div>
-          <div className="space-y-0.5">
-            <h3 className="text-2xl font-black text-slate-900 dark:text-white">
-              {data.transaccionesHoy} <span className="text-sm font-normal text-slate-400">ventas</span>
-            </h3>
-            <p className="text-xs text-slate-500">
-              Ticket Promedio:{" "}
-              <strong className="text-slate-700 dark:text-slate-300">
-                {formatoCOP(
-                  data.transaccionesHoy > 0 ? Math.round(data.ventasHoy / data.transaccionesHoy) : 0
-                )}
-              </strong>
-            </p>
-          </div>
-        </div>
-
-        {/* 3. Gastos de Hoy */}
-        <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm space-y-2">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
-              Gastos Operativos
-            </span>
-            <div className="p-2 rounded-xl bg-amber-50 dark:bg-amber-950/50 text-amber-600">
-              <Wallet className="h-5 w-5" />
-            </div>
-          </div>
-          <div className="space-y-0.5">
-            <h3 className="text-2xl font-black text-slate-900 dark:text-white">
-              {formatoCOP(data.gastosHoy)}
-            </h3>
-            <p className="text-xs text-slate-500">
-              Ayer: {formatoCOP(data.gastosAyer)}
-            </p>
-          </div>
-        </div>
-
-        {/* 4. Utilidad Neta de Hoy */}
-        <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm space-y-2">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
-              Utilidad Bruta
-            </span>
-            <div className="p-2 rounded-xl bg-purple-50 dark:bg-purple-950/50 text-purple-600">
-              <TrendingUp className="h-5 w-5" />
-            </div>
-          </div>
-          <div className="space-y-0.5">
-            <h3 className="text-2xl font-black text-slate-900 dark:text-white">
-              {formatoCOP(data.utilidadHoy)}
-            </h3>
-            <p className="text-xs text-slate-500">
-              Margen de Ganancia:{" "}
-              <strong className="text-purple-600 font-bold">{data.margenUtilidadHoy}%</strong>
-            </p>
-          </div>
-        </div>
-      </div>
-
-      {/* Gráficos de Ventas */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Gráfico 1: Ventas por Hora de Hoy (2 Cols) */}
-        <div className="lg:col-span-2 p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="font-bold text-base text-slate-900 dark:text-white">
-                Ventas por Hora de Hoy
-              </h3>
-              <p className="text-xs text-slate-500">
-                Flujo de facturación en el mostrador a lo largo del día
-              </p>
-            </div>
-            <span className="text-xs font-mono font-bold text-emerald-600 bg-emerald-50 dark:bg-emerald-950/40 px-2.5 py-1 rounded-lg">
-              Hoy: {formatoCOP(data.ventasHoy)}
-            </span>
-          </div>
-
-          <div className="h-56">
-            <canvas ref={chartHoraRef} />
-          </div>
-        </div>
-
-        {/* Gráfico 2: Ventas Semanales (1 Col) */}
-        <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
-          <div>
-            <h3 className="font-bold text-base text-slate-900 dark:text-white">
-              Ventas Últimos 7 Días
-            </h3>
-            <p className="text-xs text-slate-500">
-              Facturación acumulada diaria
-            </p>
-          </div>
-
-          <div className="h-56">
-            <canvas ref={chartDiaRef} />
-          </div>
-        </div>
-      </div>
-
-      {/* Desglose de Medios de Pago + Últimas Ventas */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Medios de Pago de Hoy */}
-        <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
-          <h3 className="font-bold text-base text-slate-900 dark:text-white">
-            Medios de Pago de Hoy
-          </h3>
-
-          <div className="space-y-3">
-            {data.pagosHoy.map((p) => (
-              <div key={p.metodo} className="space-y-1.5">
-                <div className="flex items-center justify-between text-xs">
-                  <span className="font-semibold text-slate-700 dark:text-slate-300">
-                    {p.label}
+            {/* Ventas por método de pago */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Ventas por método de pago</CardTitle>
+                <p className="text-xs text-slate-400">Hoy</p>
+              </CardHeader>
+              <CardContent>
+                <ul className="divide-y divide-slate-100">
+                  {data.pagosHoy.map((m) => (
+                    <li key={m.metodo} className="flex items-center gap-3 py-2.5 first:pt-0 last:pb-0">
+                      <span
+                        className="h-2.5 w-2.5 rounded-full"
+                        style={{ backgroundColor: m.color }}
+                      />
+                      <span className="flex-1 text-[13px] font-medium text-slate-600">
+                        {m.label}
+                      </span>
+                      <span className={`rounded-md px-1.5 py-0.5 text-[11px] font-bold ${m.bgSoft}`}>
+                        {m.porcentaje}%
+                      </span>
+                      <span className="w-24 text-right text-[13px] font-semibold tabular-nums text-slate-800">
+                        {formatoCOP(m.total)}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+                <div className="mt-3 flex items-center justify-between rounded-xl bg-slate-50 px-4 py-3">
+                  <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                    Total Hoy
                   </span>
-                  <span className="font-bold text-slate-900 dark:text-white">
-                    {formatoCOP(p.total)}{" "}
-                    <span className="text-[11px] text-slate-400 font-normal">
-                      ({p.porcentaje}%)
-                    </span>
+                  <span className="text-lg font-bold tabular-nums text-slate-900">
+                    {formatoCOP(data.ventasHoy)}
                   </span>
                 </div>
-                <div className="h-2 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
+              </CardContent>
+            </Card>
+          </div>
+
+          <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
+            {/* Ventas por día */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Ventas por día</CardTitle>
+                <p className="text-xs text-slate-400">Últimos 7 días</p>
+              </CardHeader>
+              <CardContent>
+                <div className="h-[180px]">
+                  <canvas ref={chartDiaRef} />
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Meta del día */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Meta del día</CardTitle>
+                <p className="text-xs text-slate-400">Objetivo configurado</p>
+              </CardHeader>
+              <CardContent className="flex h-[148px] flex-col justify-center">
+                <div className="mb-2 flex items-baseline justify-between">
+                  <span className="text-2xl font-bold tracking-tight text-slate-900">
+                    {formatoCOP(data.ventasHoy)}
+                  </span>
+                  <span className="text-sm font-medium text-slate-400">
+                    de {formatoCOP(metaDia)}
+                  </span>
+                </div>
+                <div className="h-2.5 w-full overflow-hidden rounded-full bg-slate-100">
                   <div
-                    className="h-full rounded-full transition-all duration-500"
-                    style={{
-                      width: `${p.porcentaje}%`,
-                      backgroundColor: p.color,
-                    }}
+                    className="h-full rounded-full bg-gradient-to-r from-brand-400 to-brand-600 transition-all duration-500"
+                    style={{ width: `${progresoMetaPct}%` }}
                   />
                 </div>
-              </div>
-            ))}
+                <p className="mt-3 text-[13px] text-slate-400">
+                  {data.ventasHoy === 0
+                    ? "Aún no registras ventas hoy. ¡El día apenas comienza!"
+                    : `Has alcanzado el ${progresoMetaPct}% de la meta estimada del día.`}
+                </p>
+              </CardContent>
+            </Card>
           </div>
 
-          {/* Estado Operativo Rápido */}
-          <div className="pt-3 border-t border-slate-100 dark:border-slate-800 grid grid-cols-2 gap-2 text-xs">
-            <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/50">
-              <span className="text-slate-400 block text-[10px] uppercase font-semibold">
-                Estado de Caja
-              </span>
-              <span
-                className={`font-bold ${
-                  data.cajaAbierta ? "text-emerald-600" : "text-amber-500"
-                }`}
-              >
-                {data.cajaAbierta ? "Abierta" : "Cerrada"}
-              </span>
-            </div>
-
-            <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/50">
-              <span className="text-slate-400 block text-[10px] uppercase font-semibold">
-                Stock Bajo / Agotado
-              </span>
-              <span
-                className={`font-bold ${
-                  data.alertasStockCount > 0 ? "text-red-500" : "text-emerald-600"
-                }`}
-              >
-                {data.alertasStockCount} prendas
-              </span>
-            </div>
-          </div>
-        </div>
-
-        {/* Últimas Ventas en Tiempo Real (2 Cols) */}
-        <div className="lg:col-span-2 p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
-          <div className="flex items-center justify-between">
-            <h3 className="font-bold text-base text-slate-900 dark:text-white">
-              Últimas Ventas Registradas
-            </h3>
-            <Link
-              href="/ventas"
-              className="text-xs font-semibold text-blue-600 hover:text-blue-700 flex items-center gap-1"
-            >
-              Ver todas <ChevronRight className="h-3.5 w-3.5" />
-            </Link>
-          </div>
-
-          {data.ultimasVentas.length === 0 ? (
-            <div className="py-12 text-center text-slate-400 text-xs">
-              Aún no se han registrado ventas hoy.
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-xs">
-                <thead>
-                  <tr className="border-b border-slate-100 dark:border-slate-800 text-slate-400 text-left">
-                    <th className="pb-2 font-semibold">Código</th>
-                    <th className="pb-2 font-semibold">Cliente</th>
-                    <th className="pb-2 font-semibold">Método</th>
-                    <th className="pb-2 font-semibold text-right">Prendas</th>
-                    <th className="pb-2 font-semibold text-right">Total</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                  {data.ultimasVentas.map((v) => (
-                    <tr key={v.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/40">
-                      <td className="py-2.5 font-mono font-bold text-blue-600">{v.codigo}</td>
-                      <td className="py-2.5 text-slate-800 dark:text-slate-200 font-medium">
-                        {v.cliente}
-                      </td>
-                      <td className="py-2.5">
-                        <Badge variant="neutral" className="text-[10px]">
-                          {v.metodo}
-                        </Badge>
-                      </td>
-                      <td className="py-2.5 text-right font-semibold text-slate-600 dark:text-slate-400">
-                        {v.itemsCount}
-                      </td>
-                      <td className="py-2.5 text-right font-bold text-slate-900 dark:text-white">
-                        {formatoCOP(v.total)}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+          {/* Últimas Ventas en Tiempo Real */}
+          {data.ultimasVentas.length > 0 && (
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between">
+                <div>
+                  <CardTitle>Últimas Ventas Registradas</CardTitle>
+                  <p className="text-xs text-slate-400">Transacciones de hoy en vivo</p>
+                </div>
+                <Link
+                  href="/ventas"
+                  className="text-xs font-semibold text-brand-600 hover:text-brand-700 flex items-center gap-1"
+                >
+                  Ver todas <ChevronRight className="h-3.5 w-3.5" />
+                </Link>
+              </CardHeader>
+              <CardContent>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-xs">
+                    <thead>
+                      <tr className="border-b border-slate-100 text-slate-400 text-left">
+                        <th className="pb-2 font-semibold">Código</th>
+                        <th className="pb-2 font-semibold">Cliente</th>
+                        <th className="pb-2 font-semibold">Método</th>
+                        <th className="pb-2 font-semibold text-right">Prendas</th>
+                        <th className="pb-2 font-semibold text-right">Total</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {data.ultimasVentas.map((v) => (
+                        <tr key={v.id} className="hover:bg-slate-50">
+                          <td className="py-2.5 font-mono font-bold text-brand-600">{v.codigo}</td>
+                          <td className="py-2.5 text-slate-800 font-medium">{v.cliente}</td>
+                          <td className="py-2.5">
+                            <span className="px-2 py-0.5 rounded bg-slate-100 font-semibold text-[10px] text-slate-700">
+                              {v.metodo}
+                            </span>
+                          </td>
+                          <td className="py-2.5 text-right font-semibold text-slate-600">
+                            {v.itemsCount}
+                          </td>
+                          <td className="py-2.5 text-right font-bold text-slate-900">
+                            {formatoCOP(v.total)}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </CardContent>
+            </Card>
           )}
         </div>
-      </div>
 
-      {/* Top 5 Productos Más Vendidos */}
-      {data.topProductos.length > 0 && (
-        <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
-          <h3 className="font-bold text-base text-slate-900 dark:text-white flex items-center gap-2">
-            <Sparkles className="h-4 w-4 text-amber-500" />
-            Prendas Más Vendidas de la Semana
-          </h3>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
-            {data.topProductos.map((prod, idx) => (
-              <div
-                key={prod.id}
-                className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 text-xs space-y-1.5"
-              >
-                <div className="flex items-center justify-between">
-                  <span className="font-mono text-[10px] text-slate-400">#{idx + 1}</span>
-                  <Badge variant="success" className="text-[10px]">
-                    {prod.unidades} uds
-                  </Badge>
-                </div>
-                <p className="font-bold text-slate-900 dark:text-white truncate">
-                  {prod.nombre}
-                </p>
-                <p className="font-mono text-[11px] text-slate-400">Ref: {prod.referencia}</p>
-                <p className="font-black text-slate-900 dark:text-white pt-1">
-                  {formatoCOP(prod.total)}
-                </p>
+        {/* Aside onboarding / Primeros pasos */}
+        <aside className="w-full shrink-0 xl:w-[300px]">
+          <Card className="sticky top-24">
+            <CardHeader className="flex-row items-center justify-between">
+              <CardTitle>Primeros pasos</CardTitle>
+              <Link href="/configuracion" className="text-brand-600 hover:text-brand-700">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-4 w-4">
+                  <path d="M5 12h14M13 6l6 6-6 6" />
+                </svg>
+              </Link>
+            </CardHeader>
+            <CardContent>
+              <div className="mb-1.5 flex items-center justify-between text-xs">
+                <span className="font-medium text-slate-500">Progreso</span>
+                <span className="font-bold text-slate-700">
+                  {data.ventasHoy > 0 ? "6 / 7" : "4 / 7"} completado
+                </span>
               </div>
-            ))}
-          </div>
-        </div>
-      )}
+              <div className="mb-4 h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
+                <div
+                  className="h-full rounded-full bg-brand-500 transition-all duration-500"
+                  style={{ width: data.ventasHoy > 0 ? "85%" : "57%" }}
+                />
+              </div>
+              <ul className="-mx-2 divide-y divide-slate-100">
+                {STEPS.map((step, i) => (
+                  <li key={step}>
+                    <button
+                      type="button"
+                      className="group flex w-full items-center gap-3 rounded-lg px-2 py-2.5 text-left outline-none transition-colors hover:bg-slate-50 focus-visible:ring-2 focus-visible:ring-brand-500/40"
+                    >
+                      <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-brand-500 text-[10px] font-bold text-white transition-transform group-hover:scale-110">
+                        {i + 1}
+                      </span>
+                      <span className="text-[12.5px] font-medium leading-snug text-slate-600 group-hover:text-slate-900">
+                        {step}
+                      </span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </CardContent>
+          </Card>
+        </aside>
+      </div>
     </div>
   );
 }
