@@ -126,6 +126,20 @@ export async function toggleMarca(id: number): Promise<ActionResult> {
   }
 }
 
+export async function eliminarMarca(id: number): Promise<ActionResult> {
+  try {
+    const prodsCount = await db.producto.count({ where: { marcaId: id } });
+    if (prodsCount > 0) {
+      return { ok: false, error: `No se puede eliminar la marca porque tiene ${prodsCount} producto(s) asignado(s). Puedes desactivarla.` };
+    }
+    await db.marca.delete({ where: { id } });
+    revalidatePath("/configuracion/catalogos");
+    return { ok: true };
+  } catch (e) {
+    return { ok: false as const, error: errorDesconocido(e) };
+  }
+}
+
 // ───────────────────────── CATEGORÍAS ────────────────────────
 
 export async function listarCategorias() {
@@ -139,7 +153,6 @@ export async function guardarCategoria(input: unknown): Promise<ActionResult> {
   try {
     const data = categoriaSchema.parse(input);
     if (data.padreId != null) {
-      // valida existencia y evita ciclos simples
       const padre = await db.categoria.findUnique({ where: { id: data.padreId } });
       if (!padre) return { ok: false, error: "La categoría padre no existe." };
     }
@@ -166,6 +179,24 @@ export async function actualizarCategoria(
       where: { id },
       data: { nombre: data.nombre, padreId: data.padreId ?? null },
     });
+    revalidatePath("/configuracion/catalogos");
+    return { ok: true };
+  } catch (e) {
+    return { ok: false as const, error: errorDesconocido(e) };
+  }
+}
+
+export async function eliminarCategoria(id: number): Promise<ActionResult> {
+  try {
+    const subcats = await db.categoria.count({ where: { padreId: id } });
+    if (subcats > 0) {
+      return { ok: false, error: `No se puede eliminar la categoría porque tiene ${subcats} subcategoría(s) hija(s). Elimínalas o muévelas primero.` };
+    }
+    const prodsCount = await db.producto.count({ where: { categoriaId: id } });
+    if (prodsCount > 0) {
+      return { ok: false, error: `No se puede eliminar porque tiene ${prodsCount} producto(s) asignado(s). Cambia su categoría primero.` };
+    }
+    await db.categoria.delete({ where: { id } });
     revalidatePath("/configuracion/catalogos");
     return { ok: true };
   } catch (e) {
@@ -206,6 +237,20 @@ export async function actualizarColor(id: number, input: unknown): Promise<Actio
   }
 }
 
+export async function eliminarColor(id: number): Promise<ActionResult> {
+  try {
+    const variantesCount = await db.variante.count({ where: { colorId: id } });
+    if (variantesCount > 0) {
+      return { ok: false, error: `No se puede eliminar el color porque existen ${variantesCount} variante(s) de productos creadas con este color.` };
+    }
+    await db.color.delete({ where: { id } });
+    revalidatePath("/configuracion/catalogos");
+    return { ok: true };
+  } catch (e) {
+    return { ok: false as const, error: errorDesconocido(e) };
+  }
+}
+
 // ─────────────────────── GRUPOS DE TALLA ─────────────────────
 
 export async function listarGruposTalla() {
@@ -231,6 +276,40 @@ export async function guardarGrupoTalla(input: unknown): Promise<ActionResult> {
   }
 }
 
+export async function actualizarGrupoTalla(id: number, nombreInput: string): Promise<ActionResult> {
+  try {
+    const nombre = nombreSchema.parse(nombreInput);
+    await db.grupoTalla.update({ where: { id }, data: { nombre } });
+    revalidatePath("/configuracion/catalogos");
+    return { ok: true };
+  } catch (e) {
+    return { ok: false as const, error: errorDesconocido(e) };
+  }
+}
+
+export async function eliminarGrupoTalla(id: number): Promise<ActionResult> {
+  try {
+    // Verificar si hay variantes que usen las tallas de este grupo
+    const tallasGrupo = await db.talla.findMany({ where: { grupoId: id }, select: { id: true } });
+    const tallaIds = tallasGrupo.map((t) => t.id);
+    if (tallaIds.length > 0) {
+      const variantesConTalla = await db.variante.count({ where: { tallaId: { in: tallaIds } } });
+      if (variantesConTalla > 0) {
+        return { ok: false, error: `No se puede eliminar el grupo porque existen ${variantesConTalla} variante(s) de productos usando sus tallas.` };
+      }
+    }
+
+    await db.$transaction(async (tx) => {
+      await tx.talla.deleteMany({ where: { grupoId: id } });
+      await tx.grupoTalla.delete({ where: { id } });
+    });
+    revalidatePath("/configuracion/catalogos");
+    return { ok: true };
+  } catch (e) {
+    return { ok: false as const, error: errorDesconocido(e) };
+  }
+}
+
 export async function agregarTallaAGrupo(grupoId: number, valor: string): Promise<ActionResult> {
   try {
     const { valor: v } = tallaUnicaSafe(valor);
@@ -240,6 +319,20 @@ export async function agregarTallaAGrupo(grupoId: number, valor: string): Promis
     });
     const maxOrden = Math.max(-1, ...grupo.tallas.map((t) => t.orden));
     await db.talla.create({ data: { grupoId, valor: v, orden: maxOrden + 1 } });
+    revalidatePath("/configuracion/catalogos");
+    return { ok: true };
+  } catch (e) {
+    return { ok: false as const, error: errorDesconocido(e) };
+  }
+}
+
+export async function eliminarTalla(tallaId: number): Promise<ActionResult> {
+  try {
+    const variantesCount = await db.variante.count({ where: { tallaId } });
+    if (variantesCount > 0) {
+      return { ok: false, error: `No se puede eliminar la talla porque hay ${variantesCount} variante(s) de productos creadas con esta talla.` };
+    }
+    await db.talla.delete({ where: { id: tallaId } });
     revalidatePath("/configuracion/catalogos");
     return { ok: true };
   } catch (e) {
