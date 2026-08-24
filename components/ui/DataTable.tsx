@@ -112,9 +112,9 @@ export default function DataTable<T extends Record<string, unknown>>({
 
       <div className="overflow-hidden rounded-xl border border-slate-200/70 bg-white shadow-card">
         {/* Toolbar */}
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 px-4 py-3">
-          <div className="flex flex-wrap items-center gap-2">
-            <div className="relative">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 px-4 py-3">
+          <div className="flex flex-1 flex-wrap items-center gap-2">
+            <div className="relative w-full sm:w-64">
               <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
               <Input
                 type="search"
@@ -124,13 +124,13 @@ export default function DataTable<T extends Record<string, unknown>>({
                   setSearch(e.target.value);
                   setPage(1);
                 }}
-                className="h-9 w-56 pl-9"
+                className="h-9 w-full pl-9"
               />
             </div>
             {filters}
           </div>
-          <div className="flex items-center gap-2">
-            <span className="hidden text-xs text-slate-400 sm:block">Filas</span>
+          <div className="flex items-center justify-end gap-2 self-end sm:self-auto">
+            <span className="text-xs text-slate-400">Filas</span>
             <Select
               value={String(pageSize)}
               onValueChange={(v) => {

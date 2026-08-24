@@ -211,6 +211,15 @@ export default function Sidebar({ mobileOpen, onClose }: { mobileOpen: boolean; 
               ) : (
                 <button
                   type="button"
+                  onClick={(e) => {
+                    if (item.sub) {
+                      if (hovered?.item.label === item.label) {
+                        setHovered(null);
+                      } else {
+                        openFlyout(item, e.currentTarget.closest('li'));
+                      }
+                    }
+                  }}
                   className="relative mx-auto flex w-full cursor-pointer flex-col items-center gap-1.5 rounded-xl py-2 outline-none focus-visible:ring-2 focus-visible:ring-brand-500/60"
                 >
                   {content}
@@ -221,39 +230,48 @@ export default function Sidebar({ mobileOpen, onClose }: { mobileOpen: boolean; 
         })}
       </nav>
 
-      {/* Submenú flotante */}
+      {/* Submenú flotante adaptado a desktop, tablet y móvil */}
       {hovered?.item.sub && (
         <div
-          className="fixed left-[76px] z-[1600] hidden w-60 animate-slide-left lg:block"
-          style={{ top: hovered.top }}
+          className="fixed left-[76px] z-[1600] w-64 animate-slide-left block"
+          style={{ top: Math.max(16, Math.min(hovered.top, typeof window !== 'undefined' ? window.innerHeight - 340 : hovered.top)) }}
           onMouseEnter={() => {
             if (hideTimer.current) clearTimeout(hideTimer.current);
           }}
           onMouseLeave={scheduleClose}
         >
-          <div className="overflow-hidden rounded-xl border border-slate-100 bg-white p-1.5 shadow-menu">
-            <div className="px-3 pb-1.5 pt-2 text-[11px] font-bold uppercase tracking-wider text-slate-400">
-              {hovered.item.label}
+          <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white p-2 shadow-2xl">
+            <div className="px-3 pb-1.5 pt-1.5 text-[11px] font-black uppercase tracking-wider text-slate-500 border-b border-slate-100 mb-1 flex items-center justify-between">
+              <span>{hovered.item.label}</span>
+              <button
+                type="button"
+                onClick={() => setHovered(null)}
+                className="lg:hidden text-slate-400 hover:text-slate-700 p-1 text-xs font-bold"
+              >
+                ✕
+              </button>
             </div>
-            {hovered.item.sub.map((subItem) => {
-              const active = bestMatch === subItem.href;
-              return (
-                <Link
-                  key={subItem.href}
-                  href={subItem.href}
-                  onClick={() => {
-                    setHovered(null);
-                    onClose();
-                  }}
-                  className={cn(
-                    'block rounded-lg px-3 py-2 text-[13px] font-medium transition-colors',
-                    active ? 'bg-brand-50 text-brand-700' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
-                  )}
-                >
-                  {subItem.label}
-                </Link>
-              );
-            })}
+            <div className="max-h-[70vh] overflow-y-auto space-y-0.5">
+              {hovered.item.sub.map((subItem) => {
+                const active = bestMatch === subItem.href;
+                return (
+                  <Link
+                    key={subItem.href}
+                    href={subItem.href}
+                    onClick={() => {
+                      setHovered(null);
+                      onClose();
+                    }}
+                    className={cn(
+                      'block rounded-lg px-3 py-2 text-[13px] font-medium transition-colors',
+                      active ? 'bg-brand-50 text-brand-700 font-bold' : 'text-slate-700 hover:bg-slate-100 hover:text-slate-900'
+                    )}
+                  >
+                    {subItem.label}
+                  </Link>
+                );
+              })}
+            </div>
           </div>
         </div>
       )}
