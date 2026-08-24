@@ -97,9 +97,12 @@
 ---
 
 ## ⏭️ Siguiente Paso: Fase 11 — Producción / Ensamble de Prendas y Ventas Online
-**Prioridad Inmediata**:
-1. **Producción (`/produccion`)**: Órdenes de confección/corte, consumo de insumos/telas y costeo de producto terminado.
-2. **Ventas Online / E-commerce (`/ventas-online`, `/tienda`)**: Integración de catálogo para tienda web y sincronización de stock omnicanal.
+**Módulos Operativos de Venta Mostrador (Completados)**:
+1. **Lector de Código de Barras Móvil con Cámara Web/Celular (`/ventas/nueva`)**: Escaneo continuo por cámara de smartphone/tablet con feedback sonoro (Web Audio Beep) y vibración, más soporte nativo de pistolas lectoras USB/Bluetooth.
+2. **Modal de Cobro Express con Atajos de Billetes y Cambio (`/ventas/nueva`)**: Atajos de denominaciones colombianas ($10k, $20k, $50k, $100k, $200k, Exacto), cálculo de vueltas en tiempo real y soporte de pagos mixtos (Efectivo, Transferencia Nequi/Bancolombia, Tarjeta, Crédito).
+3. **Generador e Impresión de Etiquetas con Códigos de Barras (`/productos`)**: Renderizado de códigos de barras Code128 para rollos adhesivos e impresoras térmicas (50x30mm, 40x25mm, 80mm).
+4. **Impresión de Tirilla Térmica 80mm Directa**: Ticket con datos fiscales de la tienda (NIT, dirección, ciudad, teléfono, resolución y pie de ticket).
+5. **Creación Express de Cliente**: Modal integrado en el flujo de cobro para registrar clientes sin perder los productos del carrito.
 
 ---
 
