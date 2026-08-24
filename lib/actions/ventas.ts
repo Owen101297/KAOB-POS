@@ -155,22 +155,43 @@ export async function buscarVariantePorSku(sku: string, bodegaId?: number) {
 }
 
 export async function buscarProductosPOS(
-  q: string,
+  q?: string,
   bodegaId?: number,
+  categoriaIdOrSoloActivos?: number | boolean,
   soloActivos = true
 ) {
-  if (!q || q.length < 2) return [];
+  const query = q?.trim();
+  let categoriaId: number | undefined;
+  let soloAct = soloActivos;
+
+  if (typeof categoriaIdOrSoloActivos === "boolean") {
+    soloAct = categoriaIdOrSoloActivos;
+  } else if (typeof categoriaIdOrSoloActivos === "number") {
+    categoriaId = categoriaIdOrSoloActivos;
+  }
+
+  const where: any = {
+    activo: soloAct,
+  };
+
+  if (categoriaId) {
+    where.categoriaId = categoriaId;
+  }
+
+  if (query && query.length >= 1) {
+    where.OR = [
+      { referencia: { contains: query, mode: "insensitive" } },
+      { nombre: { contains: query, mode: "insensitive" } },
+      { variantes: { some: { sku: { contains: query, mode: "insensitive" }, activa: true } } },
+    ];
+  }
+
   const res = await db.producto.findMany({
-    where: {
-      activo: soloActivos,
-      OR: [
-        { referencia: { contains: q, mode: "insensitive" } },
-        { nombre: { contains: q, mode: "insensitive" } },
-        { variantes: { some: { sku: { contains: q, mode: "insensitive" }, activa: true } } },
-      ],
-    },
-    take: 15,
+    where,
+    take: 36,
+    orderBy: { updatedAt: "desc" },
     include: {
+      categoria: true,
       variantes: {
         where: { activa: true },
         include: {
