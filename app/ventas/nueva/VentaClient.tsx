@@ -530,13 +530,8 @@ export default function VentaClient() {
     <div className="h-[calc(100vh-4rem)] flex flex-col bg-slate-100 text-slate-900 select-none overflow-hidden">
       {/* 1. Header Cockpit del POS */}
       <header className="h-14 px-4 bg-white border-b border-slate-200 flex items-center justify-between gap-4 shrink-0 shadow-sm">
-        {/* Lado Izquierdo: Marca + Tipo de Venta Switcher */}
+        {/* Lado Izquierdo: Tipo de Venta Switcher */}
         <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 px-3 py-1.5 rounded-xl text-white font-black text-xs tracking-wider shadow-md shadow-blue-500/20">
-            <Zap className="h-3.5 w-3.5 fill-current text-yellow-300" />
-            <span>POS PRO</span>
-          </div>
-
           {/* Selector de Tipo de Documento */}
           <div className="flex items-center p-1 bg-slate-100 rounded-xl border border-slate-200 text-xs">
             {(["VENTA", "REMISION", "COTIZACION"] as const).map((t) => (
