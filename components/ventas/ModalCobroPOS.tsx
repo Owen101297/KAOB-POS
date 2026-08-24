@@ -439,13 +439,31 @@ export default function ModalCobroPOS({
           {/* 4. VISTA CRÉDITO CLIENTE */}
           {metodoPrincipal === "CREDITO" && (
             <div className="p-5 max-w-xl mx-auto bg-white rounded-xl border border-amber-200 space-y-3 shadow-2xs">
-              <div className="flex items-center justify-between border-b border-slate-100 pb-2">
-                <span className="text-xs font-bold text-slate-700">Cupo de Crédito Disponible:</span>
-                <span className="text-sm font-black text-amber-700">{formatoCOP(cupoCredito)}</span>
-              </div>
-              <p className="text-xs text-slate-600 font-medium">
-                Esta compra se registrará como saldo pendiente en la cartera del cliente con fecha de vencimiento.
-              </p>
+              {!clienteNombre ? (
+                <div className="p-3 bg-amber-50 rounded-lg border border-amber-300 text-amber-900 text-xs">
+                  <p className="font-bold flex items-center gap-1.5">
+                    <AlertCircle className="h-4 w-4 text-amber-600 shrink-0" />
+                    Se requiere un cliente para venta a crédito
+                  </p>
+                  <p className="mt-1 text-[11px] font-medium">
+                    Debes seleccionar o buscar un cliente en la pantalla de ventas antes de poder fiar o cargar esta compra a crédito.
+                  </p>
+                </div>
+              ) : (
+                <>
+                  <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+                    <span className="text-xs font-bold text-slate-700">Cliente Asignado:</span>
+                    <span className="text-xs font-black text-slate-900">{clienteNombre}</span>
+                  </div>
+                  <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+                    <span className="text-xs font-bold text-slate-700">Cupo de Crédito:</span>
+                    <span className="text-sm font-black text-amber-700">{formatoCOP(cupoCredito)}</span>
+                  </div>
+                  <p className="text-xs text-slate-600 font-medium">
+                    Esta compra se registrará automáticamente en el módulo de Cartera y Créditos del cliente con plazo a 30 días.
+                  </p>
+                </>
+              )}
             </div>
           )}
 
@@ -522,7 +540,8 @@ export default function ModalCobroPOS({
             disabled={
               cargando ||
               (metodoPrincipal === "EFECTIVO" && !esEfectivoCompleto) ||
-              (metodoPrincipal === "MIXTO" && !esMixtoCompleto)
+              (metodoPrincipal === "MIXTO" && !esMixtoCompleto) ||
+              (metodoPrincipal === "CREDITO" && !clienteNombre)
             }
             className="h-11 px-8 bg-emerald-600 hover:bg-emerald-700 text-white font-black text-sm shadow-lg shadow-emerald-600/20 flex items-center gap-2"
           >

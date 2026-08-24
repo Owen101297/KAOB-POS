@@ -257,6 +257,14 @@ export async function registrarVenta(input: unknown): Promise<ActionResult<{ id:
       }
     }
 
+    const tieneCredito = data.pagos.some((p) => p.metodo === "CREDITO");
+    if (tieneCredito && !data.clienteId) {
+      return {
+        ok: false,
+        error: "Para realizar una venta a crédito debes seleccionar o registrar un cliente.",
+      };
+    }
+
     const consecutivo = await obtenerConsecutivoVenta(data.tipo);
     const codigo = `${data.tipo === "VENTA" ? "V" : data.tipo === "REMISION" ? "R" : "C"}-${String(consecutivo).padStart(4, "0")}`;
 
@@ -267,7 +275,7 @@ export async function registrarVenta(input: unknown): Promise<ActionResult<{ id:
     let estado: "COMPLETADA" | "PENDIENTE" = "COMPLETADA";
     if (data.tipo === "COTIZACION") estado = "PENDIENTE";
     else if (data.tipo === "REMISION") estado = "PENDIENTE";
-    else if (totalPagos < total) estado = "PENDIENTE";
+    else if (totalPagos < total || tieneCredito) estado = "PENDIENTE";
 
     const venta = await db.$transaction(async (tx) => {
       const v = await tx.venta.create({
@@ -352,12 +360,44 @@ export async function registrarVenta(input: unknown): Promise<ActionResult<{ id:
         }
       }
 
+      // Si la venta incluye crédito, registrar automáticamente en cartera
+      if (tieneCredito && data.clienteId) {
+        const montoCredito = data.pagos
+          .filter((p) => p.metodo === "CREDITO")
+          .reduce((a, p) => a + p.monto, 0);
+
+        const ultimoCredito = await tx.creditoCliente.findFirst({
+          orderBy: { consecutivo: "desc" },
+          select: { consecutivo: true },
+        });
+        const consecutivoCredito = (ultimoCredito?.consecutivo ?? 0) + 1;
+        const dias = 30;
+        const fechaVencimiento = new Date();
+        fechaVencimiento.setDate(fechaVencimiento.getDate() + dias);
+
+        await tx.creditoCliente.create({
+          data: {
+            consecutivo: consecutivoCredito,
+            clienteId: data.clienteId,
+            ventaId: v.id,
+            montoTotal: montoCredito,
+            saldoPendiente: montoCredito,
+            diasCredito: dias,
+            fechaVencimiento,
+            estado: "PENDIENTE",
+            nota: `Crédito originado en Venta ${codigo}`,
+          },
+        });
+      }
+
       return v;
     });
 
     revalidatePath("/ventas/nueva");
     revalidatePath("/ventas");
     revalidatePath("/remisiones");
+    revalidatePath("/creditos");
+    revalidatePath("/clientes");
     revalidatePath("/cotizaciones");
     revalidatePath("/inventario");
     revalidatePath("/movimientos");

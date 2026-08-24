@@ -210,7 +210,7 @@ export const ventaItemSchema = z.object({
 });
 
 export const pagoVentaSchema = z.object({
-  metodo: z.enum(["EFECTIVO", "TRANSFERENCIA", "TARJETA", "PUNTOS", "OTRO"]),
+  metodo: z.enum(["EFECTIVO", "TRANSFERENCIA", "TARJETA", "PUNTOS", "OTRO", "CREDITO"]),
   monto: z.coerce.number().int().positive("Monto > 0"),
   referencia: z.string().trim().max(120).optional().or(z.literal("")),
 });
@@ -226,7 +226,9 @@ export const registrarVentaSchema = z.object({
   descuento: z.coerce.number().int().min(0).default(0),
   nota: z.string().trim().max(300).optional().or(z.literal("")),
 }).refine((data) => {
-  if (data.tipo === "COTIZACION") return true;
+  if (data.tipo === "COTIZACION" || data.tipo === "REMISION") return true;
+  const tieneCredito = data.pagos.some((p) => p.metodo === "CREDITO");
+  if (tieneCredito) return true;
   const totalPagos = data.pagos.reduce((a, p) => a + p.monto, 0);
   const totalVenta = data.items.reduce((a, i) => a + i.cantidad * i.precioUnitario - i.descuento, 0) - data.descuento;
   return totalPagos >= totalVenta;
