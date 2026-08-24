@@ -4,7 +4,6 @@ import { db } from "@/lib/db";
 import { revalidatePath } from "next/cache";
 import { errorDesconocido, type ActionResult } from "@/lib/validations";
 import { generarSku } from "@/lib/constants";
-import { generarExportacion } from "@/lib/excel/exportar";
 import { parsearExcel } from "@/lib/excel/importar";
 import type { FilaParseada } from "@/lib/excel/importar";
 import type { Prisma } from "@prisma/client";
@@ -25,7 +24,8 @@ export interface VistaPreviaImportacion {
 /**
  * Importación en dos fases: sin `ejecutar` devuelve solo la vista previa
  * (validación fila por fila); con `ejecutar=true` aplica todo de forma
- * atómica. Nunca borra registros: solo crea o actualiza.
+ * atómica. Nunca duplica registros: busca por coincidencia insensible a
+ * mayúsculas/minúsculas y espacios en blanco.
  */
 export async function importarExcel(input: {
   base64: string;
@@ -55,11 +55,15 @@ export async function importarExcel(input: {
       return { ok: false, error: `El archivo tiene ${errores.length} error(es). Corrígelos antes de importar.` };
     }
 
-    const resumen = await db.$transaction((tx) => aplicarFilas(tx, filas, input.modoStock));
+    const resumen = await db.$transaction(
+      async (tx) => aplicarFilas(tx, filas, input.modoStock),
+      { timeout: 60000 }
+    );
 
     revalidatePath("/inventario");
     revalidatePath("/productos");
     revalidatePath("/movimientos");
+    revalidatePath("/ventas/nueva");
     return { ok: true, data: { ...resumen, filasAplicadas: filas.length } };
   } catch (e) {
     if (e instanceof Error && e.message.includes("columnas")) {
@@ -76,7 +80,7 @@ async function aplicarFilas(
   filas: FilaParseada[],
   modo: "sumar" | "reemplazar"
 ): Promise<Omit<ResumenImportacion, "filasAplicadas">> {
-  // Caches para no consultar lo mismo mil veces
+  // Caches para no consultar repetidamente
   const bodegasCache = new Map<string, number>();
   const marcasCache = new Map<string, number>();
   const categoriasCache = new Map<string, number>();
@@ -85,44 +89,57 @@ async function aplicarFilas(
   const tallasCache = new Map<string, number>(); // grupoId|valor
   const productosCache = new Map<string, { id: number; referencia: string; creado: boolean }>();
   const skusExistentes = new Set(
-    (await tx.variante.findMany({ select: { sku: true } })).map((v) => v.sku)
+    (await tx.variante.findMany({ select: { sku: true } })).map((v) => v.sku.toUpperCase())
   );
 
   let productosCreados = 0;
   let productosActualizados = 0;
   let variantesCreadas = 0;
 
-  async function idBodega(nombre: string): Promise<number> {
+  async function idBodega(nombreRaw: string): Promise<number> {
+    const nombre = nombreRaw.trim();
     const clave = nombre.toUpperCase();
     const hit = bodegasCache.get(clave);
     if (hit) return hit;
-    const existente = await tx.bodega.findFirst({ where: { nombre: { equals: nombre, mode: "insensitive" } } });
-    const id =
-      existente?.id ??
-      (
-        await tx.bodega.create({
-          data: { nombre, esPrincipal: !(await tx.bodega.findFirst({ where: { esPrincipal: true } })) },
-        })
-      ).id;
+
+    const existente = await tx.bodega.findFirst({
+      where: { nombre: { equals: nombre, mode: "insensitive" } },
+    });
+    let id: number;
+    if (existente) {
+      id = existente.id;
+    } else {
+      const hayPrincipal = await tx.bodega.findFirst({ where: { esPrincipal: true } });
+      const creada = await tx.bodega.create({
+        data: { nombre, esPrincipal: !hayPrincipal },
+      });
+      id = creada.id;
+    }
     bodegasCache.set(clave, id);
     return id;
   }
 
-  async function idMarca(nombre: string): Promise<number | null> {
+  async function idMarca(nombreRaw: string): Promise<number | null> {
+    const nombre = (nombreRaw || "").trim();
     if (!nombre) return null;
     const clave = nombre.toUpperCase();
     const hit = marcasCache.get(clave);
     if (hit) return hit;
-    const existente = await tx.marca.findFirst({ where: { nombre: { equals: nombre, mode: "insensitive" } } });
+
+    const existente = await tx.marca.findFirst({
+      where: { nombre: { equals: nombre, mode: "insensitive" } },
+    });
     const id = existente?.id ?? (await tx.marca.create({ data: { nombre } })).id;
     marcasCache.set(clave, id);
     return id;
   }
 
-  async function idCategoria(nombre: string): Promise<number> {
+  async function idCategoria(nombreRaw: string): Promise<number> {
+    const nombre = (nombreRaw || "").trim();
     const clave = nombre.toUpperCase();
     const hit = categoriasCache.get(clave);
     if (hit) return hit;
+
     const existente = await tx.categoria.findFirst({
       where: { nombre: { equals: nombre, mode: "insensitive" } },
     });
@@ -131,10 +148,12 @@ async function aplicarFilas(
     return id;
   }
 
-  async function idColor(nombre: string): Promise<number> {
+  async function idColor(nombreRaw: string): Promise<number> {
+    const nombre = (nombreRaw || "").trim();
     const clave = nombre.toUpperCase();
     const hit = coloresCache.get(clave);
     if (hit) return hit;
+
     const existente = await tx.color.findFirst({
       where: { nombre: { equals: nombre, mode: "insensitive" } },
     });
@@ -143,22 +162,28 @@ async function aplicarFilas(
     return id;
   }
 
-  async function idTalla(grupoNombre: string, valor: string): Promise<number> {
-    const hitGrupo = gruposCache.get(grupoNombre.toUpperCase());
-    const grupoId =
-      hitGrupo ??
-      (
-        await tx.grupoTalla.upsert({
-          where: { nombre: grupoNombre },
-          update: {},
-          create: { nombre: grupoNombre },
-        })
-      ).id;
-    gruposCache.set(grupoNombre.toUpperCase(), grupoId);
+  async function idTalla(grupoNombreRaw: string, valorRaw: string): Promise<number> {
+    const grupoNombre = (grupoNombreRaw || "").trim();
+    const valor = (valorRaw || "").trim();
+    const claveGrupo = grupoNombre.toUpperCase();
 
-    const clave = `${grupoId}|${valor.toUpperCase()}`;
-    const hit = tallasCache.get(clave);
-    if (hit) return hit;
+    let grupoId = gruposCache.get(claveGrupo);
+    if (!grupoId) {
+      const grupoExistente = await tx.grupoTalla.findFirst({
+        where: { nombre: { equals: grupoNombre, mode: "insensitive" } },
+      });
+      if (grupoExistente) {
+        grupoId = grupoExistente.id;
+      } else {
+        const nuevoGrupo = await tx.grupoTalla.create({ data: { nombre: grupoNombre } });
+        grupoId = nuevoGrupo.id;
+      }
+      gruposCache.set(claveGrupo, grupoId);
+    }
+
+    const claveTalla = `${grupoId}|${valor.toUpperCase()}`;
+    const hitTalla = tallasCache.get(claveTalla);
+    if (hitTalla) return hitTalla;
 
     let talla = await tx.talla.findFirst({
       where: { grupoId, valor: { equals: valor, mode: "insensitive" } },
@@ -169,54 +194,95 @@ async function aplicarFilas(
         data: { grupoId, valor, orden: (maxOrden._max.orden ?? -1) + 1 },
       });
     }
-    tallasCache.set(clave, talla.id);
+    tallasCache.set(claveTalla, talla.id);
     return talla.id;
   }
 
   async function productoDe(fila: FilaParseada) {
-    const clave = fila.referencia;
-    const hit = productosCache.get(clave);
+    const refLimpia = fila.referencia.trim().toUpperCase();
+    const nomLimpio = fila.nombre.trim();
+    const claveCache = refLimpia;
+    const hit = productosCache.get(claveCache);
     if (hit) return hit;
 
+    const categoriaId = await idCategoria(fila.categoria);
+    const marcaId = await idMarca(fila.marca);
+
     const datosProducto = {
-      nombre: fila.nombre,
+      nombre: nomLimpio,
       descripcion: null as string | null,
-      categoriaId: await idCategoria(fila.categoria),
-      marcaId: await idMarca(fila.marca),
+      categoriaId,
+      marcaId,
       genero: (fila.genero || null) as Genero | null,
-      material: fila.material || null,
+      material: fila.material?.trim() || null,
       calidad: (fila.calidad || null) as Calidad | null,
-      temporada: fila.temporada || null,
+      temporada: fila.temporada?.trim() || null,
       costo: fila.costo,
       precioBase: fila.precio,
     };
 
-    const existente = await tx.producto.findUnique({ where: { referencia: fila.referencia } });
+    // Búsqueda insensible a mayúsculas y minúsculas por referencia O por nombre exacto
+    const existente = await tx.producto.findFirst({
+      where: {
+        OR: [
+          { referencia: { equals: refLimpia, mode: "insensitive" } },
+          { nombre: { equals: nomLimpio, mode: "insensitive" } },
+        ],
+      },
+    });
+
     if (existente) {
-      await tx.producto.update({ where: { id: existente.id }, data: datosProducto });
+      await tx.producto.update({
+        where: { id: existente.id },
+        data: datosProducto,
+      });
       productosActualizados++;
       const reg = { id: existente.id, referencia: existente.referencia, creado: false };
-      productosCache.set(clave, reg);
+      productosCache.set(claveCache, reg);
       return reg;
     }
+
     const creado = await tx.producto.create({
-      data: { referencia: fila.referencia, ...datosProducto },
+      data: { referencia: refLimpia, ...datosProducto },
     });
     productosCreados++;
     const reg = { id: creado.id, referencia: creado.referencia, creado: true };
-    productosCache.set(clave, reg);
+    productosCache.set(claveCache, reg);
     return reg;
   }
 
-  async function varianteDe(productoId: number, referencia: string, colorId: number, colorNombre: string, tallaId: number, tallaValor: string) {
-    const existente = await tx.variante.findUnique({
+  async function varianteDe(
+    productoId: number,
+    referencia: string,
+    colorId: number,
+    colorNombre: string,
+    tallaId: number,
+    tallaValor: string
+  ) {
+    // 1. Buscar por IDs exactos
+    let existente = await tx.variante.findUnique({
       where: { productoId_colorId_tallaId: { productoId, colorId, tallaId } },
     });
+
+    // 2. Si no se encuentra, buscar variantes del producto con igual nombre de color y talla (tolerante a IDs distintos)
+    if (!existente) {
+      existente = await tx.variante.findFirst({
+        where: {
+          productoId,
+          color: { nombre: { equals: colorNombre.trim(), mode: "insensitive" } },
+          talla: { valor: { equals: tallaValor.trim(), mode: "insensitive" } },
+        },
+      });
+    }
+
     if (existente) return { id: existente.id, creada: false };
 
-    let sku = generarSku(referencia, colorNombre, tallaValor);
+    // 3. Crear variante única si no existe
+    let sku = generarSku(referencia, colorNombre, tallaValor).toUpperCase();
     let n = 2;
-    while (skusExistentes.has(sku)) sku = `${generarSku(referencia, colorNombre, tallaValor)}-${n++}`;
+    while (skusExistentes.has(sku)) {
+      sku = `${generarSku(referencia, colorNombre, tallaValor).toUpperCase()}-${n++}`;
+    }
     skusExistentes.add(sku);
 
     const creado = await tx.variante.create({
@@ -232,6 +298,7 @@ async function aplicarFilas(
       idColor(fila.color),
       idTalla(fila.grupoTalla, fila.talla),
     ]);
+
     const producto = await productoDe(fila);
     const variante = await varianteDe(
       producto.id,
@@ -242,17 +309,26 @@ async function aplicarFilas(
       fila.talla
     );
 
-    const stock = await tx.stockBodega.findUnique({
+    const stockActual = await tx.stockBodega.findUnique({
       where: { varianteId_bodegaId: { varianteId: variante.id, bodegaId } },
     });
 
-    const cantidadNueva = modo === "reemplazar" ? fila.stock : (stock?.cantidad ?? 0) + fila.stock;
-    const delta = cantidadNueva - (stock?.cantidad ?? 0);
+    const cantidadBase = stockActual?.cantidad ?? 0;
+    const cantidadNueva = modo === "sumar" ? cantidadBase + fila.stock : fila.stock;
+    const delta = cantidadNueva - cantidadBase;
 
     await tx.stockBodega.upsert({
       where: { varianteId_bodegaId: { varianteId: variante.id, bodegaId } },
-      create: { varianteId: variante.id, bodegaId, cantidad: cantidadNueva, minimo: fila.minimo },
-      update: { cantidad: cantidadNueva, minimo: fila.minimo },
+      create: {
+        varianteId: variante.id,
+        bodegaId,
+        cantidad: cantidadNueva,
+        minimo: fila.minimo,
+      },
+      update: {
+        cantidad: cantidadNueva,
+        minimo: fila.minimo,
+      },
     });
 
     if (delta !== 0) {
@@ -263,7 +339,7 @@ async function aplicarFilas(
           cantidad: Math.abs(delta),
           bodegaDestinoId: delta > 0 ? bodegaId : null,
           bodegaOrigenId: delta < 0 ? bodegaId : null,
-          nota: "Importación Excel",
+          nota: `Importación Excel (${modo === "sumar" ? "Sumar stock" : "Reemplazar stock"})`,
         },
       });
     }
