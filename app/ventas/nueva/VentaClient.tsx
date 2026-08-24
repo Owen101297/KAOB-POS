@@ -182,11 +182,29 @@ export default function VentaClient() {
   const [ventaParaImprimir, setVentaParaImprimir] = useState<VentaImpresionData | null>(null);
   const [abrirTicketModal, setAbrirTicketModal] = useState(false);
 
+  // Buscador de Clientes
+  const [busquedaCliente, setBusquedaCliente] = useState("");
+  const [mostrarDropdownCliente, setMostrarDropdownCliente] = useState(false);
+
   // Notificaciones
   const [error, setError] = useState<string | null>(null);
   const [exito, setExito] = useState<string | null>(null);
 
   const inputBusquedaRef = useRef<HTMLInputElement>(null);
+
+  // Clientes filtrados por nombre, documento o teléfono
+  const clientesFiltrados = useMemo(() => {
+    if (!busquedaCliente.trim()) return [];
+    const q = busquedaCliente.toLowerCase().trim();
+    return clientes
+      .filter(
+        (c) =>
+          c.nombre.toLowerCase().includes(q) ||
+          (c.documento && c.documento.toLowerCase().includes(q)) ||
+          (c.telefono && c.telefono.includes(q))
+      )
+      .slice(0, 8);
+  }, [clientes, busquedaCliente]);
 
   // Totales Calculados
   const subtotal = useMemo(
@@ -741,54 +759,142 @@ export default function VentaClient() {
               )}
             </div>
 
-            {/* Barra de Selección de Cliente Rápida */}
-            <div className="flex items-center gap-2">
-              <div className="flex-1">
-                <Select
-                  value={cliente ? String(cliente.id) : ""}
-                  onValueChange={(v) => {
-                    if (!v) {
-                      setCliente(null);
-                      return;
-                    }
-                    const cli = clientes.find((c) => c.id === Number(v));
-                    if (cli) setCliente(cli);
+            {/* Barra de Selección / Búsqueda de Cliente Rápida */}
+            {cliente ? (
+              <div className="flex items-center justify-between p-2.5 rounded-xl bg-blue-50 border border-blue-200 shadow-2xs">
+                <div className="flex items-center gap-2 min-w-0">
+                  <div className="h-8 w-8 rounded-lg bg-blue-600 text-white flex items-center justify-center font-bold text-xs shrink-0 shadow-2xs">
+                    <UserCheck className="h-4 w-4" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-xs font-black text-slate-900 truncate">{cliente.nombre}</p>
+                    <p className="text-[10.5px] text-slate-600 font-medium">
+                      {cliente.documento ? `Doc: ${cliente.documento}` : "Sin Documento"}
+                      {cliente.cupoCredito ? ` • Cupo: ${formatoCOP(cliente.cupoCredito)}` : ""}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setCliente(null);
+                    setBusquedaCliente("");
                   }}
+                  className="text-xs font-bold text-slate-400 hover:text-red-600 p-1.5 rounded-lg hover:bg-white transition-colors"
+                  title="Volver a Cliente General (Mostrador)"
                 >
-                  <SelectTrigger className="h-9 bg-white border-slate-300 text-xs text-slate-900">
-                    <UserCheck className="h-3.5 w-3.5 mr-1.5 text-blue-600" />
-                    <SelectValue placeholder="Cliente General (Mostrador)" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-white border-slate-200 text-slate-900">
-                    <SelectItem value="">Cliente General (Sin registrar)</SelectItem>
-                    {clientes.map((c) => (
-                      <SelectItem key={c.id} value={String(c.id)}>
-                        {c.nombre} {c.documento ? `(${c.documento})` : ""}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                  <X className="h-4 w-4" />
+                </button>
               </div>
+            ) : (
+              <div className="relative flex items-center gap-1.5">
+                <div className="relative flex-1">
+                  <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-slate-400" />
+                  <input
+                    type="text"
+                    value={busquedaCliente}
+                    onChange={(e) => {
+                      setBusquedaCliente(e.target.value);
+                      setMostrarDropdownCliente(true);
+                    }}
+                    onFocus={() => setMostrarDropdownCliente(true)}
+                    placeholder="Buscar cliente por Nombre, Cédula o NIT..."
+                    className="w-full h-9 pl-8 pr-7 text-xs font-medium rounded-lg border border-slate-300 bg-white text-slate-900 shadow-2xs focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                  />
+                  {busquedaCliente && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setBusquedaCliente("");
+                        setMostrarDropdownCliente(false);
+                      }}
+                      className="absolute right-2 top-2.5 text-slate-400 hover:text-slate-600"
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  )}
+                </div>
 
-              <Button
-                size="icon"
-                variant="outline"
-                onClick={() => {
-                  setNuevoCliente({
-                    nombre: "",
-                    telefono: "",
-                    documento: "",
-                    tipoDoc: "CC",
-                    cupoCredito: 0,
-                  });
-                  setAbrirClienteModal(true);
-                }}
-                className="h-9 w-9 border-slate-300 bg-white text-blue-600 hover:bg-blue-50 shrink-0"
-                title="Nuevo cliente rápido"
-              >
-                <UserPlus className="h-4 w-4" />
-              </Button>
-            </div>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => {
+                    const esNumero = /^\d+$/.test(busquedaCliente.trim());
+                    setNuevoCliente({
+                      nombre: !esNumero ? busquedaCliente.trim() : "",
+                      telefono: "",
+                      documento: esNumero ? busquedaCliente.trim() : "",
+                      tipoDoc: "CC",
+                      cupoCredito: 0,
+                    });
+                    setAbrirClienteModal(true);
+                  }}
+                  className="h-9 text-xs font-bold border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100 shrink-0 px-2.5 flex items-center gap-1 shadow-2xs"
+                  title="Registrar nuevo cliente"
+                >
+                  <UserPlus className="h-3.5 w-3.5" />
+                  <span>+ Registrar</span>
+                </Button>
+
+                {/* Dropdown flotante de resultados en vivo */}
+                {mostrarDropdownCliente && busquedaCliente.trim().length > 0 && (
+                  <div className="absolute top-10 left-0 right-0 z-50 bg-white rounded-xl border border-slate-200 shadow-xl overflow-hidden max-h-56 overflow-y-auto">
+                    {clientesFiltrados.length > 0 ? (
+                      clientesFiltrados.map((c) => (
+                        <button
+                          key={c.id}
+                          type="button"
+                          onClick={() => {
+                            setCliente(c);
+                            setBusquedaCliente("");
+                            setMostrarDropdownCliente(false);
+                          }}
+                          className="w-full text-left px-3 py-2 text-xs hover:bg-blue-50 transition-colors border-b border-slate-100 flex items-center justify-between"
+                        >
+                          <div>
+                            <p className="font-bold text-slate-900">{c.nombre}</p>
+                            <p className="text-[10px] text-slate-500">
+                              {c.documento ? `CC/NIT: ${c.documento}` : "Sin Documento"}{" "}
+                              {c.telefono ? `• Tel: ${c.telefono}` : ""}
+                            </p>
+                          </div>
+                          {c.cupoCredito ? (
+                            <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">
+                              Cupo: {formatoCOP(c.cupoCredito)}
+                            </span>
+                          ) : null}
+                        </button>
+                      ))
+                    ) : (
+                      <div className="p-3 text-center space-y-1.5">
+                        <p className="text-xs text-slate-500 font-medium">
+                          No se encontró &quot;{busquedaCliente}&quot;
+                        </p>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => {
+                            const esNumero = /^\d+$/.test(busquedaCliente.trim());
+                            setNuevoCliente({
+                              nombre: !esNumero ? busquedaCliente.trim() : "",
+                              telefono: "",
+                              documento: esNumero ? busquedaCliente.trim() : "",
+                              tipoDoc: "CC",
+                              cupoCredito: 0,
+                            });
+                            setAbrirClienteModal(true);
+                            setMostrarDropdownCliente(false);
+                          }}
+                          className="h-7 text-xs font-bold text-blue-700 bg-blue-50 border-blue-200 w-full"
+                        >
+                          <UserPlus className="h-3 w-3 mr-1" /> Registrar como nuevo cliente
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Lista de Artículos en Carrito (Fondo Blanco) */}
