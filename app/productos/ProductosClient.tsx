@@ -5,10 +5,12 @@ import { useRouter } from 'next/navigation';
 import {
   Archive,
   ArchiveRestore,
+  Barcode,
   Package,
   PackagePlus,
   Pencil,
   Plus,
+  Printer,
 } from 'lucide-react';
 import type { ProductoLista } from '@/lib/actions/productos';
 import type { CatalogosCompletos } from '@/lib/actions/catalogos';
@@ -17,6 +19,7 @@ import DataTable from '@/components/ui/DataTable';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { Input } from '@/components/ui/Input';
+import ImpresionEtiquetasModal from '@/components/productos/ImpresionEtiquetasModal';
 import {
   Dialog,
   DialogContent,
@@ -73,8 +76,55 @@ export default function ProductosClient({ productos, catalogos }: Props) {
   const [dialogForm, setDialogForm] = useState(false);
   const [editando, setEditando] = useState<ProductoLista | null>(null);
   const [agregandoA, setAgregandoA] = useState<ProductoLista | null>(null);
+  const [abrirEtiquetas, setAbrirEtiquetas] = useState(false);
+  const [variantesParaEtiquetas, setVariantesParaEtiquetas] = useState<
+    {
+      id: number;
+      sku: string;
+      productoNombre: string;
+      referencia: string;
+      colorNombre: string;
+      tallaValor: string;
+      precio: number;
+    }[]
+  >([]);
 
   const refrescar = () => startTransition(() => router.refresh());
+
+  const abrirImpresionParaProducto = (prod: ProductoLista) => {
+    const vars = prod.variantes.map((v) => ({
+      id: v.id,
+      sku: v.sku,
+      productoNombre: prod.nombre,
+      referencia: prod.referencia,
+      colorNombre: v.color.nombre,
+      tallaValor: v.talla.valor,
+      precio: v.precioOverride ?? prod.precioBase,
+    }));
+    setVariantesParaEtiquetas(vars);
+    setAbrirEtiquetas(true);
+  };
+
+  const abrirImpresionCatalogo = () => {
+    const todas: typeof variantesParaEtiquetas = [];
+    productos
+      .filter((p) => p.activo)
+      .forEach((p) => {
+        p.variantes.forEach((v) => {
+          todas.push({
+            id: v.id,
+            sku: v.sku,
+            productoNombre: p.nombre,
+            referencia: p.referencia,
+            colorNombre: v.color.nombre,
+            tallaValor: v.talla.valor,
+            precio: v.precioOverride ?? p.precioBase,
+          });
+        });
+      });
+    setVariantesParaEtiquetas(todas);
+    setAbrirEtiquetas(true);
+  };
 
   const filas = useMemo<FilaProducto[]>(
     () =>
@@ -160,6 +210,16 @@ export default function ProductosClient({ productos, catalogos }: Props) {
         if (!original) return null;
         return (
           <div className="flex items-center justify-end gap-0.5">
+            <Button
+              size="icon"
+              variant="ghost"
+              aria-label={`Imprimir etiquetas de ${row.nombre}`}
+              title="Imprimir etiquetas de código de barras"
+              onClick={() => abrirImpresionParaProducto(original)}
+              className="text-slate-600 hover:text-blue-600"
+            >
+              <Barcode className="h-4 w-4" />
+            </Button>
             <Button size="icon" variant="ghost" aria-label={`Editar ${row.nombre}`} onClick={() => { setEditando(original); setDialogForm(true); }}>
               <Pencil className="h-4 w-4" />
             </Button>
@@ -191,14 +251,26 @@ export default function ProductosClient({ productos, catalogos }: Props) {
         pageTitle="Productos"
         description="Catálogo de prendas con sus variantes color × talla."
         actions={
-          <Button
-            onClick={() => {
-              setEditando(null);
-              setDialogForm(true);
-            }}
-          >
-            <Plus className="h-4 w-4" /> Nuevo producto
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              onClick={abrirImpresionCatalogo}
+              className="flex items-center gap-1.5 text-xs font-semibold"
+            >
+              <Barcode className="h-4 w-4 text-blue-600" />
+              Imprimir Etiquetas
+            </Button>
+            <Button
+              variant="primary"
+              onClick={() => {
+                setEditando(null);
+                setDialogForm(true);
+              }}
+              className="flex items-center gap-1.5 text-xs font-semibold"
+            >
+              <Plus className="h-4 w-4" /> Nuevo producto
+            </Button>
+          </div>
         }
         filters={
           <Select value={filtroEstado} onValueChange={(v) => setFiltroEstado(v)}>
@@ -266,6 +338,12 @@ export default function ProductosClient({ productos, catalogos }: Props) {
           )}
         </DialogContent>
       </Dialog>
+
+      <ImpresionEtiquetasModal
+        open={abrirEtiquetas}
+        onClose={() => setAbrirEtiquetas(false)}
+        variantes={variantesParaEtiquetas}
+      />
     </div>
   );
 }

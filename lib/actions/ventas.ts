@@ -134,6 +134,26 @@ export async function obtenerVenta(id: number) {
   });
 }
 
+export async function buscarVariantePorSku(sku: string, bodegaId: number) {
+  if (!sku || sku.trim().length === 0) return null;
+  const cleanSku = sku.trim();
+  return db.variante.findFirst({
+    where: {
+      OR: [
+        { sku: { equals: cleanSku, mode: "insensitive" } },
+        { sku: { contains: cleanSku, mode: "insensitive" } },
+      ],
+      activa: true,
+    },
+    include: {
+      color: true,
+      talla: true,
+      producto: true,
+      stocks: { where: { bodegaId } },
+    },
+  });
+}
+
 export async function buscarProductosPOS(
   q: string,
   bodegaId: number,
@@ -146,9 +166,10 @@ export async function buscarProductosPOS(
       OR: [
         { referencia: { contains: q, mode: "insensitive" } },
         { nombre: { contains: q, mode: "insensitive" } },
+        { variantes: { some: { sku: { contains: q, mode: "insensitive" }, activa: true } } },
       ],
     },
-    take: 10,
+    take: 15,
     include: {
       variantes: {
         where: { activa: true },
