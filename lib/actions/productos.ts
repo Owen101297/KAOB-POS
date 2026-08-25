@@ -314,6 +314,97 @@ export async function eliminarProducto(id: number): Promise<ActionResult> {
   }
 }
 
+export async function eliminarMultiplesProductos(
+  ids: number[]
+): Promise<
+  ActionResult<{
+    eliminados: number;
+    omitidos: { id: number; nombre: string; referencia: string; motivo: string }[];
+  }>
+> {
+  try {
+    if (!ids || ids.length === 0) {
+      return { ok: false, error: "No se seleccionó ningún producto para eliminar." };
+    }
+
+    const productos = await db.producto.findMany({
+      where: { id: { in: ids } },
+      include: {
+        variantes: {
+          include: {
+            ventaItems: { select: { id: true } },
+            compraItems: { select: { id: true } },
+          },
+        },
+      },
+    });
+
+    const omitidos: { id: number; nombre: string; referencia: string; motivo: string }[] = [];
+    const paraEliminarIds: number[] = [];
+    const todasVarianteIds: number[] = [];
+
+    for (const p of productos) {
+      const tieneVentas = p.variantes.some((v) => v.ventaItems.length > 0);
+      if (tieneVentas) {
+        omitidos.push({
+          id: p.id,
+          nombre: p.nombre,
+          referencia: p.referencia,
+          motivo: "Tiene ventas registradas en el historial.",
+        });
+        continue;
+      }
+
+      const tieneCompras = p.variantes.some((v) => v.compraItems.length > 0);
+      if (tieneCompras) {
+        omitidos.push({
+          id: p.id,
+          nombre: p.nombre,
+          referencia: p.referencia,
+          motivo: "Tiene compras/documentos soporte asociados.",
+        });
+        continue;
+      }
+
+      paraEliminarIds.push(p.id);
+      todasVarianteIds.push(...p.variantes.map((v) => v.id));
+    }
+
+    if (paraEliminarIds.length > 0) {
+      await db.$transaction(async (tx) => {
+        if (todasVarianteIds.length > 0) {
+          await tx.movimientoInventario.deleteMany({
+            where: { varianteId: { in: todasVarianteIds } },
+          });
+          await tx.stockBodega.deleteMany({
+            where: { varianteId: { in: todasVarianteIds } },
+          });
+          await tx.variante.deleteMany({
+            where: { id: { in: todasVarianteIds } },
+          });
+        }
+        await tx.producto.deleteMany({
+          where: { id: { in: paraEliminarIds } },
+        });
+      });
+    }
+
+    revalidatePath("/productos");
+    revalidatePath("/inventario");
+    revalidatePath("/ventas/nueva");
+
+    return {
+      ok: true,
+      data: {
+        eliminados: paraEliminarIds.length,
+        omitidos,
+      },
+    };
+  } catch (e) {
+    return { ok: false as const, error: errorDesconocido(e) };
+  }
+}
+
 /** Agrega variantes nuevas a un producto existente con stock inicial opcional */
 export async function agregarVariantes(
   input: unknown

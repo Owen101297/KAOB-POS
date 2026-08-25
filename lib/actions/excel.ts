@@ -64,6 +64,7 @@ export async function importarExcel(input: {
     revalidatePath("/productos");
     revalidatePath("/movimientos");
     revalidatePath("/ventas/nueva");
+    revalidatePath("/configuracion/catalogos");
     return { ok: true, data: { ...resumen, filasAplicadas: filas.length } };
   } catch (e) {
     if (e instanceof Error && e.message.includes("columnas")) {

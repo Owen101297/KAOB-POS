@@ -18,7 +18,7 @@ import { cn } from '@/lib/utils';
 
 interface Column<T> {
   key: keyof T | string;
-  label: string;
+  label: React.ReactNode;
   render?: (row: T) => React.ReactNode;
   width?: string;
   align?: 'left' | 'right' | 'center';
@@ -160,6 +160,7 @@ export default function DataTable<T extends Record<string, unknown>>({
                 {columns.map((col) => {
                   const key = String(col.key);
                   const isSorted = sortKey === key;
+                  const isSortable = typeof col.label === 'string' && key !== 'acciones' && key !== 'seleccion';
                   return (
                     <th
                       key={key}
@@ -169,22 +170,31 @@ export default function DataTable<T extends Record<string, unknown>>({
                         col.align === 'right' ? 'text-right' : col.align === 'center' ? 'text-center' : 'text-left'
                       )}
                     >
-                      <button
-                        type="button"
-                        onClick={() => toggleSort(key)}
-                        className="inline-flex items-center gap-1 outline-none transition-colors hover:text-slate-800 focus-visible:ring-2 focus-visible:ring-brand-500/40"
-                      >
-                        {col.label}
-                        {isSorted ? (
-                          sortDir === 'asc' ? (
-                            <ArrowUp className="h-3 w-3 text-brand-600" />
+                      {isSortable ? (
+                        <button
+                          type="button"
+                          onClick={() => toggleSort(key)}
+                          className="inline-flex items-center gap-1 outline-none transition-colors hover:text-slate-800 focus-visible:ring-2 focus-visible:ring-brand-500/40"
+                        >
+                          {col.label}
+                          {isSorted ? (
+                            sortDir === 'asc' ? (
+                              <ArrowUp className="h-3 w-3 text-brand-600" />
+                            ) : (
+                              <ArrowDown className="h-3 w-3 text-brand-600" />
+                            )
                           ) : (
-                            <ArrowDown className="h-3 w-3 text-brand-600" />
-                          )
-                        ) : (
-                          <span className="w-3" />
-                        )}
-                      </button>
+                            <span className="w-3" />
+                          )}
+                        </button>
+                      ) : (
+                        <div className={cn(
+                          'inline-flex items-center',
+                          col.align === 'right' ? 'justify-end' : col.align === 'center' ? 'justify-center' : 'justify-start'
+                        )}>
+                          {col.label}
+                        </div>
+                      )}
                     </th>
                   );
                 })}
