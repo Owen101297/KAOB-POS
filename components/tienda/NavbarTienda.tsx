@@ -2,8 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { Search, ShoppingBag, Menu, X, ArrowLeft, Store, Phone } from 'lucide-react';
-import { Button } from '@/components/ui/Button';
+import { Search, ShoppingBag, Menu, X, ArrowLeft, Sparkles, User, Users, Gem } from 'lucide-react';
 
 interface Props {
   totalItemsEnBolsa: number;
@@ -12,6 +11,8 @@ interface Props {
   onCambiarBusqueda: (val: string) => void;
   categoriaActiva: string | null;
   onSeleccionarCategoria: (cat: string | null) => void;
+  generoActivo: string | null;
+  onSeleccionarGenero: (gen: string | null) => void;
   categorias: { id: number; nombre: string }[];
 }
 
@@ -22,6 +23,8 @@ export default function NavbarTienda({
   onCambiarBusqueda,
   categoriaActiva,
   onSeleccionarCategoria,
+  generoActivo,
+  onSeleccionarGenero,
   categorias,
 }: Props) {
   const [menuMovilAbierto, setMenuMovilAbierto] = useState(false);
@@ -29,9 +32,10 @@ export default function NavbarTienda({
 
   return (
     <header className="sticky top-0 z-50 bg-black/95 backdrop-blur-md border-b border-white/10 text-white transition-all">
-      {/* Banner promocional superior */}
-      <div className="bg-gradient-to-r from-zinc-900 via-black to-zinc-900 border-b border-white/5 py-1.5 px-4 text-center text-[11px] font-medium tracking-wider uppercase text-zinc-400">
-        <span>Envíos a todo el país · Compra rápida y segura</span>
+      {/* Barra de anuncios / Promociones */}
+      <div className="bg-gradient-to-r from-zinc-950 via-zinc-900 to-zinc-950 border-b border-white/5 py-1.5 px-4 text-center text-[10.5px] sm:text-[11px] font-semibold tracking-wider uppercase text-zinc-300 flex items-center justify-center gap-2 overflow-hidden">
+        <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-ping shrink-0" />
+        <span>🔥 ENVÍOS A TODA COLOMBIA · PRENDAS 100% GARANTIZADAS · PIDE FÁCIL POR WHATSAPP</span>
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -51,7 +55,14 @@ export default function NavbarTienda({
 
           {/* Logotipo KAOB MODERN WEAR */}
           <div className="flex items-center gap-3">
-            <Link href="/tienda" className="flex items-center gap-3 group">
+            <Link
+              href="/tienda"
+              onClick={() => {
+                onSeleccionarCategoria(null);
+                onSeleccionarGenero(null);
+              }}
+              className="flex items-center gap-3 group"
+            >
               <div className="h-11 w-11 rounded-full bg-white p-0.5 flex items-center justify-center shadow-lg transition-transform group-hover:scale-105">
                 <img src="/brand/isotype.svg" alt="KAOB" className="h-10 w-10 rounded-full object-contain" />
               </div>
@@ -66,44 +77,99 @@ export default function NavbarTienda({
             </Link>
           </div>
 
-          {/* Menú de categorías escritorio */}
-          <nav className="hidden lg:flex items-center gap-8 text-xs font-semibold tracking-wider uppercase">
+          {/* Menú de navegación por Colección / Sexo */}
+          <nav className="hidden lg:flex items-center gap-7 text-xs font-bold tracking-widest uppercase">
             <button
               type="button"
-              onClick={() => onSeleccionarCategoria(null)}
-              className={`transition-colors hover:text-white ${
-                categoriaActiva === null ? 'text-white border-b-2 border-white pb-1 font-bold' : 'text-zinc-400'
+              onClick={() => {
+                onSeleccionarGenero(null);
+                onSeleccionarCategoria(null);
+              }}
+              className={`transition-colors hover:text-white pb-1 ${
+                generoActivo === null && categoriaActiva === null
+                  ? 'text-white border-b-2 border-white font-extrabold'
+                  : 'text-zinc-400'
               }`}
             >
-              Todo el Catálogo
+              Todo
             </button>
-            {categorias.slice(0, 5).map((cat) => (
-              <button
-                key={cat.id}
-                type="button"
-                onClick={() => onSeleccionarCategoria(cat.nombre)}
-                className={`transition-colors hover:text-white ${
-                  categoriaActiva === cat.nombre
-                    ? 'text-white border-b-2 border-white pb-1 font-bold'
-                    : 'text-zinc-400'
-                }`}
-              >
-                {cat.nombre}
-              </button>
-            ))}
+
+            <button
+              type="button"
+              onClick={() => {
+                onSeleccionarGenero('DAMA');
+                onSeleccionarCategoria(null);
+              }}
+              className={`transition-colors hover:text-white pb-1 flex items-center gap-1 ${
+                generoActivo === 'DAMA'
+                  ? 'text-white border-b-2 border-rose-400 font-extrabold text-rose-300'
+                  : 'text-zinc-400'
+              }`}
+            >
+              <Sparkles className="h-3.5 w-3.5 text-rose-400" />
+              <span>Dama</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                onSeleccionarGenero('CABALLERO');
+                onSeleccionarCategoria(null);
+              }}
+              className={`transition-colors hover:text-white pb-1 flex items-center gap-1 ${
+                generoActivo === 'CABALLERO'
+                  ? 'text-white border-b-2 border-sky-400 font-extrabold text-sky-300'
+                  : 'text-zinc-400'
+              }`}
+            >
+              <User className="h-3.5 w-3.5 text-sky-400" />
+              <span>Caballero</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                onSeleccionarGenero('UNISEX');
+                onSeleccionarCategoria(null);
+              }}
+              className={`transition-colors hover:text-white pb-1 flex items-center gap-1 ${
+                generoActivo === 'UNISEX'
+                  ? 'text-white border-b-2 border-emerald-400 font-extrabold text-emerald-300'
+                  : 'text-zinc-400'
+              }`}
+            >
+              <Users className="h-3.5 w-3.5 text-emerald-400" />
+              <span>Unisex</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                onSeleccionarGenero('ACCESORIOS');
+                onSeleccionarCategoria(null);
+              }}
+              className={`transition-colors hover:text-white pb-1 flex items-center gap-1 ${
+                generoActivo === 'ACCESORIOS'
+                  ? 'text-white border-b-2 border-amber-400 font-extrabold text-amber-300'
+                  : 'text-zinc-400'
+              }`}
+            >
+              <Gem className="h-3.5 w-3.5 text-amber-400" />
+              <span>Accesorios</span>
+            </button>
           </nav>
 
-          {/* Acciones derecha: Buscador, POS link, Carrito */}
+          {/* Acciones derecha: Buscador y Carrito */}
           <div className="flex items-center gap-3">
             {/* Buscador interactivo */}
-            <div className="relative hidden sm:block w-48 md:w-64">
+            <div className="relative hidden sm:block w-44 md:w-60">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400" />
               <input
                 type="text"
-                placeholder="Buscar prenda, referencia..."
+                placeholder="Buscar prenda..."
                 value={busqueda}
                 onChange={(e) => onCambiarBusqueda(e.target.value)}
-                className="w-full pl-9 pr-3 py-1.5 text-xs bg-zinc-900/90 border border-zinc-800 rounded-full text-white placeholder-zinc-500 focus:outline-none focus:border-white/40 focus:ring-1 focus:ring-white/40 transition-all"
+                className="w-full pl-9 pr-3 py-1.5 text-xs bg-zinc-900/90 border border-zinc-800 rounded-full text-white placeholder-zinc-500 focus:outline-none focus:border-white/50 focus:ring-1 focus:ring-white/50 transition-all"
               />
               {busqueda && (
                 <button
@@ -116,7 +182,7 @@ export default function NavbarTienda({
               )}
             </div>
 
-            {/* Botón lupa móvil */}
+            {/* Lupa móvil */}
             <button
               type="button"
               onClick={() => setMostrarBuscador(!mostrarBuscador)}
@@ -126,26 +192,16 @@ export default function NavbarTienda({
               <Search className="h-5 w-5" />
             </button>
 
-            {/* Acceso al POS */}
-            <Link
-              href="/"
-              className="hidden md:inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-full border border-zinc-800 bg-zinc-900/80 text-zinc-300 hover:text-white hover:border-zinc-700 transition-colors"
-              title="Ir al panel del POS"
-            >
-              <ArrowLeft className="h-3.5 w-3.5" />
-              <span>Admin POS</span>
-            </Link>
-
             {/* Botón Bolsa / Carrito */}
             <button
               type="button"
               onClick={onAbrirBolsa}
               aria-label="Ver bolsa de compras"
-              className="relative flex items-center justify-center p-2.5 rounded-full bg-white text-black hover:bg-zinc-200 transition-all shadow-md active:scale-95"
+              className="relative flex items-center justify-center p-2.5 rounded-full bg-white text-black hover:bg-zinc-200 transition-all shadow-md active:scale-95 group"
             >
-              <ShoppingBag className="h-5 w-5" />
+              <ShoppingBag className="h-5 w-5 group-hover:scale-110 transition-transform" />
               {totalItemsEnBolsa > 0 && (
-                <span className="absolute -top-1.5 -right-1.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-brand-500 px-1 text-[10px] font-black text-white shadow-sm ring-2 ring-black">
+                <span className="absolute -top-1.5 -right-1.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-emerald-500 px-1 text-[10px] font-black text-white shadow-md ring-2 ring-black animate-in zoom-in">
                   {totalItemsEnBolsa}
                 </span>
               )}
@@ -160,7 +216,7 @@ export default function NavbarTienda({
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400" />
               <input
                 type="text"
-                placeholder="Buscar prenda o referencia..."
+                placeholder="Buscar prenda por nombre o referencia..."
                 value={busqueda}
                 onChange={(e) => onCambiarBusqueda(e.target.value)}
                 autoFocus
@@ -171,48 +227,103 @@ export default function NavbarTienda({
         )}
       </div>
 
-      {/* Drawer menú móvil */}
+      {/* Menú móvil desplegable */}
       {menuMovilAbierto && (
-        <div className="lg:hidden border-t border-zinc-800 bg-zinc-950 px-4 py-4 space-y-3 animate-in slide-in-from-top-2">
-          <p className="text-[11px] font-bold uppercase tracking-widest text-zinc-500">Categorías</p>
-          <div className="flex flex-col gap-1">
-            <button
-              type="button"
-              onClick={() => {
-                onSeleccionarCategoria(null);
-                setMenuMovilAbierto(false);
-              }}
-              className={`text-left px-3 py-2 rounded-lg text-xs font-semibold ${
-                categoriaActiva === null ? 'bg-white text-black' : 'text-zinc-300 hover:bg-zinc-900'
-              }`}
-            >
-              Todo el Catálogo
-            </button>
-            {categorias.map((cat) => (
+        <div className="lg:hidden border-t border-zinc-800 bg-zinc-950 px-4 py-4 space-y-4 animate-in slide-in-from-top-2">
+          <div>
+            <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-500 mb-2">Colecciones por Sexo</p>
+            <div className="grid grid-cols-2 gap-1.5">
               <button
-                key={cat.id}
                 type="button"
                 onClick={() => {
-                  onSeleccionarCategoria(cat.nombre);
+                  onSeleccionarGenero(null);
+                  onSeleccionarCategoria(null);
                   setMenuMovilAbierto(false);
                 }}
-                className={`text-left px-3 py-2 rounded-lg text-xs font-semibold ${
-                  categoriaActiva === cat.nombre ? 'bg-white text-black' : 'text-zinc-300 hover:bg-zinc-900'
+                className={`text-left px-3 py-2 rounded-xl text-xs font-bold ${
+                  generoActivo === null && categoriaActiva === null ? 'bg-white text-black' : 'bg-zinc-900 text-zinc-300'
                 }`}
               >
-                {cat.nombre}
+                Todo el Catálogo
               </button>
-            ))}
+
+              <button
+                type="button"
+                onClick={() => {
+                  onSeleccionarGenero('DAMA');
+                  onSeleccionarCategoria(null);
+                  setMenuMovilAbierto(false);
+                }}
+                className={`text-left px-3 py-2 rounded-xl text-xs font-bold ${
+                  generoActivo === 'DAMA' ? 'bg-rose-500 text-white' : 'bg-zinc-900 text-zinc-300'
+                }`}
+              >
+                Dama 👩
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  onSeleccionarGenero('CABALLERO');
+                  onSeleccionarCategoria(null);
+                  setMenuMovilAbierto(false);
+                }}
+                className={`text-left px-3 py-2 rounded-xl text-xs font-bold ${
+                  generoActivo === 'CABALLERO' ? 'bg-sky-500 text-white' : 'bg-zinc-900 text-zinc-300'
+                }`}
+              >
+                Caballero 👨
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  onSeleccionarGenero('UNISEX');
+                  onSeleccionarCategoria(null);
+                  setMenuMovilAbierto(false);
+                }}
+                className={`text-left px-3 py-2 rounded-xl text-xs font-bold ${
+                  generoActivo === 'UNISEX' ? 'bg-emerald-500 text-white' : 'bg-zinc-900 text-zinc-300'
+                }`}
+              >
+                Unisex ⚡
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  onSeleccionarGenero('ACCESORIOS');
+                  onSeleccionarCategoria(null);
+                  setMenuMovilAbierto(false);
+                }}
+                className={`text-left px-3 py-2 rounded-xl text-xs font-bold col-span-2 ${
+                  generoActivo === 'ACCESORIOS' ? 'bg-amber-500 text-white' : 'bg-zinc-900 text-zinc-300'
+                }`}
+              >
+                Accesorios & Gorras 🎒
+              </button>
+            </div>
           </div>
 
-          <div className="pt-3 border-t border-zinc-800 flex flex-col gap-2">
-            <Link
-              href="/"
-              onClick={() => setMenuMovilAbierto(false)}
-              className="flex items-center gap-2 px-3 py-2 text-xs font-semibold text-zinc-400 hover:text-white rounded-lg hover:bg-zinc-900"
-            >
-              <ArrowLeft className="h-4 w-4" /> Volver al Sistema POS
-            </Link>
+          <div>
+            <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-500 mb-2">Categorías</p>
+            <div className="flex flex-wrap gap-1">
+              {categorias.map((cat) => (
+                <button
+                  key={cat.id}
+                  type="button"
+                  onClick={() => {
+                    onSeleccionarCategoria(cat.nombre);
+                    setMenuMovilAbierto(false);
+                  }}
+                  className={`px-2.5 py-1.5 rounded-lg text-xs font-medium ${
+                    categoriaActiva === cat.nombre ? 'bg-white text-black font-bold' : 'bg-zinc-900 text-zinc-400'
+                  }`}
+                >
+                  {cat.nombre}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
       )}

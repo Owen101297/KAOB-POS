@@ -88,34 +88,64 @@ export default function CartDrawerTienda({
     setEnviando(false);
   };
 
+  const MONTO_ENVIO_GRATIS = 150000;
+  const faltaParaGratis = Math.max(0, MONTO_ENVIO_GRATIS - total);
+  const porcentajeGratis = Math.min(100, Math.round((total / MONTO_ENVIO_GRATIS) * 100));
+
   return (
     <div className="fixed inset-0 z-[1500] flex justify-end bg-black/60 backdrop-blur-xs animate-in fade-in duration-200">
       <div className="relative w-full max-w-md bg-white h-full shadow-2xl flex flex-col justify-between animate-in slide-in-from-right duration-300">
         
         {/* Cabecera del Drawer */}
-        <div className="flex items-center justify-between p-5 border-b border-zinc-200 bg-zinc-950 text-white">
-          <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-white text-black font-bold">
-              <ShoppingBag className="h-5 w-5" />
+        <div className="p-5 border-b border-zinc-200 bg-zinc-950 text-white space-y-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-white text-black font-bold">
+                <ShoppingBag className="h-5 w-5" />
+              </div>
+              <div>
+                <h2 className="text-sm font-extrabold uppercase tracking-widest">
+                  Tu Bolsa de Compras
+                </h2>
+                <p className="text-[11px] text-zinc-400">
+                  {totalPrendas === 1 ? '1 prenda seleccionada' : `${totalPrendas} prendas seleccionadas`}
+                </p>
+              </div>
             </div>
-            <div>
-              <h2 className="text-sm font-extrabold uppercase tracking-widest">
-                Tu Bolsa de Compras
-              </h2>
-              <p className="text-[11px] text-zinc-400">
-                {totalPrendas === 1 ? '1 prenda seleccionada' : `${totalPrendas} prendas seleccionadas`}
-              </p>
-            </div>
+
+            <button
+              type="button"
+              onClick={onCerrar}
+              className="p-2 rounded-full text-zinc-400 hover:text-white hover:bg-white/10 transition-colors"
+              aria-label="Cerrar bolsa"
+            >
+              <X className="h-5 w-5" />
+            </button>
           </div>
 
-          <button
-            type="button"
-            onClick={onCerrar}
-            className="p-2 rounded-full text-zinc-400 hover:text-white hover:bg-white/10 transition-colors"
-            aria-label="Cerrar bolsa"
-          >
-            <X className="h-5 w-5" />
-          </button>
+          {/* Barra de Envío Gratis */}
+          {items.length > 0 && (
+            <div className="pt-2 border-t border-zinc-800/80 space-y-1.5">
+              <div className="flex justify-between text-[11px] font-semibold">
+                {faltaParaGratis === 0 ? (
+                  <span className="text-emerald-400 font-bold flex items-center gap-1">
+                    🎉 ¡Felicidades! Tienes Envío Gratis
+                  </span>
+                ) : (
+                  <span className="text-zinc-300">
+                    Agrega <strong className="text-white">{formatoCOP(faltaParaGratis)}</strong> para <strong>Envío Gratis</strong>
+                  </span>
+                )}
+                <span className="text-zinc-400 font-mono">{porcentajeGratis}%</span>
+              </div>
+              <div className="h-1.5 w-full bg-zinc-800 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-gradient-to-r from-emerald-500 to-emerald-400 rounded-full transition-all duration-500"
+                  style={{ width: `${porcentajeGratis}%` }}
+                />
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Contenido Principal */}

@@ -1,10 +1,13 @@
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
-import { Sparkles, SlidersHorizontal, Package, RefreshCw, Phone, MapPin } from 'lucide-react';
+import { Sparkles, SlidersHorizontal, Package, RefreshCw, Phone, MapPin, X } from 'lucide-react';
 import type { ProductoLista } from '@/lib/actions/productos';
 import NavbarTienda from '@/components/tienda/NavbarTienda';
 import HeroTienda from '@/components/tienda/HeroTienda';
+import CategoryGridBento from '@/components/tienda/CategoryGridBento';
+import SocialProofSection from '@/components/tienda/SocialProofSection';
+import FooterTienda from '@/components/tienda/FooterTienda';
 import ProductCardTienda from '@/components/tienda/ProductCardTienda';
 import ProductDetailModal from '@/components/tienda/ProductDetailModal';
 import CartDrawerTienda, { type ItemBolsa } from '@/components/tienda/CartDrawerTienda';
@@ -25,6 +28,7 @@ interface Props {
 export default function TiendaClient({ productos, categorias, configuracion }: Props) {
   const [busqueda, setBusqueda] = useState('');
   const [categoriaActiva, setCategoriaActiva] = useState<string | null>(null);
+  const [generoActivo, setGeneroActivo] = useState<string | null>(null);
   const [orden, setOrden] = useState<'recientes' | 'precio-asc' | 'precio-desc' | 'nombre'>('recientes');
   
   // Bolsa de compras
@@ -59,10 +63,50 @@ export default function TiendaClient({ productos, categorias, configuracion }: P
   const productosFiltrados = useMemo(() => {
     let list = productos.filter((p) => p.activo);
 
+    // Filtrar por Sexo / Colección
+    if (generoActivo) {
+      if (generoActivo === 'DAMA') {
+        list = list.filter(
+          (p) =>
+            p.genero === 'DAMA' ||
+            (p.categoria?.nombre && p.categoria.nombre.toLowerCase().includes('dama')) ||
+            p.nombre.toLowerCase().includes('dama') ||
+            p.nombre.toLowerCase().includes('mujer')
+        );
+      } else if (generoActivo === 'CABALLERO') {
+        list = list.filter(
+          (p) =>
+            p.genero === 'CABALLERO' ||
+            (p.categoria?.nombre && p.categoria.nombre.toLowerCase().includes('caballero')) ||
+            p.nombre.toLowerCase().includes('caballero') ||
+            p.nombre.toLowerCase().includes('hombre')
+        );
+      } else if (generoActivo === 'UNISEX') {
+        list = list.filter(
+          (p) =>
+            p.genero === 'UNISEX' ||
+            (p.categoria?.nombre && p.categoria.nombre.toLowerCase().includes('unisex')) ||
+            !p.genero
+        );
+      } else if (generoActivo === 'ACCESORIOS') {
+        list = list.filter(
+          (p) =>
+            (p.categoria?.nombre && p.categoria.nombre.toLowerCase().includes('accesorio')) ||
+            (p.categoria?.nombre && p.categoria.nombre.toLowerCase().includes('gorra')) ||
+            p.nombre.toLowerCase().includes('gorra') ||
+            p.nombre.toLowerCase().includes('cap') ||
+            p.nombre.toLowerCase().includes('morral') ||
+            p.nombre.toLowerCase().includes('accesorio')
+        );
+      }
+    }
+
+    // Filtrar por Categoría
     if (categoriaActiva) {
       list = list.filter((p) => p.categoria?.nombre === categoriaActiva);
     }
 
+    // Filtrar por Búsqueda de texto
     if (busqueda.trim()) {
       const q = busqueda.toLowerCase().trim();
       list = list.filter(
@@ -84,7 +128,7 @@ export default function TiendaClient({ productos, categorias, configuracion }: P
     }
 
     return copy;
-  }, [productos, categoriaActiva, busqueda, orden]);
+  }, [productos, generoActivo, categoriaActiva, busqueda, orden]);
 
   // Manejadores de Carrito
   const agregarABolsa = (nuevoItem: ItemBolsa) => {
@@ -121,8 +165,23 @@ export default function TiendaClient({ productos, categorias, configuracion }: P
 
   const totalItemsEnBolsa = itemsBolsa.reduce((acc, it) => acc + it.cantidad, 0);
 
+  const handleExplorar = () => {
+    const el = document.getElementById('catalogo-prendas');
+    el?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  const tituloSeccion = useMemo(() => {
+    if (busqueda) return `Resultados para "${busqueda}"`;
+    if (generoActivo === 'DAMA') return 'Colección Dama 👩';
+    if (generoActivo === 'CABALLERO') return 'Colección Caballero 👨';
+    if (generoActivo === 'UNISEX') return 'Línea Unisex & Urban ⚡';
+    if (generoActivo === 'ACCESORIOS') return 'Accesorios & Gorras 🎒';
+    if (categoriaActiva) return `Categoría: ${categoriaActiva}`;
+    return 'Catálogo Completo';
+  }, [busqueda, generoActivo, categoriaActiva]);
+
   return (
-    <div className="min-h-screen bg-zinc-50 font-sans text-zinc-900 flex flex-col justify-between">
+    <div className="min-h-screen bg-zinc-50 font-sans text-zinc-900 flex flex-col justify-between selection:bg-zinc-900 selection:text-white">
       {/* NAVBAR */}
       <NavbarTienda
         totalItemsEnBolsa={totalItemsEnBolsa}
@@ -131,79 +190,105 @@ export default function TiendaClient({ productos, categorias, configuracion }: P
         onCambiarBusqueda={setBusqueda}
         categoriaActiva={categoriaActiva}
         onSeleccionarCategoria={setCategoriaActiva}
+        generoActivo={generoActivo}
+        onSeleccionarGenero={setGeneroActivo}
         categorias={categorias}
       />
 
-      {/* HERO BANNER */}
+      {/* HERO BANNER EDITORIAL */}
       {!busqueda && (
         <HeroTienda
-          onExplorar={() => {
-            const el = document.getElementById('catalogo-prendas');
-            el?.scrollIntoView({ behavior: 'smooth' });
-          }}
+          onExplorar={handleExplorar}
+          onSeleccionarGenero={setGeneroActivo}
           categorias={categorias}
           categoriaSeleccionada={categoriaActiva}
           onSeleccionarCategoria={setCategoriaActiva}
         />
       )}
 
+      {/* BENTO GRID DE COLECCIONES POR GÉNERO */}
+      {!busqueda && (
+        <CategoryGridBento
+          onSeleccionarGenero={setGeneroActivo}
+          generoSeleccionado={generoActivo}
+        />
+      )}
+
       {/* CATÁLOGO DE PRODUCTOS */}
-      <main id="catalogo-prendas" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 flex-1 w-full">
+      <main id="catalogo-prendas" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14 flex-1 w-full">
         {/* Cabecera del Catálogo */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-zinc-200">
           <div>
             <div className="flex items-center gap-2">
-              <span className="h-2 w-2 rounded-full bg-brand-500" />
+              <span className="h-2.5 w-2.5 rounded-full bg-emerald-500 animate-pulse" />
               <h2 className="text-xl sm:text-2xl font-black uppercase tracking-tight text-zinc-900">
-                {categoriaActiva ? `Colección: ${categoriaActiva}` : 'Catálogo Completo'}
+                {tituloSeccion}
               </h2>
             </div>
-            <p className="text-xs text-zinc-500 mt-0.5">
+            <p className="text-xs text-zinc-500 mt-1">
               {productosFiltrados.length === 1
                 ? '1 prenda disponible en vitrina'
                 : `${productosFiltrados.length} prendas disponibles en vitrina`}
             </p>
           </div>
 
-          {/* Ordenar */}
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-semibold text-zinc-500 whitespace-nowrap">Ordenar por:</span>
-            <Select value={orden} onValueChange={(v: any) => setOrden(v)}>
-              <SelectTrigger className="w-[180px] text-xs h-9 bg-white">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="recientes">Más recientes</SelectItem>
-                <SelectItem value="precio-asc">Menor precio</SelectItem>
-                <SelectItem value="precio-desc">Mayor precio</SelectItem>
-                <SelectItem value="nombre">Nombre A - Z</SelectItem>
-              </SelectContent>
-            </Select>
+          {/* Filtros Activos & Ordenamiento */}
+          <div className="flex items-center gap-3 flex-wrap">
+            {(generoActivo || categoriaActiva || busqueda) && (
+              <button
+                type="button"
+                onClick={() => {
+                  setGeneroActivo(null);
+                  setCategoriaActiva(null);
+                  setBusqueda('');
+                }}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-zinc-200 hover:bg-zinc-300 text-xs font-bold text-zinc-800 transition-colors"
+              >
+                <span>Limpiar filtros</span>
+                <X className="h-3.5 w-3.5" />
+              </button>
+            )}
+
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-semibold text-zinc-500 whitespace-nowrap">Ordenar:</span>
+              <Select value={orden} onValueChange={(v: any) => setOrden(v)}>
+                <SelectTrigger className="w-[170px] text-xs h-9 bg-white border-zinc-300">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="recientes">Más recientes</SelectItem>
+                  <SelectItem value="precio-asc">Menor precio</SelectItem>
+                  <SelectItem value="precio-desc">Mayor precio</SelectItem>
+                  <SelectItem value="nombre">Nombre A - Z</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
         </div>
 
         {/* Rejilla de Productos */}
         {productosFiltrados.length === 0 ? (
-          <div className="my-16 text-center p-8 bg-white rounded-3xl border border-zinc-200 max-w-lg mx-auto shadow-sm">
+          <div className="my-16 text-center p-10 bg-white rounded-3xl border border-zinc-200 max-w-lg mx-auto shadow-sm">
             <div className="w-16 h-16 rounded-full bg-zinc-100 flex items-center justify-center mx-auto text-zinc-400">
               <Package className="h-8 w-8" />
             </div>
             <h3 className="mt-4 text-base font-bold text-zinc-900">No se encontraron prendas</h3>
-            <p className="text-xs text-zinc-500 mt-1">
+            <p className="text-xs text-zinc-500 mt-1 max-w-xs mx-auto">
               {busqueda
                 ? `No hay resultados para "${busqueda}". Intenta con otra palabra clave.`
-                : 'No hay productos disponibles en esta categoría actualmente.'}
+                : 'No hay productos disponibles en esta sección actualmente.'}
             </p>
-            {(busqueda || categoriaActiva) && (
+            {(busqueda || categoriaActiva || generoActivo) && (
               <Button
                 variant="outline"
                 onClick={() => {
                   setBusqueda('');
                   setCategoriaActiva(null);
+                  setGeneroActivo(null);
                 }}
-                className="mt-4 text-xs font-bold uppercase tracking-wider rounded-full"
+                className="mt-5 text-xs font-bold uppercase tracking-wider rounded-full"
               >
-                Limpiar filtros
+                Ver todo el catálogo
               </Button>
             )}
           </div>
@@ -221,67 +306,18 @@ export default function TiendaClient({ productos, categorias, configuracion }: P
         )}
       </main>
 
-      {/* FOOTER OFICIAL KAOB */}
-      <footer className="bg-black text-white border-t border-zinc-800 mt-20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-16">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-            {/* Columna Marca */}
-            <div className="space-y-3 md:col-span-2">
-              <div className="flex items-center gap-3">
-                <img src="/brand/isotype.svg" alt="KAOB" className="h-9 w-9 rounded-full" />
-                <span className="font-extrabold text-lg tracking-[0.25em] uppercase">KΛOB</span>
-              </div>
-              <p className="text-xs text-zinc-400 max-w-sm leading-relaxed">
-                Moda contemporánea, cortes premium y telas seleccionadas para el estilo diario. Catálogo integrado con inventario en tiempo real.
-              </p>
-              <p className="text-[11px] text-zinc-500">
-                © {new Date().getFullYear()} KAOB MODERN WEAR. Todos los derechos reservados.
-              </p>
-            </div>
+      {/* SECCIÓN SOCIAL PROOF Y GARANTÍAS */}
+      <SocialProofSection />
 
-            {/* Categorías */}
-            <div className="space-y-2">
-              <p className="text-xs font-bold uppercase tracking-widest text-zinc-300">Colecciones</p>
-              <ul className="space-y-1.5 text-xs text-zinc-400">
-                {categorias.slice(0, 5).map((cat) => (
-                  <li key={cat.id}>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setCategoriaActiva(cat.nombre);
-                        window.scrollTo({ top: 0, behavior: 'smooth' });
-                      }}
-                      className="hover:text-white transition-colors"
-                    >
-                      {cat.nombre}
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            </div>
+      {/* FOOTER OFICIAL */}
+      <FooterTienda
+        categorias={categorias}
+        onSeleccionarCategoria={setCategoriaActiva}
+        onSeleccionarGenero={setGeneroActivo}
+        telefonoWhatsApp={configuracion?.telefono || '573000000000'}
+      />
 
-            {/* Contacto & Pedidos */}
-            <div className="space-y-2">
-              <p className="text-xs font-bold uppercase tracking-widest text-zinc-300">Atención al Cliente</p>
-              <div className="space-y-2 text-xs text-zinc-400">
-                <p className="flex items-center gap-2">
-                  <Phone className="h-3.5 w-3.5 text-brand-400" />
-                  <span>Pedidos por WhatsApp</span>
-                </p>
-                <p className="flex items-center gap-2">
-                  <MapPin className="h-3.5 w-3.5 text-sky-400" />
-                  <span>Envíos a todo el país</span>
-                </p>
-                <p className="text-[11px] text-zinc-500 pt-2">
-                  Sistema POS & Tienda Oficial
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </footer>
-
-      {/* MODALES */}
+      {/* MODALES INTERACTIVOS */}
       <ProductDetailModal
         producto={productoSeleccionado}
         abierto={Boolean(productoSeleccionado)}
