@@ -52,7 +52,14 @@ interface VentasClientProps {
   };
 }
 
-export default function VentasClient({ ventasIniciales, statsIniciales }: VentasClientProps) {
+export default function VentasClient({
+  ventasIniciales = [],
+  statsIniciales = {
+    ventas: { total: 0, cantidad: 0 },
+    remisiones: { total: 0, cantidad: 0 },
+    cotizaciones: { cantidad: 0 },
+  },
+}: VentasClientProps) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
 
@@ -67,8 +74,10 @@ export default function VentasClient({ ventasIniciales, statsIniciales }: Ventas
 
   // Filtrado de ventas
   const ventasFiltradas = useMemo(() => {
-    return ventasIniciales.filter((v) => {
-      const codigo = `V-${String(v.consecutivo).padStart(4, "0")}`;
+    const lista = Array.isArray(ventasIniciales) ? ventasIniciales : [];
+    return lista.filter((v) => {
+      if (!v) return false;
+      const codigo = `V-${String(v.consecutivo ?? "").padStart(4, "0")}`;
       const matchBusqueda =
         !busqueda ||
         codigo.toLowerCase().includes(busqueda.toLowerCase()) ||
@@ -83,9 +92,9 @@ export default function VentasClient({ ventasIniciales, statsIniciales }: Ventas
 
   // Ticket promedio
   const ticketPromedio = useMemo(() => {
-    return statsIniciales.ventas.cantidad > 0
-      ? Math.round(statsIniciales.ventas.total / statsIniciales.ventas.cantidad)
-      : 0;
+    const cant = statsIniciales?.ventas?.cantidad ?? 0;
+    const tot = statsIniciales?.ventas?.total ?? 0;
+    return cant > 0 ? Math.round(tot / cant) : 0;
   }, [statsIniciales]);
 
   async function handleAnular() {
@@ -120,7 +129,7 @@ export default function VentasClient({ ventasIniciales, statsIniciales }: Ventas
       label: "Factura",
       render: (v: VentaRow) => (
         <span className="font-mono font-bold text-slate-900">
-          V-{String(v.consecutivo).padStart(4, "0")}
+          V-{String(v.consecutivo ?? "").padStart(4, "0")}
         </span>
       ),
     },
@@ -129,10 +138,12 @@ export default function VentasClient({ ventasIniciales, statsIniciales }: Ventas
       label: "Fecha",
       render: (v: VentaRow) => (
         <span className="text-xs text-slate-600">
-          {new Date(v.createdAt).toLocaleString("es-CO", {
-            dateStyle: "short",
-            timeStyle: "short",
-          })}
+          {v.createdAt
+            ? new Date(v.createdAt).toLocaleString("es-CO", {
+                dateStyle: "short",
+                timeStyle: "short",
+              })
+            : "-"}
         </span>
       ),
     },
@@ -159,7 +170,7 @@ export default function VentasClient({ ventasIniciales, statsIniciales }: Ventas
       label: "Ítems",
       render: (v: VentaRow) => (
         <span className="text-xs font-semibold bg-slate-100 text-slate-700 px-2 py-0.5 rounded-full">
-          {v.items.reduce((a, i) => a + i.cantidad, 0)} arts
+          {(v.items ?? []).reduce((a, i) => a + (i.cantidad ?? 0), 0)} arts
         </span>
       ),
     },
@@ -168,7 +179,7 @@ export default function VentasClient({ ventasIniciales, statsIniciales }: Ventas
       label: "Total",
       render: (v: VentaRow) => (
         <span className="font-extrabold text-slate-900">
-          {formatoCOP(v.total)}
+          {formatoCOP(v.total ?? 0)}
         </span>
       ),
     },
@@ -252,8 +263,8 @@ export default function VentasClient({ ventasIniciales, statsIniciales }: Ventas
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard
           label="Ventas del Día"
-          value={formatoCOP(statsIniciales.ventas.total)}
-          hint={`${statsIniciales.ventas.cantidad} transacciones completadas`}
+          value={formatoCOP(statsIniciales?.ventas?.total ?? 0)}
+          hint={`${statsIniciales?.ventas?.cantidad ?? 0} transacciones completadas`}
           icon={<ShoppingBag className="h-5 w-5" />}
           color="brand"
         />
@@ -266,14 +277,14 @@ export default function VentasClient({ ventasIniciales, statsIniciales }: Ventas
         />
         <StatCard
           label="Remisiones Hoy"
-          value={formatoCOP(statsIniciales.remisiones.total)}
-          hint={`${statsIniciales.remisiones.cantidad} remisiones emitidas`}
+          value={formatoCOP(statsIniciales?.remisiones?.total ?? 0)}
+          hint={`${statsIniciales?.remisiones?.cantidad ?? 0} remisiones emitidas`}
           icon={<Receipt className="h-5 w-5" />}
           color="amber"
         />
         <StatCard
           label="Cotizaciones Hoy"
-          value={String(statsIniciales.cotizaciones.cantidad)}
+          value={String(statsIniciales?.cotizaciones?.cantidad ?? 0)}
           hint="Cotizaciones generadas hoy"
           icon={<FileText className="h-5 w-5" />}
           color="violet"
@@ -333,7 +344,7 @@ export default function VentasClient({ ventasIniciales, statsIniciales }: Ventas
               Detalle de Venta V-{String(ventaSeleccionada?.consecutivo ?? 0).padStart(4, "0")}
             </DialogTitle>
             <DialogDescription>
-              Procesada el {ventaSeleccionada ? new Date(ventaSeleccionada.createdAt).toLocaleString("es-CO") : ""}
+              Procesada el {ventaSeleccionada?.createdAt ? new Date(ventaSeleccionada.createdAt).toLocaleString("es-CO") : ""}
             </DialogDescription>
           </DialogHeader>
 
@@ -355,7 +366,7 @@ export default function VentasClient({ ventasIniciales, statsIniciales }: Ventas
                 <div>
                   <span className="text-slate-500 block">Bodega:</span>
                   <span className="font-semibold text-slate-800">
-                    {ventaSeleccionada.bodega.nombre}
+                    {ventaSeleccionada.bodega?.nombre ?? "Bodega Principal"}
                   </span>
                 </div>
               </div>
@@ -363,7 +374,7 @@ export default function VentasClient({ ventasIniciales, statsIniciales }: Ventas
               {/* DESGLOSE ÍTEMS */}
               <div>
                 <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
-                  Ítems Vendidos ({ventaSeleccionada.items.length})
+                  Ítems Vendidos ({ventaSeleccionada.items?.length ?? 0})
                 </h4>
                 <div className="border border-slate-200 rounded-lg overflow-hidden">
                   <table className="w-full text-xs text-left">
@@ -377,21 +388,21 @@ export default function VentasClient({ ventasIniciales, statsIniciales }: Ventas
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-200">
-                      {ventaSeleccionada.items.map((item) => (
+                      {(ventaSeleccionada.items ?? []).map((item) => (
                         <tr key={item.id}>
                           <td className="p-2">
-                            <div className="font-medium text-slate-800">{item.variante.sku}</div>
+                            <div className="font-medium text-slate-800">{item.variante?.sku ?? "-"}</div>
                             <div className="text-[11px] text-slate-500">
-                              {item.variante.color.nombre} / T.{item.variante.talla.valor}
+                              {item.variante?.color?.nombre ?? ""} / T.{item.variante?.talla?.valor ?? ""}
                             </div>
                           </td>
-                          <td className="p-2 text-center font-bold">{item.cantidad}</td>
-                          <td className="p-2 text-right">{formatoCOP(item.precioUnitario)}</td>
+                          <td className="p-2 text-center font-bold">{item.cantidad ?? 0}</td>
+                          <td className="p-2 text-right">{formatoCOP(item.precioUnitario ?? 0)}</td>
                           <td className="p-2 text-right text-red-500">
-                            {item.descuento > 0 ? `-${formatoCOP(item.descuento)}` : "-"}
+                            {(item.descuento ?? 0) > 0 ? `-${formatoCOP(item.descuento)}` : "-"}
                           </td>
                           <td className="p-2 text-right font-bold text-slate-900">
-                            {formatoCOP(item.subtotal)}
+                            {formatoCOP(item.subtotal ?? 0)}
                           </td>
                         </tr>
                       ))}
@@ -404,13 +415,13 @@ export default function VentasClient({ ventasIniciales, statsIniciales }: Ventas
               <div className="grid sm:grid-cols-2 gap-4">
                 <div className="bg-slate-50 p-3 rounded-lg space-y-1 text-xs">
                   <span className="font-bold text-slate-700 block mb-1">Métodos de Pago</span>
-                  {ventaSeleccionada.pagos.map((pago) => (
+                  {(ventaSeleccionada.pagos ?? []).map((pago) => (
                     <div key={pago.id} className="flex justify-between text-slate-600">
                       <span>{pago.metodo} {pago.referencia ? `(${pago.referencia})` : ""}</span>
-                      <span className="font-semibold">{formatoCOP(pago.monto)}</span>
+                      <span className="font-semibold">{formatoCOP(pago.monto ?? 0)}</span>
                     </div>
                   ))}
-                  {ventaSeleccionada.pagos.length === 0 && (
+                  {(!ventaSeleccionada.pagos || ventaSeleccionada.pagos.length === 0) && (
                     <span className="text-slate-400 italic">Sin registros de pago detallados</span>
                   )}
                 </div>
@@ -418,9 +429,9 @@ export default function VentasClient({ ventasIniciales, statsIniciales }: Ventas
                 <div className="bg-slate-100 p-3 rounded-lg space-y-1 text-xs text-right">
                   <div className="flex justify-between text-slate-600">
                     <span>Subtotal:</span>
-                    <span>{formatoCOP(ventaSeleccionada.subtotal)}</span>
+                    <span>{formatoCOP(ventaSeleccionada.subtotal ?? 0)}</span>
                   </div>
-                  {ventaSeleccionada.descuento > 0 && (
+                  {(ventaSeleccionada.descuento ?? 0) > 0 && (
                     <div className="flex justify-between text-red-600 font-semibold">
                       <span>Descuento global:</span>
                       <span>-{formatoCOP(ventaSeleccionada.descuento)}</span>
@@ -428,7 +439,7 @@ export default function VentasClient({ ventasIniciales, statsIniciales }: Ventas
                   )}
                   <div className="flex justify-between text-sm font-extrabold text-slate-900 border-t border-slate-300 pt-1 mt-1">
                     <span>TOTAL:</span>
-                    <span>{formatoCOP(ventaSeleccionada.total)}</span>
+                    <span>{formatoCOP(ventaSeleccionada.total ?? 0)}</span>
                   </div>
                 </div>
               </div>

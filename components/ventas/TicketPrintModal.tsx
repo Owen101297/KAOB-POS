@@ -125,21 +125,21 @@ export function TicketPrintModal({ open, onOpenChange, venta }: TicketPrintModal
                 </tr>
               </thead>
               <tbody className="divide-y divide-dashed divide-slate-200">
-                {venta.items.map((item) => (
+                {(venta.items ?? []).map((item) => (
                   <tr key={item.id} className="py-1">
                     <td className="py-1 pr-1">
                       <div className="font-semibold">
-                        {item.cantidad} × {item.variante.producto?.nombre ?? "Producto"}
+                        {item.cantidad ?? 0} × {item.variante?.producto?.nombre ?? "Producto"}
                       </div>
                       <div className="text-[10px] text-slate-500">
-                        {item.variante.sku} · {item.variante.color.nombre} / T.{item.variante.talla.valor}
+                        {item.variante?.sku ?? "-"} · {item.variante?.color?.nombre ?? ""} / T.{item.variante?.talla?.valor ?? ""}
                       </div>
-                      {item.descuento > 0 && (
+                      {(item.descuento ?? 0) > 0 && (
                         <div className="text-[10px] text-red-500">Desc: -{formatoCOP(item.descuento)}</div>
                       )}
                     </td>
                     <td className="py-1 text-right align-top font-semibold">
-                      {formatoCOP(item.subtotal)}
+                      {formatoCOP(item.subtotal ?? 0)}
                     </td>
                   </tr>
                 ))}

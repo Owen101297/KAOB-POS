@@ -82,6 +82,7 @@ const varianteInclude = {
   include: {
     color: true,
     talla: true,
+    producto: true,
   },
 } as const;
 
@@ -94,31 +95,36 @@ export async function listarVentas(opts?: {
   vendedorId?: number;
   take?: number;
 }) {
-  return db.venta.findMany({
-    where: {
-      ...(opts?.tipo ? { tipo: opts.tipo } : {}),
-      ...(opts?.estado ? { estado: opts.estado } : {}),
-      ...(opts?.clienteId ? { clienteId: opts.clienteId } : {}),
-      ...(opts?.vendedorId ? { vendedorId: opts.vendedorId } : {}),
-      ...(opts?.desde || opts?.hasta
-        ? {
-            createdAt: {
-              ...(opts.desde ? { gte: opts.desde } : {}),
-              ...(opts.hasta ? { lte: opts.hasta } : {}),
-            },
-          }
-        : {}),
-    },
-    orderBy: { createdAt: "desc" },
-    take: opts?.take ?? 200,
-    include: {
-      cliente: true,
-      vendedor: true,
-      bodega: true,
-      items: { include: { variante: varianteInclude } },
-      pagos: true,
-    },
-  });
+  try {
+    return await db.venta.findMany({
+      where: {
+        ...(opts?.tipo ? { tipo: opts.tipo } : {}),
+        ...(opts?.estado ? { estado: opts.estado } : {}),
+        ...(opts?.clienteId ? { clienteId: opts.clienteId } : {}),
+        ...(opts?.vendedorId ? { vendedorId: opts.vendedorId } : {}),
+        ...(opts?.desde || opts?.hasta
+          ? {
+              createdAt: {
+                ...(opts.desde ? { gte: opts.desde } : {}),
+                ...(opts.hasta ? { lte: opts.hasta } : {}),
+              },
+            }
+          : {}),
+      },
+      orderBy: { createdAt: "desc" },
+      take: opts?.take ?? 200,
+      include: {
+        cliente: true,
+        vendedor: true,
+        bodega: true,
+        items: { include: { variante: varianteInclude } },
+        pagos: true,
+      },
+    });
+  } catch (error) {
+    console.error("Error en listarVentas:", error);
+    return [];
+  }
 }
 
 export async function obtenerVenta(id: number) {
@@ -576,32 +582,41 @@ export async function convertirDocumento(
 // ─────────────────────────── ESTADÍSTICAS DEL DÍA ──────────────────────────
 
 export async function estadisticasDia(fecha?: Date) {
-  const dia = fecha ?? new Date();
-  const inicio = new Date(dia);
-  inicio.setHours(0, 0, 0, 0);
-  const fin = new Date(dia);
-  fin.setHours(23, 59, 59, 999);
+  try {
+    const dia = fecha ?? new Date();
+    const inicio = new Date(dia);
+    inicio.setHours(0, 0, 0, 0);
+    const fin = new Date(dia);
+    fin.setHours(23, 59, 59, 999);
 
-  const [ventas, remisiones, cotizaciones] = await Promise.all([
-    db.venta.aggregate({
-      where: { tipo: "VENTA", estado: "COMPLETADA", createdAt: { gte: inicio, lte: fin } },
-      _sum: { total: true },
-      _count: true,
-    }),
-    db.venta.aggregate({
-      where: { tipo: "REMISION", estado: { in: ["COMPLETADA", "PENDIENTE"] }, createdAt: { gte: inicio, lte: fin } },
-      _sum: { total: true },
-      _count: true,
-    }),
-    db.venta.aggregate({
-      where: { tipo: "COTIZACION", createdAt: { gte: inicio, lte: fin } },
-      _count: true,
-    }),
-  ]);
+    const [ventas, remisiones, cotizaciones] = await Promise.all([
+      db.venta.aggregate({
+        where: { tipo: "VENTA", estado: "COMPLETADA", createdAt: { gte: inicio, lte: fin } },
+        _sum: { total: true },
+        _count: true,
+      }),
+      db.venta.aggregate({
+        where: { tipo: "REMISION", estado: { in: ["COMPLETADA", "PENDIENTE"] }, createdAt: { gte: inicio, lte: fin } },
+        _sum: { total: true },
+        _count: true,
+      }),
+      db.venta.aggregate({
+        where: { tipo: "COTIZACION", createdAt: { gte: inicio, lte: fin } },
+        _count: true,
+      }),
+    ]);
 
-  return {
-    ventas: { total: ventas._sum.total ?? 0, cantidad: ventas._count ?? 0 },
-    remisiones: { total: remisiones._sum.total ?? 0, cantidad: remisiones._count ?? 0 },
-    cotizaciones: { cantidad: cotizaciones._count ?? 0 },
-  };
+    return {
+      ventas: { total: ventas._sum.total ?? 0, cantidad: ventas._count ?? 0 },
+      remisiones: { total: remisiones._sum.total ?? 0, cantidad: remisiones._count ?? 0 },
+      cotizaciones: { cantidad: cotizaciones._count ?? 0 },
+    };
+  } catch (error) {
+    console.error("Error en estadisticasDia:", error);
+    return {
+      ventas: { total: 0, cantidad: 0 },
+      remisiones: { total: 0, cantidad: 0 },
+      cotizaciones: { cantidad: 0 },
+    };
+  }
 }
