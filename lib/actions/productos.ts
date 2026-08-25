@@ -258,48 +258,90 @@ export async function eliminarProducto(id: number): Promise<ActionResult> {
       include: {
         variantes: {
           include: {
-            ventaItems: { select: { id: true } },
-            compraItems: { select: { id: true } },
+            ventaItems: {
+              select: {
+                id: true,
+                venta: { select: { id: true, estado: true } },
+              },
+            },
+            compraItems: {
+              select: {
+                id: true,
+                compra: { select: { id: true, estado: true } },
+              },
+            },
+            planSepareItems: {
+              select: {
+                id: true,
+                planSepare: { select: { id: true, estado: true } },
+              },
+            },
+            ordenCompraDetalles: { select: { id: true } },
+            trasladosDetalle: { select: { id: true } },
           },
         },
       },
     });
     if (!producto) return { ok: false, error: "El producto no existe." };
 
-    const tieneVentas = producto.variantes.some((v) => v.ventaItems.length > 0);
-    if (tieneVentas) {
-      return {
-        ok: false,
-        error: "No se puede eliminar el producto porque tiene ventas registradas en el historial. Puedes desactivarlo.",
-      };
-    }
+    // Verificar si tiene ventas activas no anuladas
+    const tieneVentasActivas = producto.variantes.some((v) =>
+      v.ventaItems.some((vi) => vi.venta?.estado !== "ANULADA")
+    );
+    // Verificar si tiene compras activas no anuladas
+    const tieneComprasActivas = producto.variantes.some((v) =>
+      v.compraItems.some((ci) => ci.compra?.estado !== "ANULADA")
+    );
+    // Verificar si tiene plan separe activo (no cancelado ni entregado)
+    const tienePlanSepareActivo = producto.variantes.some((v) =>
+      v.planSepareItems.some((psi) => psi.planSepare?.estado === "ACTIVO")
+    );
 
-    const tieneCompras = producto.variantes.some((v) => v.compraItems.length > 0);
-    if (tieneCompras) {
+    if (tienePlanSepareActivo) {
       return {
         ok: false,
-        error: "No se puede eliminar el producto porque tiene compras/documentos soporte asociados. Puedes desactivarlo.",
+        error: "El producto está reservado en un Plan Separe ACTIVO. Cancela el plan primero antes de eliminar.",
       };
     }
 
     const varianteIds = producto.variantes.map((v) => v.id);
 
     await db.$transaction(async (tx) => {
-      // 1. Eliminar movimientos de inventario asociados
       if (varianteIds.length > 0) {
+        // 1. Eliminar ítems de planes separe asociados (ej. cancelados/finalizados)
+        await tx.planSepareItem.deleteMany({
+          where: { varianteId: { in: varianteIds } },
+        });
+        // 2. Eliminar detalles de órdenes de compra
+        await tx.ordenCompraDetalle.deleteMany({
+          where: { varianteId: { in: varianteIds } },
+        });
+        // 3. Eliminar ítems de compra/documento soporte
+        await tx.compraItem.deleteMany({
+          where: { varianteId: { in: varianteIds } },
+        });
+        // 4. Eliminar ítems de venta asociados
+        await tx.ventaItem.deleteMany({
+          where: { varianteId: { in: varianteIds } },
+        });
+        // 5. Eliminar detalles de traslados
+        await tx.trasladoDetalle.deleteMany({
+          where: { varianteId: { in: varianteIds } },
+        });
+        // 6. Eliminar movimientos de inventario asociados
         await tx.movimientoInventario.deleteMany({
           where: { varianteId: { in: varianteIds } },
         });
-        // 2. Eliminar stock en bodegas
+        // 7. Eliminar stock en bodegas
         await tx.stockBodega.deleteMany({
           where: { varianteId: { in: varianteIds } },
         });
-        // 3. Eliminar variantes
+        // 8. Eliminar variantes
         await tx.variante.deleteMany({
           where: { id: { in: varianteIds } },
         });
       }
-      // 4. Eliminar producto
+      // 9. Eliminar producto
       await tx.producto.delete({
         where: { id },
       });
@@ -308,6 +350,7 @@ export async function eliminarProducto(id: number): Promise<ActionResult> {
     revalidatePath("/productos");
     revalidatePath("/inventario");
     revalidatePath("/ventas/nueva");
+    revalidatePath("/tienda");
     return { ok: true };
   } catch (e) {
     return { ok: false as const, error: errorDesconocido(e) };
@@ -332,8 +375,24 @@ export async function eliminarMultiplesProductos(
       include: {
         variantes: {
           include: {
-            ventaItems: { select: { id: true } },
-            compraItems: { select: { id: true } },
+            ventaItems: {
+              select: {
+                id: true,
+                venta: { select: { id: true, estado: true } },
+              },
+            },
+            compraItems: {
+              select: {
+                id: true,
+                compra: { select: { id: true, estado: true } },
+              },
+            },
+            planSepareItems: {
+              select: {
+                id: true,
+                planSepare: { select: { id: true, estado: true } },
+              },
+            },
           },
         },
       },
@@ -344,24 +403,15 @@ export async function eliminarMultiplesProductos(
     const todasVarianteIds: number[] = [];
 
     for (const p of productos) {
-      const tieneVentas = p.variantes.some((v) => v.ventaItems.length > 0);
-      if (tieneVentas) {
+      const tienePlanSepareActivo = p.variantes.some((v) =>
+        v.planSepareItems.some((psi) => psi.planSepare?.estado === "ACTIVO")
+      );
+      if (tienePlanSepareActivo) {
         omitidos.push({
           id: p.id,
           nombre: p.nombre,
           referencia: p.referencia,
-          motivo: "Tiene ventas registradas en el historial.",
-        });
-        continue;
-      }
-
-      const tieneCompras = p.variantes.some((v) => v.compraItems.length > 0);
-      if (tieneCompras) {
-        omitidos.push({
-          id: p.id,
-          nombre: p.nombre,
-          referencia: p.referencia,
-          motivo: "Tiene compras/documentos soporte asociados.",
+          motivo: "Tiene un Plan Separe ACTIVO pendiente. Cancela el plan primero.",
         });
         continue;
       }
@@ -373,16 +423,40 @@ export async function eliminarMultiplesProductos(
     if (paraEliminarIds.length > 0) {
       await db.$transaction(async (tx) => {
         if (todasVarianteIds.length > 0) {
+          // 1. Eliminar ítems de planes separe
+          await tx.planSepareItem.deleteMany({
+            where: { varianteId: { in: todasVarianteIds } },
+          });
+          // 2. Eliminar detalles de órdenes de compra
+          await tx.ordenCompraDetalle.deleteMany({
+            where: { varianteId: { in: todasVarianteIds } },
+          });
+          // 3. Eliminar compras
+          await tx.compraItem.deleteMany({
+            where: { varianteId: { in: todasVarianteIds } },
+          });
+          // 4. Eliminar ventas
+          await tx.ventaItem.deleteMany({
+            where: { varianteId: { in: todasVarianteIds } },
+          });
+          // 5. Eliminar traslados
+          await tx.trasladoDetalle.deleteMany({
+            where: { varianteId: { in: todasVarianteIds } },
+          });
+          // 6. Eliminar movimientos de inventario
           await tx.movimientoInventario.deleteMany({
             where: { varianteId: { in: todasVarianteIds } },
           });
+          // 7. Eliminar stock
           await tx.stockBodega.deleteMany({
             where: { varianteId: { in: todasVarianteIds } },
           });
+          // 8. Eliminar variantes
           await tx.variante.deleteMany({
             where: { id: { in: todasVarianteIds } },
           });
         }
+        // 9. Eliminar productos
         await tx.producto.deleteMany({
           where: { id: { in: paraEliminarIds } },
         });
@@ -392,6 +466,7 @@ export async function eliminarMultiplesProductos(
     revalidatePath("/productos");
     revalidatePath("/inventario");
     revalidatePath("/ventas/nueva");
+    revalidatePath("/tienda");
 
     return {
       ok: true,
