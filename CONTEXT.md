@@ -1,11 +1,13 @@
 # KAOB POS - Context for Continuation (Antigravity)
 
 ## Project Overview
-**Sistema POS para tienda de ropa en Colombia** - Next.js 14 + PostgreSQL (Railway) + Prisma ORM
+**Sistema POS & Portal E-Commerce para tienda de ropa en Colombia** - Next.js 14 + PostgreSQL (Railway) + Prisma ORM
+- **Marca Oficial**: **KΛOB MODERN WEAR** (Isotipo circular KA + Monocromo Streetwear Luxury)
 - **Repositorio**: https://github.com/Owen101297/KAOB-POS.git
 - **Rama develop**: CI/CD → staging (railway.app)
 - **Rama main**: CI/CD → production (railway.app)
 - **Stack**: Next.js 14.2.35, React 18, TypeScript, Tailwind CSS, Prisma 6.19.3, exceljs, zod
+- **MCP Servers Conectados**: `21st` (UI Components & Design), `higgsfield` (AI Fashion Studio & Assets), `firebase-mcp-server`.
 - **UI Components**: DataTable, Dialog, Select, Button, Card, Badge, PageHeader, EmptyState, StatCard (shadcn-style)
 - **Server Actions pattern**: `"use server"`, zod validation, `ActionResult<T>`, `revalidatePath`, `$transaction`
 
@@ -17,7 +19,6 @@
   - **Staging** (develop): 605c228b-ddef-4e9c-89a9-58e871b2908e → https://app-staging-61f4.up.railway.app
 - **Deploy**: preDeployCommand `npx prisma migrate deploy`, healthcheck `/api/health`
 - **Secrets**: `DATABASE_URL` por entorno, shadow DB para migraciones
-- **Límites trial**: 2 proyectos / 5 servicios
 
 ---
 
@@ -25,84 +26,92 @@
 
 ### ✅ Fase 0 - Infraestructura Base
 - Git init, Railway project + Postgres ×2, Prisma bootstrap, `/api/health`, CI/CD GitHub.
-- Next.js security fix 14.2.3 → 14.2.35.
-- Ambos entornos live con `/api/health` → 200.
+- Next.js security fix 14.2.3 → 14.2.35. Ambos entornos live con `/api/health` → 200.
 
 ### ✅ Fase 1 - Catálogo e Inventario Retail
 - **Schema**: Bodega, Marca, Categoria (jerárquica), GrupoTalla, Talla, Color, Producto, Variante, StockBodega, MovimientoInventario, Traslado.
-- **Enums**: Genero, Calidad (4 niveles), TipoMovimiento.
 - **Acciones**: `catalogos.ts`, `productos.ts`, `inventario.ts`, `excel.ts`.
 - **UI**: `/configuracion/catalogos`, `/productos`, `/inventario`, `/traslados`, `/movimientos`, `/lista-precios`.
-- **Excel**: plantilla + exportación completa + importación atómica upsert.
+- **Mejoras**: Edición rápida de stock en inventario (con chips de cálculo rápido `+1`, `+5`, `-1`, `-5`), selección múltiple y eliminación masiva de productos.
 
 ### ✅ Fase 2 - Contactos
-- **Schema**: Cliente (tipoDoc CC/NIT/OTRO, cupo/días crédito), Proveedor, Vendedor (comisión%), Domiciliario.
+- **Schema**: Cliente (CC/NIT/OTRO, cupo/días crédito), Proveedor, Vendedor (comisión%), Domiciliario.
 - **UI**: `/clientes`, `/proveedores`, `/vendedores`, `/domiciliarios`.
 
 ### ✅ Fase 3 - Núcleo POS + Caja Mínima
 - **Schema**: Venta, VentaItem, PagoVenta, SesionCaja, MovimientoCaja.
-- **Enums**: TipoVenta, EstadoVenta, MetodoPago, TipoMovimiento (+VENTA, +DEVOLUCION_CLIENTE).
 - **Acciones**: `ventas.ts`, `caja.ts`.
-- **UI**: `/ventas/nueva` (POS completo con pagos mixtos y ticket 80mm) y `/caja/apertura`.
+- **UI**: `/ventas/nueva` (POS completo con pagos mixtos, atajos de billetes colombianos, escáner de cámara móvil/pistola y ticket 80mm).
 
 ### ✅ Fase 4 - Histórico y Operaciones
-- **UI `/ventas`**: Histórico completo de ventas, métricas del día, detalle, anulación con reversión de stock y reimpresión de tickets 80mm.
+- **UI `/ventas`**: Histórico completo de ventas, métricas del día, detalle, anulación con reversión de stock y reimpresión de tickets.
 - **UI `/remisiones`**: Listado de remisiones, detalle, conversión a venta con cobro y anulación.
 - **UI `/cotizaciones`**: Listado de cotizaciones, detalle, conversión a venta con descuento de stock y anulación.
 
 ### ✅ Fase 5 - Arqueo y Caja Completa
-- **UI `/caja/ingreso`**: Movimientos manuales de efectivo (`INGRESO_BASE`, `RETIRO`, `SUPLIDO`, `OTRO`) con validación de saldo.
-- **UI `/caja/cerrar`**: Calculadora de billetes/monedas, arqueo ciego, cálculo de sobrante/faltante y cierre de turno.
+- **UI `/caja/ingreso`**: Movimientos manuales de efectivo (`INGRESO_BASE`, `RETIRO`, `SUPLIDO`, `OTRO`).
+- **UI `/caja/cerrar`**: Calculadora de billetes/monedas, arqueo ciego, cálculo de descuadre y cierre de turno.
 - **UI `/caja/cierres`**: Historial de turnos de caja cerrados con badges de auditoría y reporte detallado.
 
 ### ✅ Fase 6 - Compras y Proveedores
 - **Schema**: Compra, CompraItem, PagoCompra, OrdenCompra, OrdenCompraDetalle.
-- **Acciones**: `compras.ts` (`registrarCompra`, `anularCompra`, `crearOrdenCompra`, `listarCompras`, `listarOrdenesCompra`).
-- **UI `/compras/documento-soporte`**: Recepción de mercancía de proveedores con buscador de prendas, ingreso atómico de inventario (`COMPRA`) y actualización de costo base.
-- **UI `/compras/historico-doc-soporte`**: Consulta de compras, detalle, impresión de comprobante y anulación con reversión de stock.
-- **UI `/ordenes-compra`**: Creación y seguimiento de pedidos preliminares a proveedores.
+- **UI `/compras/documento-soporte`**, `/compras/historico-doc-soporte`, `/ordenes-compra`.
 
 ### ✅ Fase 7 - Crédito y Cartera de Clientes
-- **Schema**: CreditoCliente, AbonoCredito, MetodoPago (`CREDITO`).
-- **Acciones**: `credito.ts` (`listarCreditos`, `obtenerResumenCartera`, `obtenerEstadoCuentaCliente`, `registrarAbono`).
-- **UI `/creditos`**: Dashboard de cartera con semáforo de morosidad, modal de registro de abono con ingreso a caja, modal de estado de cuenta del cliente con barra de cupo e impresión de recibo térmico de 80mm.
+- **Schema**: CreditoCliente, AbonoCredito.
+- **UI `/creditos`**: Dashboard de cartera con semáforo de morosidad, abonos con ingreso a caja y recibo térmico de 80mm.
 
 ### ✅ Fase 8 - Reportes e Informes Gerenciales
-- **Acciones**: `reportes.ts` (`obtenerReporteVentas`, `obtenerReporteRentabilidad`, `obtenerReporteInventarioRotacion`).
-- **UI `/informes`**:
-  - Filtros dinámicos por período (7d, 30d, 90d, 1 año) y por bodega.
-  - Tab 1 (Ventas y Rendimiento): KPIs de facturación, ventas por método de pago, ventas por categoría y comisiones por vendedor.
-  - Tab 2 (Utilidad y Rentabilidad): Margen de Utilidad Bruta (Ingresos vs COGS), badges de margen (%) y desglose por producto.
-  - Tab 3 (Rotación e Inventario): Valoración de stock a costo vs venta, ranking Top Sellers y alertas de reabastecimiento.
-  - Exportación de informes a Excel (.csv) e impresión en PDF.
+- **UI `/informes`**: Ventas y Rendimiento, Utilidad Bruta (Ingresos vs COGS), Rotación y Top Sellers, exportación Excel y PDF.
 
 ### ✅ Fase 9 - Fidelización, Plan Separe y Promociones
 - **Schema**: PlanSepare, PlanSepareItem, AbonoPlanSepare, MovimientoPuntos, Promocion, GiftCard.
-- **Acciones**: `fidelizacion.ts` (`crearPlanSepare`, `registrarAbonoSepare`, `cancelarPlanSepare`, `ajustarPuntos`, `guardarPromocion`, `togglePromocion`, `emitirGiftCard`).
-- **UI `/plan-separe`**: Apartados de mercancía con reserva física de existencias en bodega, registro de cuotas y cancelación con devolución de stock.
-- **UI `/puntos`**: Historial de puntos por compras y modal de ajuste/asignación manual.
-- **UI `/promociones`**: Descuentos automáticos por porcentaje o monto fijo con vigencias y switch de activación en vivo.
-- **UI `/gift-cards`**: Emisión de tarjetas de regalo con código aleatorio y vale imprimible de 80mm.
+- **UI `/plan-separe`**: Apartados de mercancía con reserva de existencias, abonos y cancelación con devolución de stock.
+- **UI `/puntos`**, `/promociones`, `/gift-cards`.
 
-### ✅ Fase 10 - Auditoría, Bancos, Conciliaciones, Gastos y Configuración de Tienda
-- **Schema**: Auditoria, CuentaBancaria, MovimientoBancario, ConciliacionBancaria, Gasto, ampliación de Configuracion (regimen, ciudad, pieTicket, etc.).
-- **Acciones**: `auditoria.ts`, `bancos.ts`, `gastos.ts`, `configuracion.ts` e instrumentación en anulaciones de ventas, compras, apertura/cierre de caja y gastos.
-- **UI `/configuracion`**: Configuración de razón social, NIT, régimen fiscal, metas diarias, reglas de puntos y simulador/preview en vivo de ticket térmico 80mm.
-- **UI `/auditoria`**: Bitácora inmutable de eventos con estadísticas de seguridad, filtros multicriterio y modal de inspección JSON de metadatos.
-- **UI `/bancos`**: Panel consolidado de cuentas bancarias y billeteras virtuales, creación/edición con colores identificadores y transferencias interbancarias directas.
-- **UI `/bancos/movimientos`**: Extracto detallado con registro de notas débito/crédito, comisiones e ingresos.
-- **UI `/bancos/conciliaciones`**: Asistente de conciliación contra extractos bancarios con cotejo de movimientos y cálculo automático de descuadre.
-- **UI `/gastos`**: Módulo de egresos operativos categorizados con afectación directa a caja activa o débito en cuenta bancaria y opción de anulación con reversión.
+### ✅ Fase 10 - Auditoría, Bancos, Conciliaciones y Gastos
+- **UI `/configuracion`**, `/auditoria`, `/bancos`, `/bancos/movimientos`, `/bancos/conciliaciones`, `/gastos`.
+
+### ✅ Fase 11 - Identidad de Marca KAOB MODERN WEAR
+- **Branding Assets**:
+  - `public/brand/isotype.svg` (Monograma circular KA).
+  - `public/brand/logo.svg` (Wordmark geométrico KΛOB MODERN WEAR).
+  - `app/icon.svg` (Favicon oficial).
+  - Encabezados térmicos de 80mm en tickets de venta y apartados.
+  - Topbar con avatar monograma y enlace directo a la tienda.
+
+### ✅ Fase 12 - Portal E-Commerce Autónomo (`/tienda`)
+- **Aislamiento Total (`Shell.tsx`)**: Al entrar a `/tienda`, la pantalla carga 100% limpia sin el Sidebar ni el Topbar del POS.
+- **Top Announcement Bar**: Marquee animado con beneficios y envíos a Colombia.
+- **Segmentación por Sexo y Colección**:
+  - 👗 **Dama**: Prendas casuales, tops, conjuntos y vestidos.
+  - 👕 **Caballero**: Camisetas oversize heavyweight, hoodies y streetwear.
+  - ⚡ **Unisex & Urban**: Siluetas neutras y boxy fit.
+  - 🎒 **Accesorios**: Gorras estructuradas y complementos.
+- **Bento Grid de Colecciones (`CategoryGridBento.tsx`)**: Cuadrícula visual de acceso directo a colecciones.
+- **Tarjetas de Producto con Ganchos de Venta (`ProductCardTienda.tsx`)**: Muestras de color (*swatches*), selector de tallas en tiempo real, badges de urgencia (*"Últimas unidades"*, *"Más Vendido"*).
+- **Modal de Vista Rápida (`ProductDetailModal.tsx`)**: Zoom, descripción y selección ágil.
+- **Bolsa de Compras Deslizable (`CartDrawerTienda.tsx`)**: Barra de progreso para envío gratis y checkout en 1 clic formateado para WhatsApp.
+- **Social Proof & Confianza (`SocialProofSection.tsx`)**: Testimonios de clientes 5 estrellas y sellos de garantía.
+- **Footer Oficial (`FooterTienda.tsx`)**: Enlaces, políticas y contacto de WhatsApp directo.
+
+### ✅ Fase 13 - Despacho Online en POS (`/ventas-online`)
+- Panel de control en el POS para gestionar pedidos recibidos por la tienda web con estados (*Pendiente*, *Empacado*, *En camino*, *Entregado*).
+
+### ✅ Fase 14 - Robustez en Eliminación y Filtro de Categorías
+- **Limpieza en Cascada de Productos**: En `lib/actions/productos.ts`, `eliminarProducto` y `eliminarMultiplesProductos` limpian automáticamente registros huérfanos de pruebas (ítems de planes separe cancelados, ventas/compras anuladas) permitiendo borrar productos sin bloqueos de base de datos.
+- **Filtro de Categorías Activas**: `listarCategorias(true)` en POS (`/ventas/nueva`) y Tienda (`/tienda`) para mostrar únicamente las categorías que contienen productos reales activos (ocultando categorías plantilla como `COMPLETO`, `PRENDA INFERIOR`, `PRENDA SUPERIOR`).
 
 ---
 
-## ⏭️ Siguiente Paso: Fase 11 — Producción / Ensamble de Prendas y Ventas Online
-**Módulos Operativos de Venta Mostrador (Completados)**:
-1. **Lector de Código de Barras Móvil con Cámara Web/Celular (`/ventas/nueva`)**: Escaneo continuo por cámara de smartphone/tablet con feedback sonoro (Web Audio Beep) y vibración, más soporte nativo de pistolas lectoras USB/Bluetooth.
-2. **Modal de Cobro Express con Atajos de Billetes y Cambio (`/ventas/nueva`)**: Atajos de denominaciones colombianas ($10k, $20k, $50k, $100k, $200k, Exacto), cálculo de vueltas en tiempo real y soporte de pagos mixtos (Efectivo, Transferencia Nequi/Bancolombia, Tarjeta, Crédito).
-3. **Generador e Impresión de Etiquetas con Códigos de Barras (`/productos`)**: Renderizado de códigos de barras Code128 para rollos adhesivos e impresoras térmicas (50x30mm, 40x25mm, 80mm).
-4. **Impresión de Tirilla Térmica 80mm Directa**: Ticket con datos fiscales de la tienda (NIT, dirección, ciudad, teléfono, resolución y pie de ticket).
-5. **Creación Express de Cliente**: Modal integrado en el flujo de cobro para registrar clientes sin perder los productos del carrito.
+## ⏭️ Próximos Pasos para Mañana
+1. **Pruebas Integrales de Usuario en Producción**:
+   - Probar flujo de venta en mostrador (POS) y flujo de compra en la tienda web (`/tienda`).
+   - Validar responsive en móvil y escritorio.
+2. **Puesta a Cero de Datos de Prueba (Cuando el usuario lo indique)**:
+   - Script o procedimiento para limpiar ventas/inventario de prueba y dejar la base de datos limpia para arranque en producción.
+3. **Módulo de Producción / Confección de Prendas (`/produccion`)**:
+   - Registro de lotes de corte, materias primas (telas/hilos/botones) y costo de confección por prenda.
 
 ---
 
@@ -120,7 +129,7 @@ git push origin main:develop   # staging
 git push origin main           # producción
 ```
 
-## Contact
+## Contact & Credits
 - GitHub: Owen101297
 - Railway: owen101297
 - Email: owenalvarez97@gmail.com
