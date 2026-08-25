@@ -82,8 +82,8 @@ export function TicketPrintModal({ open, onOpenChange, venta }: TicketPrintModal
           >
             {/* ENCABEZADO TIENDA */}
             <div className="text-center space-y-0.5 border-b border-dashed border-slate-300 pb-3 mb-3">
-              <h2 className="text-base font-extrabold tracking-wider uppercase text-slate-900">KAOB STORE</h2>
-              <p className="text-[11px] text-slate-600">Tienda de Ropa & Moda</p>
+              <h2 className="text-lg font-black tracking-widest uppercase text-slate-950 font-sans">KΛOB</h2>
+              <p className="text-[10px] font-bold tracking-widest uppercase text-slate-600">MODERN WEAR</p>
               <p className="text-[10px] text-slate-500">{venta.bodega?.nombre ?? "Bodega Principal"}</p>
               {venta.bodega?.direccion && <p className="text-[10px] text-slate-500">{venta.bodega.direccion}</p>}
               <div className="pt-1 font-bold text-sm text-slate-900">

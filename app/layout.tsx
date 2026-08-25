@@ -14,8 +14,8 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: 'POS System',
-  description: 'Sistema Punto de Venta',
+  title: 'KAOB | MODERN WEAR - POS & E-Commerce',
+  description: 'Sistema Punto de Venta y Tienda E-Commerce Oficial KAOB Modern Wear',
 };
 
 // Render dinámico: el HTML nunca queda cacheado con hashes de assets viejos
