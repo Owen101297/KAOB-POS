@@ -18,6 +18,7 @@ export default async function TiendaVirtualPage() {
     const [prods, cats, conf] = await Promise.all([
       listarProductos(true),
       db.categoria.findMany({
+        where: { productos: { some: { activo: true } } },
         orderBy: { nombre: 'asc' },
         select: { id: true, nombre: true },
       }),
