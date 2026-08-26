@@ -44,14 +44,14 @@ export default function Topbar({ onMenuClick }: { onMenuClick?: () => void }) {
   return (
     <header className="fixed inset-x-0 top-0 z-[1300] flex h-16 items-stretch border-b border-slate-200/70 bg-white/90 backdrop-blur">
       {/* Marca — alineada con el rail */}
-      <div className="flex w-[76px] shrink-0 items-center justify-center bg-slate-900">
+      <div className="flex w-[76px] shrink-0 items-center justify-center bg-slate-950 border-r border-slate-800">
         <Link
           href="/"
-          title="Ir al Inicio / Dashboard"
+          title="KAOB | MODERN WEAR"
           aria-label="Ir al Inicio"
-          className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-brand-400 to-brand-600 shadow-md shadow-brand-500/30 transition-transform hover:scale-110 active:scale-95 focus:outline-none focus:ring-2 focus:ring-brand-400"
+          className="flex h-10 w-10 items-center justify-center rounded-full bg-black shadow-md shadow-black/50 transition-transform hover:scale-105 active:scale-95 focus:outline-none focus:ring-2 focus:ring-slate-400"
         >
-          <Store className="h-[18px] w-[18px] text-white" />
+          <img src="/brand/isotype.svg" alt="KAOB" className="h-8 w-8 object-contain rounded-full" />
         </Link>
       </div>
 
@@ -68,6 +68,16 @@ export default function Topbar({ onMenuClick }: { onMenuClick?: () => void }) {
 
         <div className="hidden items-center gap-2 sm:flex">
           <BodegaSelector />
+        </div>
+
+        <div className="hidden md:flex items-center gap-2 pl-2 border-l border-slate-200">
+          <Link
+            href="/tienda"
+            className="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-semibold rounded-full bg-slate-900 text-white hover:bg-slate-800 transition-colors"
+          >
+            <Store className="h-3.5 w-3.5 text-brand-400" />
+            <span>Ver Tienda Online</span>
+          </Link>
         </div>
       </div>
 

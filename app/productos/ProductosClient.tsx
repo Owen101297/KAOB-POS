@@ -44,6 +44,7 @@ import {
   agregarVariantes,
   crearProducto,
   eliminarProducto,
+  eliminarMultiplesProductos,
   toggleProductoActivo,
 } from '@/lib/actions/productos';
 
@@ -90,6 +91,11 @@ export default function ProductosClient({ productos, catalogos }: Props) {
       precio: number;
     }[]
   >([]);
+
+  // Selección múltiple
+  const [seleccionados, setSeleccionados] = useState<Set<number>>(new Set());
+  const [modalBulkEliminar, setModalBulkEliminar] = useState(false);
+  const [eliminandoBulk, setEliminandoBulk] = useState(false);
 
   const refrescar = () => startTransition(() => router.refresh());
 
@@ -154,7 +160,75 @@ export default function ProductosClient({ productos, catalogos }: Props) {
     [productos, filtroEstado, bodegaActiva]
   );
 
+  const todosSeleccionados = filas.length > 0 && seleccionados.size === filas.length;
+
+  const toggleSeleccionarTodos = () => {
+    if (todosSeleccionados) {
+      setSeleccionados(new Set());
+    } else {
+      setSeleccionados(new Set(filas.map((f) => f.id)));
+    }
+  };
+
+  const toggleSeleccionarFila = (id: number) => {
+    const next = new Set(seleccionados);
+    if (next.has(id)) {
+      next.delete(id);
+    } else {
+      next.add(id);
+    }
+    setSeleccionados(next);
+  };
+
+  async function handleBulkEliminar() {
+    if (seleccionados.size === 0) return;
+    setEliminandoBulk(true);
+    try {
+      const ids = Array.from(seleccionados);
+      const res = await eliminarMultiplesProductos(ids);
+      if (!res.ok) {
+        alert(res.error || 'Error al eliminar productos.');
+        return;
+      }
+      setModalBulkEliminar(false);
+      setSeleccionados(new Set());
+      refrescar();
+      if (res.data.omitidos && res.data.omitidos.length > 0) {
+        const msg = `Se eliminaron ${res.data.eliminados} producto(s).\n\nLos siguientes ${res.data.omitidos.length} producto(s) no se pudieron eliminar porque tienen ventas o compras registradas:\n` +
+          res.data.omitidos.map((o) => `• ${o.nombre} (${o.referencia}): ${o.motivo}`).join('\n');
+        alert(msg);
+      }
+    } catch (e) {
+      alert('Ocurrió un error inesperado al eliminar los productos.');
+    } finally {
+      setEliminandoBulk(false);
+    }
+  }
+
   const columnas = [
+    {
+      key: 'seleccion',
+      label: (
+        <input
+          type="checkbox"
+          checked={todosSeleccionados}
+          onChange={toggleSeleccionarTodos}
+          className="h-4 w-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500 cursor-pointer"
+          title="Seleccionar todos"
+        />
+      ),
+      width: '45px',
+      align: 'center' as const,
+      render: (row: FilaProducto) => (
+        <input
+          type="checkbox"
+          checked={seleccionados.has(row.id)}
+          onChange={() => toggleSeleccionarFila(row.id)}
+          className="h-4 w-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500 cursor-pointer"
+          aria-label={`Seleccionar ${row.nombre}`}
+        />
+      ),
+    },
     {
       key: 'referencia',
       label: 'Referencia',
@@ -265,8 +339,47 @@ export default function ProductosClient({ productos, catalogos }: Props) {
     },
   ];
 
+  const productosSeleccionadosLista = useMemo(() => {
+    return productos.filter((p) => seleccionados.has(p.id));
+  }, [productos, seleccionados]);
+
   return (
-    <div>
+    <div className="space-y-4">
+      {/* BARRA FLOTANTE / ALERTA DE SELECCIÓN MÚLTIPLE */}
+      {seleccionados.size > 0 && (
+        <div className="flex items-center justify-between gap-3 bg-red-50 border border-red-200 text-red-900 px-4 py-2.5 rounded-xl shadow-sm transition-all animate-in fade-in slide-in-from-top-2">
+          <div className="flex items-center gap-2">
+            <span className="flex h-6 w-6 items-center justify-center rounded-full bg-red-600 text-xs font-bold text-white">
+              {seleccionados.size}
+            </span>
+            <span className="text-xs font-semibold">
+              {seleccionados.size === 1
+                ? '1 producto seleccionado'
+                : `${seleccionados.size} productos seleccionados`}
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setSeleccionados(new Set())}
+              className="text-xs text-red-700 hover:bg-red-100"
+            >
+              Deseleccionar
+            </Button>
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={() => setModalBulkEliminar(true)}
+              className="flex items-center gap-1.5 text-xs font-semibold shadow-sm"
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+              Eliminar seleccionados ({seleccionados.size})
+            </Button>
+          </div>
+        </div>
+      )}
+
       <DataTable
         columns={columnas}
         data={filas}
@@ -306,6 +419,48 @@ export default function ProductosClient({ productos, catalogos }: Props) {
         emptyTitle="Sin productos"
         emptyDescription="Crea tu primer producto o impórtalo desde Excel."
       />
+
+      {/* MODAL DE CONFIRMACIÓN DE ELIMINACIÓN MÚLTIPLE */}
+      <Dialog open={modalBulkEliminar} onOpenChange={setModalBulkEliminar}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-red-600 flex items-center gap-2">
+              <Trash2 className="h-5 w-5" />
+              Eliminar {seleccionados.size} producto(s)
+            </DialogTitle>
+            <DialogDescription>
+              Esta acción eliminará de forma permanente los productos seleccionados, sus variantes y
+              existencias asociadas que no tengan historial de ventas.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="max-h-48 overflow-y-auto rounded-lg border border-slate-200 bg-slate-50 p-2 space-y-1 text-xs">
+            {productosSeleccionadosLista.map((p) => (
+              <div key={p.id} className="flex justify-between items-center bg-white p-2 rounded border border-slate-200">
+                <span className="font-medium text-slate-800">{p.nombre}</span>
+                <span className="font-mono text-slate-500 font-semibold">{p.referencia}</span>
+              </div>
+            ))}
+          </div>
+
+          <DialogFooter className="gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setModalBulkEliminar(false)}
+              disabled={eliminandoBulk}
+            >
+              Cancelar
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleBulkEliminar}
+              disabled={eliminandoBulk}
+            >
+              {eliminandoBulk ? 'Eliminando...' : `Sí, eliminar ${seleccionados.size} productos`}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={dialogForm} onOpenChange={setDialogForm}>
         <DialogContent className="max-h-[92vh] overflow-y-auto sm:max-w-2xl">
@@ -463,7 +618,9 @@ function FormProducto({
   }
 
   const sinCatalogos =
-    catalogos.categorias.length === 0 || catalogos.grupos.length === 0 || catalogos.colores.length === 0;
+    (catalogos?.categorias?.length ?? 0) === 0 ||
+    (catalogos?.grupos?.length ?? 0) === 0 ||
+    (catalogos?.colores?.length ?? 0) === 0;
 
   return (
     <form onSubmit={enviar} className="grid gap-4">
@@ -482,7 +639,7 @@ function FormProducto({
           <Select value={categoriaId || undefined} onValueChange={setCategoriaId} required>
             <SelectTrigger><SelectValue placeholder="Selecciona…" /></SelectTrigger>
             <SelectContent>
-              {catalogos.categorias.map((c) => (
+              {(catalogos?.categorias ?? []).map((c) => (
                 <SelectItem key={c.id} value={String(c.id)}>{c.nombre}</SelectItem>
               ))}
             </SelectContent>
@@ -494,7 +651,7 @@ function FormProducto({
             <SelectTrigger><SelectValue placeholder="Sin marca" /></SelectTrigger>
             <SelectContent>
               <SelectItem value="ninguna">Sin marca</SelectItem>
-              {catalogos.marcas.map((m) => (
+              {(catalogos?.marcas ?? []).map((m) => (
                 <SelectItem key={m.id} value={String(m.id)}>{m.nombre}</SelectItem>
               ))}
             </SelectContent>

@@ -87,9 +87,10 @@ export default function TicketVentaModal({ open, onClose, venta }: TicketVentaMo
           >
             {/* Encabezado Tienda */}
             <div className="text-center space-y-0.5 border-b border-dashed border-slate-400 pb-2.5">
-              <p className="font-black text-sm tracking-wider uppercase text-slate-950">
-                {venta.tiendaNombre || "KAOB POS"}
+              <p className="font-black text-base tracking-widest uppercase text-slate-950 font-sans">
+                KΛOB
               </p>
+              <p className="text-[10px] font-bold tracking-widest uppercase text-slate-700">MODERN WEAR</p>
               <p className="text-[10px] text-slate-700 font-semibold">NIT: {venta.nit || "900.000.000-0"}</p>
               <p className="text-[10px] text-slate-600">{venta.direccion || "Dirección de la tienda"}</p>
               <p className="text-[10px] text-slate-600">

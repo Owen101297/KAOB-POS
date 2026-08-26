@@ -228,7 +228,7 @@ export default function VentaClient() {
   // Carga inicial
   useEffect(() => {
     verificarCaja();
-    listarCategorias().then(setCategorias);
+    listarCategorias(true).then(setCategorias);
     listarClientes(true).then(setClientes);
     listarVendedores(true).then(setVendedores);
     obtenerConfiguracion().then(setConfigTienda);

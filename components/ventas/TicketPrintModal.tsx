@@ -82,8 +82,8 @@ export function TicketPrintModal({ open, onOpenChange, venta }: TicketPrintModal
           >
             {/* ENCABEZADO TIENDA */}
             <div className="text-center space-y-0.5 border-b border-dashed border-slate-300 pb-3 mb-3">
-              <h2 className="text-base font-extrabold tracking-wider uppercase text-slate-900">KAOB STORE</h2>
-              <p className="text-[11px] text-slate-600">Tienda de Ropa & Moda</p>
+              <h2 className="text-lg font-black tracking-widest uppercase text-slate-950 font-sans">KΛOB</h2>
+              <p className="text-[10px] font-bold tracking-widest uppercase text-slate-600">MODERN WEAR</p>
               <p className="text-[10px] text-slate-500">{venta.bodega?.nombre ?? "Bodega Principal"}</p>
               {venta.bodega?.direccion && <p className="text-[10px] text-slate-500">{venta.bodega.direccion}</p>}
               <div className="pt-1 font-bold text-sm text-slate-900">
@@ -125,21 +125,21 @@ export function TicketPrintModal({ open, onOpenChange, venta }: TicketPrintModal
                 </tr>
               </thead>
               <tbody className="divide-y divide-dashed divide-slate-200">
-                {venta.items.map((item) => (
+                {(venta.items ?? []).map((item) => (
                   <tr key={item.id} className="py-1">
                     <td className="py-1 pr-1">
                       <div className="font-semibold">
-                        {item.cantidad} × {item.variante.producto?.nombre ?? "Producto"}
+                        {item.cantidad ?? 0} × {item.variante?.producto?.nombre ?? "Producto"}
                       </div>
                       <div className="text-[10px] text-slate-500">
-                        {item.variante.sku} · {item.variante.color.nombre} / T.{item.variante.talla.valor}
+                        {item.variante?.sku ?? "-"} · {item.variante?.color?.nombre ?? ""} / T.{item.variante?.talla?.valor ?? ""}
                       </div>
-                      {item.descuento > 0 && (
+                      {(item.descuento ?? 0) > 0 && (
                         <div className="text-[10px] text-red-500">Desc: -{formatoCOP(item.descuento)}</div>
                       )}
                     </td>
                     <td className="py-1 text-right align-top font-semibold">
-                      {formatoCOP(item.subtotal)}
+                      {formatoCOP(item.subtotal ?? 0)}
                     </td>
                   </tr>
                 ))}

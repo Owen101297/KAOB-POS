@@ -2,7 +2,7 @@
 
 import { useMemo, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
-import { AlertTriangle, Download, PackageCheck, SlidersHorizontal, TrendingDown } from 'lucide-react';
+import { AlertTriangle, Download, PackageCheck, Pencil, Plus, Minus, SlidersHorizontal, TrendingDown } from 'lucide-react';
 import type { StockFila } from '@/lib/actions/inventario';
 import type { Bodega } from '@prisma/client';
 import DataTable from '@/components/ui/DataTable';
@@ -121,11 +121,30 @@ export default function InventarioClient({
       key: 'cantidad',
       label: 'Cantidad',
       align: 'right' as const,
-      render: (row: FilaStock) => (
-        <span className={row.cantidad === 0 ? 'font-bold text-red-500' : 'font-bold text-slate-800'}>
-          {row.cantidad}
-        </span>
-      ),
+      render: (row: FilaStock) => {
+        const original = stock.find(
+          (f) => f.varianteId === row.varianteId && f.bodegaId === row.bodegaId
+        );
+        return (
+          <button
+            type="button"
+            onClick={() => original && setAjustando(original)}
+            className="group inline-flex items-center gap-1.5 px-2 py-0.5 rounded-lg border border-transparent hover:border-slate-300 hover:bg-slate-50 transition-colors"
+            title="Clic para editar el stock"
+          >
+            <span
+              className={
+                row.cantidad === 0
+                  ? 'font-extrabold text-red-500 text-sm'
+                  : 'font-extrabold text-slate-900 text-sm'
+              }
+            >
+              {row.cantidad}
+            </span>
+            <Pencil className="h-3 w-3 text-slate-400 group-hover:text-brand-600 opacity-60 group-hover:opacity-100 transition-opacity" />
+          </button>
+        );
+      },
     },
     {
       key: 'minimo',
@@ -150,16 +169,24 @@ export default function InventarioClient({
     },
     {
       key: 'acciones',
-      label: '',
-      width: '70px',
+      label: 'Acciones',
+      width: '100px',
+      align: 'center' as const,
       render: (row: FilaStock) => {
         const original = stock.find(
           (f) => f.varianteId === row.varianteId && f.bodegaId === row.bodegaId
         );
         if (!original) return null;
         return (
-          <Button size="icon" variant="ghost" aria-label={`Ajustar ${row.sku}`} onClick={() => setAjustando(original)}>
-            <SlidersHorizontal className="h-4 w-4" />
+          <Button
+            size="sm"
+            variant="outline"
+            className="h-8 gap-1.5 text-xs font-semibold text-slate-700 hover:text-brand-700 hover:border-brand-300 hover:bg-brand-50"
+            onClick={() => setAjustando(original)}
+            title="Editar existencias de esta prenda"
+          >
+            <Pencil className="h-3.5 w-3.5 text-brand-600" />
+            Editar
           </Button>
         );
       },
@@ -291,6 +318,14 @@ function InlineMinimo({
 
 // ───────────────────────── dialog ajuste ───────────────────────
 
+const MOTIVOS_PREDEFINIDOS = [
+  'Conteo físico / Auditoría',
+  'Ingreso manual de prendas',
+  'Devolución de cliente',
+  'Prenda dañada / Merma',
+  'Ajuste por descuadre',
+];
+
 function DialogAjuste({
   fila,
   disabled,
@@ -309,45 +344,151 @@ function DialogAjuste({
   async function enviar(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
+    const cantNum = Math.max(0, Number(nuevaCantidad) || 0);
     const res = await ajustarStock({
       varianteId: fila.varianteId,
       bodegaId: fila.bodegaId,
-      nuevaCantidad: Number(nuevaCantidad),
-      motivo,
+      nuevaCantidad: cantNum,
+      motivo: motivo.trim(),
     });
     if (!res.ok) return setError(res.error);
     onListo();
   }
 
-  const delta = Number(nuevaCantidad) - fila.cantidad;
+  const delta = (Number(nuevaCantidad) || 0) - fila.cantidad;
+
+  const aplicarDelta = (diff: number) => {
+    const actual = Number(nuevaCantidad) || 0;
+    const nuevo = Math.max(0, actual + diff);
+    setNuevaCantidad(String(nuevo));
+  };
 
   return (
-    <form onSubmit={enviar} className="grid gap-3">
-      <div className="rounded-lg bg-slate-50 px-4 py-3 text-[13px]">
-        <p className="font-bold text-slate-800">{fila.variante.producto.nombre}</p>
-        <p className="text-xs text-slate-500">
-          {fila.variante.color.nombre} · Talla {fila.variante.talla.valor} · {fila.bodega.nombre}
-        </p>
+    <form onSubmit={enviar} className="grid gap-3.5">
+      <div className="rounded-xl bg-slate-50 border border-slate-200/80 p-3 text-[13px] space-y-1">
+        <p className="font-bold text-slate-800 text-sm">{fila.variante.producto.nombre}</p>
+        <div className="flex flex-wrap gap-2 text-xs text-slate-500">
+          <span className="font-mono bg-white px-2 py-0.5 rounded border border-slate-200">{fila.variante.sku}</span>
+          <span>Color: <strong>{fila.variante.color.nombre}</strong></span>
+          <span>Talla: <strong>{fila.variante.talla.valor}</strong></span>
+          <span>Bodega: <strong>{fila.bodega.nombre}</strong></span>
+        </div>
       </div>
-      <label className="grid gap-1">
-        <span className="text-xs font-semibold text-slate-600">
-          Cantidad actual: <strong>{fila.cantidad}</strong>
-          {delta !== 0 && (
-            <span className={delta > 0 ? 'ml-2 text-emerald-600' : 'ml-2 text-red-500'}>
-              ({delta > 0 ? '+' : ''}{delta})
-            </span>
-          )}
-        </span>
-        <Input type="number" min={0} value={nuevaCantidad} onChange={(e) => setNuevaCantidad(e.target.value)} required autoFocus />
-      </label>
-      <label className="grid gap-1">
-        <span className="text-xs font-semibold text-slate-600">Motivo del ajuste *</span>
-        <Input value={motivo} onChange={(e) => setMotivo(e.target.value)} required minLength={3} maxLength={300} placeholder="Ej. Prenda dañada, conteo físico…" />
-      </label>
+
+      <div className="space-y-2">
+        <div className="flex items-center justify-between">
+          <span className="text-xs font-semibold text-slate-700">Nueva cantidad en inventario *</span>
+          <span className="text-xs text-slate-500">
+            Actual: <strong className="text-slate-800">{fila.cantidad}</strong>
+            {delta !== 0 && (
+              <span className={delta > 0 ? 'ml-2 font-bold text-emerald-600' : 'ml-2 font-bold text-red-500'}>
+                ({delta > 0 ? `+${delta}` : delta})
+              </span>
+            )}
+          </span>
+        </div>
+
+        <Input
+          type="number"
+          min={0}
+          value={nuevaCantidad}
+          onChange={(e) => setNuevaCantidad(e.target.value)}
+          required
+          autoFocus
+          className="text-base font-bold"
+        />
+
+        {/* BOTONES DE AJUSTE RÁPIDO */}
+        <div className="flex flex-wrap gap-1.5 pt-1">
+          <button
+            type="button"
+            onClick={() => aplicarDelta(-10)}
+            className="rounded-md border border-slate-200 bg-white px-2 py-1 text-xs font-semibold text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+          >
+            -10
+          </button>
+          <button
+            type="button"
+            onClick={() => aplicarDelta(-5)}
+            className="rounded-md border border-slate-200 bg-white px-2 py-1 text-xs font-semibold text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+          >
+            -5
+          </button>
+          <button
+            type="button"
+            onClick={() => aplicarDelta(-1)}
+            className="rounded-md border border-slate-200 bg-white px-2 py-1 text-xs font-semibold text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+          >
+            -1
+          </button>
+          <button
+            type="button"
+            onClick={() => aplicarDelta(1)}
+            className="rounded-md border border-slate-200 bg-white px-2 py-1 text-xs font-semibold text-emerald-700 hover:bg-emerald-50"
+          >
+            +1
+          </button>
+          <button
+            type="button"
+            onClick={() => aplicarDelta(5)}
+            className="rounded-md border border-slate-200 bg-white px-2 py-1 text-xs font-semibold text-emerald-700 hover:bg-emerald-50"
+          >
+            +5
+          </button>
+          <button
+            type="button"
+            onClick={() => aplicarDelta(10)}
+            className="rounded-md border border-slate-200 bg-white px-2 py-1 text-xs font-semibold text-emerald-700 hover:bg-emerald-50"
+          >
+            +10
+          </button>
+          <button
+            type="button"
+            onClick={() => setNuevaCantidad('0')}
+            className="rounded-md border border-red-200 bg-red-50 px-2 py-1 text-xs font-semibold text-red-600 hover:bg-red-100"
+          >
+            Poner en 0
+          </button>
+        </div>
+      </div>
+
+      <div className="space-y-1.5">
+        <label className="block text-xs font-semibold text-slate-700">
+          Motivo del ajuste *
+        </label>
+        <Input
+          value={motivo}
+          onChange={(e) => setMotivo(e.target.value)}
+          required
+          minLength={3}
+          maxLength={300}
+          placeholder="Ingresa el motivo del ajuste o selecciona una opción rápida…"
+        />
+
+        {/* MOTIVOS PREDEFINIDOS */}
+        <div className="flex flex-wrap gap-1 pt-1">
+          {MOTIVOS_PREDEFINIDOS.map((m) => (
+            <button
+              key={m}
+              type="button"
+              onClick={() => setMotivo(m)}
+              className="text-[11px] rounded-full border border-slate-200 bg-slate-100 px-2.5 py-0.5 text-slate-600 hover:bg-slate-200 hover:text-slate-900 transition-colors"
+            >
+              {m}
+            </button>
+          ))}
+        </div>
+      </div>
+
       {error && <p className="text-xs font-semibold text-red-500">{error}</p>}
-      <DialogFooter>
-        <Button type="button" variant="outline" onClick={onCancelar}>Cancelar</Button>
-        <Button type="submit" disabled={disabled || motivo.trim().length < 3}>Registrar ajuste</Button>
+
+      <DialogFooter className="gap-2 pt-2">
+        <Button type="button" variant="outline" onClick={onCancelar}>
+          Cancelar
+        </Button>
+        <Button type="submit" disabled={disabled || motivo.trim().length < 3}>
+          Guardar cambios en inventario
+        </Button>
       </DialogFooter>
     </form>
   );

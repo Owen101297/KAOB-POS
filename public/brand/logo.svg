@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 300" width="100%" height="100%">
+  <!-- Fondo transparente / compatible con dark & light mode -->
+  <g fill="currentColor">
+    <!-- Letra K geométrica -->
+    <path d="M 120 70 L 145 70 L 145 200 L 120 200 Z" />
+    <path d="M 145 135 L 210 70 L 245 70 L 175 140 L 250 200 L 215 200 L 150 148 Z" />
+    
+    <!-- Letra Lambda / A estilizada (sin travesaño) -->
+    <path d="M 330 70 L 355 70 L 415 200 L 385 200 L 342 105 L 300 200 L 270 200 Z" />
+    
+    <!-- Letra O circular perfecta -->
+    <path fill-rule="evenodd" d="M 500 68 C 540 68 570 98 570 135 C 570 172 540 202 500 202 C 460 202 430 172 430 135 C 430 98 460 68 500 68 Z M 500 93 C 475 93 456 112 456 135 C 456 158 475 177 500 177 C 525 177 544 158 544 135 C 544 112 525 93 500 93 Z" />
+    
+    <!-- Letra B moderna -->
+    <path fill-rule="evenodd" d="M 600 70 L 665 70 C 690 70 708 84 708 102 C 708 114 700 125 685 131 C 705 137 715 150 715 168 C 715 188 695 200 665 200 L 600 200 Z M 626 92 L 626 122 L 660 122 C 674 122 682 114 682 107 C 682 100 674 92 660 92 Z M 626 144 L 626 178 L 662 178 C 678 178 688 169 688 161 C 688 153 678 144 662 144 Z" />
+  </g>
+  
+  <!-- Subtítulo MODERN WEAR con espaciado amplio -->
+  <text x="415" y="255" text-anchor="middle" font-family="'Montserrat', 'Inter', 'Helvetica Neue', sans-serif" font-size="28" font-weight="600" letter-spacing="18" fill="currentColor">
+    MODERN WEAR
+  </text>
+</svg>

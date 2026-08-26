@@ -142,11 +142,46 @@ export async function eliminarMarca(id: number): Promise<ActionResult> {
 
 // ───────────────────────── CATEGORÍAS ────────────────────────
 
-export async function listarCategorias() {
+export async function listarCategorias(soloConProductos = false) {
   return db.categoria.findMany({
+    where: soloConProductos
+      ? {
+          productos: {
+            some: { activo: true },
+          },
+        }
+      : undefined,
     orderBy: { nombre: "asc" },
     include: { padre: { select: { nombre: true } } },
   });
+}
+
+/** Limpia y elimina automáticamente categorías huérfanas/vacías que no tienen productos asignados */
+export async function limpiarCategoriasVacias(): Promise<ActionResult<{ eliminadas: number }>> {
+  try {
+    const categoriasSinUso = await db.categoria.findMany({
+      where: {
+        productos: { none: {} },
+        hijas: { none: {} },
+      },
+      select: { id: true, nombre: true },
+    });
+
+    const ids = categoriasSinUso.map((c) => c.id);
+    if (ids.length > 0) {
+      await db.categoria.deleteMany({
+        where: { id: { in: ids } },
+      });
+    }
+
+    revalidatePath("/configuracion/catalogos");
+    revalidatePath("/ventas/nueva");
+    revalidatePath("/productos");
+    revalidatePath("/tienda");
+    return { ok: true, data: { eliminadas: ids.length } };
+  } catch (e) {
+    return { ok: false as const, error: errorDesconocido(e) };
+  }
 }
 
 export async function guardarCategoria(input: unknown): Promise<ActionResult> {
