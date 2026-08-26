@@ -165,6 +165,20 @@
   - **Nivel 2 (Subcategorías Dinámicas)**: Al seleccionar un género (ej: `MEN`), calcula en tiempo real qué categorías de inventario contienen ropa para hombre y muestra chips filtrables: `[ Todo Men (24) ] [ Camisetas (12) ] [ Hoodies (8) ] [ Pantalones (4) ]`.
   - **Breadcrumbs Interactivos**: `INICIO > MEN > HOODIES` con chips de remoción individual para navegación intuitiva.
 
+### ✅ Fase 23 - Datos de Pago Inmediatos, Mensajería VIP Concierge y WhatsApp Oficial
+- **Número Oficial Configurable**:
+  - Establecido teléfono oficial por defecto: `3136332887` (`573136332887`).
+  - Sincronización en tiempo real con `db.configuracion.telefono` y cuentas bancarias activas (`db.cuentaBancaria`).
+- **Tarjetas Interactivas de Pago en Carrito (`CartDrawerTienda.tsx`)**:
+  - **Transferencia (Nequi / Bancolombia)**: Tarjetas interactivas con número de cuenta y botón *"Copiar"* de 1 clic con feedback visual.
+  - **Addi**: Explicación de 3 cuotas con 0% de interés y generación de link directo.
+  - **Sistecrédito**: Instrucciones para validación ágil de cupo con cédula en 30 segundos.
+  - **Plan Separe (30%)**: Cálculo dinámico del anticipo del 30% para apartar y congelar la talla por 30 días con datos de Nequi.
+- **Mensaje WhatsApp de Alto Nivel ("Concierge VIP")**:
+  - Separadores limpios `━━━━━━━━━━━━━━━━━━━━`, cabecera de orden `#KB-XXXX`, desglose jerárquico de prendas (`•`, `└`), destino de despacho y llamada a la acción contextualizada según el método de pago.
+- **Atención en 1 Clic desde el POS (`/ventas-online`)**:
+  - Botón *"Atender en WA"* con respuestas prediseñadas automáticas por método de pago para que el vendedor responda al cliente en segundos.
+
 ---
 
 ## ⏭️ Próximos Pasos y Roadmap
