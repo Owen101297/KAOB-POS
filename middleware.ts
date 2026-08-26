@@ -9,7 +9,8 @@ export const config = {
      * - login, register (auth pages)
      * - tienda (public storefront)
      * - api/auth (NextAuth API)
+     * - api/health (healthcheck)
      */
-    "/((?!_next|brand|icon|favicon|login|register|tienda|api/auth).*)",
+    "/((?!_next|brand|icon|favicon|login|register|tienda|api/auth|api/health).*)",
   ],
 };
