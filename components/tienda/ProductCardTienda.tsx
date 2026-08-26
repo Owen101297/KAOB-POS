@@ -1,10 +1,11 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import { ShoppingBag, Eye, Check, AlertCircle } from 'lucide-react';
+import { ShoppingBag, Eye, Check, AlertCircle, Flame } from 'lucide-react';
 import type { ProductoLista } from '@/lib/actions/productos';
 import { formatoCOP } from '@/lib/format';
 import { CALIDAD_LABEL } from '@/lib/constants';
+import FinanciacionCalculadora from './FinanciacionCalculadora';
 
 interface ItemBolsa {
   varianteId: number;
@@ -23,12 +24,14 @@ interface Props {
   producto: ProductoLista;
   onAgregarABolsa: (item: ItemBolsa) => void;
   onVerDetalle: (producto: ProductoLista) => void;
+  vendidosRecientes?: number;
 }
 
 export default function ProductCardTienda({
   producto,
   onAgregarABolsa,
   onVerDetalle,
+  vendidosRecientes = 0,
 }: Props) {
   // Colores disponibles únicos
   const coloresDisponibles = useMemo(() => {
@@ -146,6 +149,12 @@ export default function ProductCardTienda({
               {CALIDAD_LABEL[producto.calidad as keyof typeof CALIDAD_LABEL] ?? producto.calidad}
             </span>
           )}
+
+          {vendidosRecientes >= 3 && (
+            <span className="px-2.5 py-1 rounded-full bg-orange-500 text-white text-[10px] font-black uppercase tracking-wider shadow-sm flex items-center gap-1">
+              <Flame className="h-3 w-3" /> {vendidosRecientes} vendidos este mes
+            </span>
+          )}
         </div>
 
         {/* Botón flotante vista rápida */}
@@ -243,6 +252,7 @@ export default function ProductCardTienda({
             <span className="text-base sm:text-lg font-black text-zinc-900">
               {formatoCOP(precioEfectivo)}
             </span>
+            <FinanciacionCalculadora precio={precioEfectivo} variante="compacta" />
           </div>
 
           <button

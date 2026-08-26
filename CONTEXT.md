@@ -127,6 +127,19 @@
 - **UI `/login`**: Formulario oficial de inicio de sesión con branding KΛOB, toggle de contraseña y retroalimentación de errores.
 - **Estado Actual de Railway**: Despliegue en staging (`develop`) en estado **SUCCESS**, base de datos migrada y login 100% operativo.
 
+### ✅ Fase 19 - Motor de Conversión (CRO) en la Tienda Online
+
+- **Schema**: `PedidoOnline` / `PedidoOnlineItem` (pedidos reales capturados en el checkout web, antes de abrir WhatsApp) y `LeadTienda` (contactos capturados por exit-intent para recuperación manual). Migración [`20260826150000_add_tienda_cro_pedidos_leads`](file:///f:/SISTEMAS-OWEN/KAOB-POS/prisma/migrations/20260826150000_add_tienda_cro_pedidos_leads/migration.sql).
+- **Acciones**: `lib/actions/tienda.ts` — `crearPedidoOnline`, `listarPedidosOnline`, `actualizarEstadoPedidoOnline`, `registrarLeadTienda`, `listarLeadsTienda`, `marcarLeadContactado`, `obtenerVentasPorProducto` (contador de vendidos reales), `obtenerActividadRecienteVitrina` (prueba social basada 100% en pedidos reales, sin datos inventados), `obtenerPromocionDestacada`.
+- **`/ventas-online` ahora es real**: dejó de usar datos mock; lee `PedidoOnline` de la base de datos y agrega una pestaña **Leads de Recuperación** para contactar manualmente a visitantes que recibieron el cupón de salida.
+- **Checkout de la tienda (2 pasos, sin pasarela real)**: al enviar el pedido por WhatsApp, `CartDrawerTienda` ahora también lo persiste como `PedidoOnline` (con método de pago/financiación elegido), visible de inmediato en `/ventas-online`.
+- **Financiación visible (`FinanciacionCalculadora.tsx`)**: calculadora de cuotas (Plan Separe / Addi / Sistecrédito) en tarjeta de producto, modal de detalle y carrito, con aviso de que el valor es estimado y sujeto a aprobación.
+- **Urgencia y escasez con datos reales**: badge "vendidos este mes" (`obtenerVentasPorProducto`), banner de oferta flash con cuenta regresiva (`OfertaFlashBanner.tsx`) ligado a `Promocion`, toast de actividad reciente (`RecentPurchaseToast.tsx`) que solo se muestra si hay pedidos reales — nunca simula compras falsas.
+- **Recuperación de visitantes**: `ExitIntentModal.tsx` detecta intención de salida y ofrece 10% de descuento a cambio de WhatsApp/correo, guardado como `LeadTienda` para seguimiento manual.
+- **Descubrimiento**: búsqueda predictiva con sugerencias en vivo en `NavbarTienda`, y franja "Vistos recientemente" (`RecentlyViewedTienda.tsx`) basada en `localStorage`.
+- **Confianza en checkout**: franja de métodos de pago aceptados (efectivo, Nequi/Daviplata, Wompi, Addi, Sistecrédito, Plan Separe) en el footer y en el carrito.
+- **Nota de despliegue**: la migración se escribió a mano (sin acceso a `DATABASE_URL` en este entorno) siguiendo el estilo exacto de Prisma; se aplicará automáticamente en el próximo despliegue vía `prisma migrate deploy` (Railway).
+
 ---
 
 ## ⏭️ Próximos Pasos y Roadmap

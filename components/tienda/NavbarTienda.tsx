@@ -3,6 +3,15 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { Search, ShoppingBag, Menu, X, ArrowLeft, Sparkles, User, Users, Gem } from 'lucide-react';
+import { formatoCOP } from '@/lib/format';
+import OfertaFlashBanner from './OfertaFlashBanner';
+
+interface Sugerencia {
+  id: number;
+  nombre: string;
+  referencia: string;
+  precio: number;
+}
 
 interface Props {
   totalItemsEnBolsa: number;
@@ -14,6 +23,9 @@ interface Props {
   generoActivo: string | null;
   onSeleccionarGenero: (gen: string | null) => void;
   categorias: { id: number; nombre: string }[];
+  sugerencias?: Sugerencia[];
+  onSeleccionarSugerencia?: (id: number) => void;
+  promocionDestacada?: { nombre: string; tipo: string; valor: number; fechaFin: Date | string } | null;
 }
 
 export default function NavbarTienda({
@@ -26,12 +38,25 @@ export default function NavbarTienda({
   generoActivo,
   onSeleccionarGenero,
   categorias,
+  sugerencias = [],
+  onSeleccionarSugerencia,
+  promocionDestacada = null,
 }: Props) {
   const [menuMovilAbierto, setMenuMovilAbierto] = useState(false);
   const [mostrarBuscador, setMostrarBuscador] = useState(false);
+  const [buscadorEnfocado, setBuscadorEnfocado] = useState(false);
+
+  const mostrarSugerencias = buscadorEnfocado && busqueda.trim().length > 0 && sugerencias.length > 0;
+
+  const elegirSugerencia = (id: number) => {
+    onSeleccionarSugerencia?.(id);
+    setBuscadorEnfocado(false);
+    onCambiarBusqueda('');
+  };
 
   return (
     <header className="sticky top-0 z-50 bg-black/95 backdrop-blur-md border-b border-white/10 text-white transition-all">
+      <OfertaFlashBanner promocion={promocionDestacada} />
       {/* Barra de anuncios / Promociones */}
       <div className="bg-gradient-to-r from-zinc-950 via-zinc-900 to-zinc-950 border-b border-white/5 py-1.5 px-4 text-center text-[10.5px] sm:text-[11px] font-semibold tracking-wider uppercase text-zinc-300 flex items-center justify-center gap-2 overflow-hidden">
         <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-ping shrink-0" />
@@ -161,7 +186,7 @@ export default function NavbarTienda({
 
           {/* Acciones derecha: Buscador y Carrito */}
           <div className="flex items-center gap-3">
-            {/* Buscador interactivo */}
+            {/* Buscador interactivo con sugerencias predictivas */}
             <div className="relative hidden sm:block w-44 md:w-60">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400" />
               <input
@@ -169,6 +194,8 @@ export default function NavbarTienda({
                 placeholder="Buscar prenda..."
                 value={busqueda}
                 onChange={(e) => onCambiarBusqueda(e.target.value)}
+                onFocus={() => setBuscadorEnfocado(true)}
+                onBlur={() => setTimeout(() => setBuscadorEnfocado(false), 150)}
                 className="w-full pl-9 pr-3 py-1.5 text-xs bg-zinc-900/90 border border-zinc-800 rounded-full text-white placeholder-zinc-500 focus:outline-none focus:border-white/50 focus:ring-1 focus:ring-white/50 transition-all"
               />
               {busqueda && (
@@ -179,6 +206,25 @@ export default function NavbarTienda({
                 >
                   ✕
                 </button>
+              )}
+
+              {mostrarSugerencias && (
+                <div className="absolute top-full mt-2 left-0 w-72 rounded-2xl bg-white text-zinc-900 shadow-2xl border border-zinc-200 overflow-hidden animate-in fade-in slide-in-from-top-1 duration-150">
+                  {sugerencias.slice(0, 6).map((s) => (
+                    <button
+                      key={s.id}
+                      type="button"
+                      onClick={() => elegirSugerencia(s.id)}
+                      className="w-full flex items-center justify-between gap-3 px-4 py-2.5 hover:bg-zinc-50 text-left border-b border-zinc-100 last:border-0"
+                    >
+                      <div>
+                        <p className="text-xs font-bold line-clamp-1">{s.nombre}</p>
+                        <p className="text-[10px] text-zinc-400 font-mono">{s.referencia}</p>
+                      </div>
+                      <span className="text-xs font-black shrink-0">{formatoCOP(s.precio)}</span>
+                    </button>
+                  ))}
+                </div>
               )}
             </div>
 
@@ -219,10 +265,34 @@ export default function NavbarTienda({
                 placeholder="Buscar prenda por nombre o referencia..."
                 value={busqueda}
                 onChange={(e) => onCambiarBusqueda(e.target.value)}
+                onFocus={() => setBuscadorEnfocado(true)}
+                onBlur={() => setTimeout(() => setBuscadorEnfocado(false), 150)}
                 autoFocus
                 className="w-full pl-9 pr-3 py-2 text-xs bg-zinc-900 border border-zinc-800 rounded-full text-white placeholder-zinc-500 focus:outline-none focus:border-white"
               />
             </div>
+
+            {mostrarSugerencias && (
+              <div className="mt-2 rounded-2xl bg-white text-zinc-900 shadow-2xl border border-zinc-200 overflow-hidden">
+                {sugerencias.slice(0, 6).map((s) => (
+                  <button
+                    key={s.id}
+                    type="button"
+                    onClick={() => {
+                      elegirSugerencia(s.id);
+                      setMostrarBuscador(false);
+                    }}
+                    className="w-full flex items-center justify-between gap-3 px-4 py-2.5 hover:bg-zinc-50 text-left border-b border-zinc-100 last:border-0"
+                  >
+                    <div>
+                      <p className="text-xs font-bold line-clamp-1">{s.nombre}</p>
+                      <p className="text-[10px] text-zinc-400 font-mono">{s.referencia}</p>
+                    </div>
+                    <span className="text-xs font-black shrink-0">{formatoCOP(s.precio)}</span>
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
         )}
       </div>

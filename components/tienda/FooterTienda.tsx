@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Phone, MapPin, ShieldCheck, MessageCircle, ArrowUp } from 'lucide-react';
+import { Phone, MapPin, ShieldCheck, MessageCircle, ArrowUp, Wallet, CreditCard, Landmark, Smartphone } from 'lucide-react';
 
 interface Props {
   categorias: { id: number; nombre: string }[];
@@ -42,6 +42,36 @@ export default function FooterTienda({
             <MessageCircle className="h-4 w-4" />
             <span>Chatear por WhatsApp</span>
           </a>
+        </div>
+      </div>
+
+      {/* Franja de métodos de pago y financiación */}
+      <div className="border-b border-zinc-800/80 py-6">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-500 mb-3 text-center sm:text-left">
+            Métodos de pago y financiación disponibles
+          </p>
+          <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
+            {[
+              { icono: Landmark, label: 'Efectivo contraentrega' },
+              { icono: Smartphone, label: 'Nequi / Daviplata' },
+              { icono: CreditCard, label: 'Tarjeta · Wompi' },
+              { icono: Wallet, label: 'Addi' },
+              { icono: Wallet, label: 'Sistecrédito' },
+              { icono: Wallet, label: 'Plan Separe' },
+            ].map((m, i) => {
+              const Icono = m.icono;
+              return (
+                <span
+                  key={i}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-zinc-900 border border-zinc-800 text-[11px] font-semibold text-zinc-300"
+                >
+                  <Icono className="h-3.5 w-3.5 text-zinc-400" />
+                  {m.label}
+                </span>
+              );
+            })}
+          </div>
         </div>
       </div>
 

@@ -236,6 +236,7 @@ model Variante {
   compraItems    CompraItem[]
   ordenCompraDetalles OrdenCompraDetalle[]
   planSepareItems PlanSepareItem[]
+  pedidoOnlineItems PedidoOnlineItem[]
 
   @@unique([productoId, colorId, tallaId])
   @@map("variantes")
@@ -831,6 +832,64 @@ model Gasto {
   @@index([fecha])
   @@index([estado])
   @@map("gastos")
+}
+
+// ───────────────────────── TIENDA ONLINE (CRO) ─────────────────────────
+
+model PedidoOnline {
+  id                  Int      @id @default(autoincrement())
+  consecutivo         Int      @unique
+  clienteNombre       String
+  clienteTelefono     String
+  ciudad              String
+  direccion           String
+  notas               String?
+  metodoFinanciacion  String   @default("CONTADO") // CONTADO, PLAN_SEPARE, ADDI, SISTECREDITO
+  subtotal            Int
+  total               Int
+  estado              String   @default("PENDIENTE") // PENDIENTE, EMPACADO, DESPACHADO, ENTREGADO, CANCELADO
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  items PedidoOnlineItem[]
+
+  @@index([estado])
+  @@index([createdAt])
+  @@map("pedidos_online")
+}
+
+model PedidoOnlineItem {
+  id             Int           @id @default(autoincrement())
+  pedidoId       Int
+  pedido         PedidoOnline  @relation(fields: [pedidoId], references: [id], onDelete: Cascade)
+  varianteId     Int?
+  variante       Variante?     @relation(fields: [varianteId], references: [id], onDelete: SetNull)
+  nombreProducto String
+  referencia     String?
+  tallaValor     String
+  colorNombre    String
+  cantidad       Int
+  precioUnitario Int
+  subtotal       Int
+
+  @@map("pedidos_online_items")
+}
+
+model LeadTienda {
+  id             Int       @id @default(autoincrement())
+  nombre         String?
+  telefono       String?
+  email          String?
+  origen         String    // EXIT_INTENT, CARRITO_ABANDONADO, NEWSLETTER
+  cuponOfrecido  String?
+  descuentoPct   Int?
+  contactado     Boolean   @default(false)
+  carritoResumen String?
+  createdAt      DateTime  @default(now())
+
+  @@index([contactado])
+  @@index([createdAt])
+  @@map("leads_tienda")
 }
 
 // ───────────────────────── AUTENTICACIÓN Y USUARIOS ─────────────────────────

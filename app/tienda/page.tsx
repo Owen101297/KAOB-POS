@@ -1,5 +1,10 @@
 import { db } from '@/lib/db';
 import { listarProductos, type ProductoLista } from '@/lib/actions/productos';
+import {
+  obtenerVentasPorProducto,
+  obtenerActividadRecienteVitrina,
+  obtenerPromocionDestacada,
+} from '@/lib/actions/tienda';
 import TiendaClient from './TiendaClient';
 
 export const dynamic = 'force-dynamic';
@@ -13,9 +18,12 @@ export default async function TiendaVirtualPage() {
     direccion: '',
     ciudad: '',
   };
+  let ventasPorProducto: Record<number, number> = {};
+  let actividadReciente: { nombre: string; producto: string; minutosAtras: number; ciudad: string }[] = [];
+  let promocionDestacada: { nombre: string; tipo: string; valor: number; fechaFin: Date } | null = null;
 
   try {
-    const [prods, cats, conf] = await Promise.all([
+    const [prods, cats, conf, ventas, actividad, promo] = await Promise.all([
       listarProductos(true),
       db.categoria.findMany({
         where: { productos: { some: { activo: true } } },
@@ -23,10 +31,16 @@ export default async function TiendaVirtualPage() {
         select: { id: true, nombre: true },
       }),
       db.configuracion.findFirst(),
+      obtenerVentasPorProducto(30),
+      obtenerActividadRecienteVitrina(),
+      obtenerPromocionDestacada(),
     ]);
 
     productos = prods ?? [];
     categorias = cats ?? [];
+    ventasPorProducto = ventas ?? {};
+    actividadReciente = actividad ?? [];
+    promocionDestacada = promo && promo.fechaFin ? { ...promo, fechaFin: promo.fechaFin } : null;
     if (conf) {
       configuracion = {
         nombreTienda: conf.nombreTienda || 'KAOB MODERN WEAR',
@@ -44,6 +58,9 @@ export default async function TiendaVirtualPage() {
       productos={productos}
       categorias={categorias}
       configuracion={configuracion}
+      ventasPorProducto={ventasPorProducto}
+      actividadReciente={actividadReciente}
+      promocionDestacada={promocionDestacada}
     />
   );
 }

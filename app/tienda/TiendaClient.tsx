@@ -11,8 +11,25 @@ import FooterTienda from '@/components/tienda/FooterTienda';
 import ProductCardTienda from '@/components/tienda/ProductCardTienda';
 import ProductDetailModal from '@/components/tienda/ProductDetailModal';
 import CartDrawerTienda, { type ItemBolsa } from '@/components/tienda/CartDrawerTienda';
+import RecentlyViewedTienda from '@/components/tienda/RecentlyViewedTienda';
+import RecentPurchaseToast from '@/components/tienda/RecentPurchaseToast';
+import ExitIntentModal from '@/components/tienda/ExitIntentModal';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/Select';
 import { Button } from '@/components/ui/Button';
+
+interface ActividadReciente {
+  nombre: string;
+  producto: string;
+  minutosAtras: number;
+  ciudad: string;
+}
+
+interface PromocionDestacada {
+  nombre: string;
+  tipo: string;
+  valor: number;
+  fechaFin: Date | string;
+}
 
 interface Props {
   productos: ProductoLista[];
@@ -23,9 +40,19 @@ interface Props {
     direccion?: string;
     ciudad?: string;
   };
+  ventasPorProducto?: Record<number, number>;
+  actividadReciente?: ActividadReciente[];
+  promocionDestacada?: PromocionDestacada | null;
 }
 
-export default function TiendaClient({ productos, categorias, configuracion }: Props) {
+export default function TiendaClient({
+  productos,
+  categorias,
+  configuracion,
+  ventasPorProducto = {},
+  actividadReciente = [],
+  promocionDestacada = null,
+}: Props) {
   const [busqueda, setBusqueda] = useState('');
   const [categoriaActiva, setCategoriaActiva] = useState<string | null>(null);
   const [generoActivo, setGeneroActivo] = useState<string | null>(null);
@@ -38,12 +65,19 @@ export default function TiendaClient({ productos, categorias, configuracion }: P
   // Modal de Detalle
   const [productoSeleccionado, setProductoSeleccionado] = useState<ProductoLista | null>(null);
 
+  // Vistos recientemente
+  const [vistosIds, setVistosIds] = useState<number[]>([]);
+
   // Cargar carrito guardado en localStorage
   useEffect(() => {
     try {
       const guardado = localStorage.getItem('kaob_cart_items');
       if (guardado) {
         setItemsBolsa(JSON.parse(guardado));
+      }
+      const vistos = localStorage.getItem('kaob_vistos');
+      if (vistos) {
+        setVistosIds(JSON.parse(vistos));
       }
     } catch {
       // Ignorar error de JSON parse
@@ -57,6 +91,45 @@ export default function TiendaClient({ productos, categorias, configuracion }: P
     } catch {
       // Ignorar
     }
+  }, [itemsBolsa]);
+
+  const abrirDetalleProducto = (producto: ProductoLista) => {
+    setProductoSeleccionado(producto);
+    setVistosIds((prev) => {
+      const siguiente = [producto.id, ...prev.filter((id) => id !== producto.id)].slice(0, 8);
+      try {
+        localStorage.setItem('kaob_vistos', JSON.stringify(siguiente));
+      } catch {
+        // Ignorar
+      }
+      return siguiente;
+    });
+  };
+
+  // Sugerencias de búsqueda predictiva para el navbar
+  const sugerenciasBusqueda = useMemo(() => {
+    if (!busqueda.trim()) return [];
+    const q = busqueda.toLowerCase().trim();
+    return productos
+      .filter((p) => p.activo)
+      .filter((p) => p.nombre.toLowerCase().includes(q) || p.referencia.toLowerCase().includes(q))
+      .slice(0, 6)
+      .map((p) => ({
+        id: p.id,
+        nombre: p.nombre,
+        referencia: p.referencia,
+        precio: p.variantes[0]?.precioOverride ?? p.precioBase,
+      }));
+  }, [productos, busqueda]);
+
+  const handleSeleccionarSugerencia = (id: number) => {
+    const producto = productos.find((p) => p.id === id);
+    if (producto) abrirDetalleProducto(producto);
+  };
+
+  const resumenCarrito = useMemo(() => {
+    if (itemsBolsa.length === 0) return undefined;
+    return itemsBolsa.map((it) => `${it.cantidad}x ${it.nombre} (${it.tallaValor}/${it.colorNombre})`).join('; ');
   }, [itemsBolsa]);
 
   // Filtrado y Ordenamiento
@@ -193,6 +266,9 @@ export default function TiendaClient({ productos, categorias, configuracion }: P
         generoActivo={generoActivo}
         onSeleccionarGenero={setGeneroActivo}
         categorias={categorias}
+        sugerencias={sugerenciasBusqueda}
+        onSeleccionarSugerencia={handleSeleccionarSugerencia}
+        promocionDestacada={promocionDestacada}
       />
 
       {/* HERO BANNER EDITORIAL */}
@@ -299,12 +375,16 @@ export default function TiendaClient({ productos, categorias, configuracion }: P
                 key={prod.id}
                 producto={prod}
                 onAgregarABolsa={agregarABolsa}
-                onVerDetalle={(p) => setProductoSeleccionado(p)}
+                onVerDetalle={abrirDetalleProducto}
+                vendidosRecientes={ventasPorProducto[prod.id] ?? 0}
               />
             ))}
           </div>
         )}
       </main>
+
+      {/* VISTOS RECIENTEMENTE */}
+      <RecentlyViewedTienda productos={productos} idsVistos={vistosIds} onVerDetalle={abrirDetalleProducto} />
 
       {/* SECCIÓN SOCIAL PROOF Y GARANTÍAS */}
       <SocialProofSection />
@@ -334,6 +414,12 @@ export default function TiendaClient({ productos, categorias, configuracion }: P
         onVaciarBolsa={() => setItemsBolsa([])}
         telefonoWhatsAppTienda={configuracion?.telefono || '573000000000'}
       />
+
+      {/* PRUEBA SOCIAL EN TIEMPO REAL (basada en pedidos reales) */}
+      <RecentPurchaseToast actividad={actividadReciente} />
+
+      {/* RECUPERACIÓN DE VISITANTES QUE VAN A ABANDONAR LA TIENDA */}
+      <ExitIntentModal totalItemsEnBolsa={totalItemsEnBolsa} resumenCarrito={resumenCarrito} />
     </div>
   );
 }

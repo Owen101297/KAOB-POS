@@ -1,91 +1,73 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useTransition } from 'react';
 import Link from 'next/link';
 import {
-  Globe,
   ExternalLink,
-  ShoppingBag,
-  Truck,
-  CheckCircle2,
-  Clock,
   Send,
   Copy,
   Check,
   Search,
   Store,
+  Clock,
+  Users,
+  Package,
+  PhoneCall,
 } from 'lucide-react';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
-import { formatoCOP } from '@/lib/format';
+import { formatoCOP, formatoFechaHora } from '@/lib/format';
+import {
+  actualizarEstadoPedidoOnline,
+  marcarLeadContactado,
+  type PedidoOnlineLista,
+  type LeadTiendaLista,
+} from '@/lib/actions/tienda';
 
-interface PedidoOnline {
-  id: string;
-  cliente: string;
-  telefono: string;
-  ciudad: string;
-  direccion: string;
-  total: number;
-  fecha: string;
-  estado: 'pendiente' | 'empacado' | 'despachado' | 'entregado';
-  prendas: { nombre: string; talla: string; color: string; cantidad: number; subtotal: number }[];
+type EstadoPedido = 'PENDIENTE' | 'EMPACADO' | 'DESPACHADO' | 'ENTREGADO' | 'CANCELADO';
+
+const ESTADO_LABEL: Record<EstadoPedido, string> = {
+  PENDIENTE: 'Pendiente',
+  EMPACADO: 'Empacado',
+  DESPACHADO: 'En camino',
+  ENTREGADO: 'Entregado',
+  CANCELADO: 'Cancelado',
+};
+
+const METODO_LABEL: Record<string, string> = {
+  CONTADO: 'Contado',
+  PLAN_SEPARE: 'Plan Separe',
+  ADDI: 'Addi',
+  SISTECREDITO: 'Sistecrédito',
+};
+
+interface Props {
+  pedidosIniciales: PedidoOnlineLista[];
+  leadsIniciales: LeadTiendaLista[];
 }
 
-export default function VentasOnlineClient() {
+export default function VentasOnlineClient({ pedidosIniciales, leadsIniciales }: Props) {
+  const [tab, setTab] = useState<'pedidos' | 'leads'>('pedidos');
   const [copiado, setCopiado] = useState(false);
   const [filtroEstado, setFiltroEstado] = useState<string>('todos');
   const [busqueda, setBusqueda] = useState('');
+  const [pedidos, setPedidos] = useState(pedidosIniciales);
+  const [leads, setLeads] = useState(leadsIniciales);
+  const [, startTransition] = useTransition();
 
-  // Pedidos online de ejemplo / demostración en tiempo real
-  const [pedidos, setPedidos] = useState<PedidoOnline[]>([
-    {
-      id: 'PED-1001',
-      cliente: 'Mariana Gómez',
-      telefono: '3124567890',
-      ciudad: 'Medellín',
-      direccion: 'Cra 43A # 1-50 Apto 802',
-      total: 185000,
-      fecha: 'Hoy, hace 25 min',
-      estado: 'pendiente',
-      prendas: [
-        { nombre: 'Camiseta Oversize Heavyweight', talla: 'M', color: 'Negro', cantidad: 2, subtotal: 130000 },
-        { nombre: 'Gorra Essential KAOB', talla: 'U', color: 'Blanco', cantidad: 1, subtotal: 55000 },
-      ],
-    },
-    {
-      id: 'PED-1002',
-      cliente: 'Andrés Felipe Restrepo',
-      telefono: '3009876543',
-      ciudad: 'Bogotá',
-      direccion: 'Calle 100 # 15-20',
-      total: 240000,
-      fecha: 'Hoy, hace 2 horas',
-      estado: 'empacado',
-      prendas: [
-        { nombre: 'Hoodie Boxy Fit Fleece', talla: 'L', color: 'Gris Plomo', cantidad: 1, subtotal: 160000 },
-        { nombre: 'Camiseta Minimal Stamp', talla: 'L', color: 'Negro', cantidad: 1, subtotal: 80000 },
-      ],
-    },
-    {
-      id: 'PED-1003',
-      cliente: 'Camila Torres',
-      telefono: '3157891234',
-      ciudad: 'Cali',
-      direccion: 'Av 6N # 25-10',
-      total: 95000,
-      fecha: 'Ayer',
-      estado: 'despachado',
-      prendas: [
-        { nombre: 'Pantalón Cargo Loose', talla: '30', color: 'Beige', cantidad: 1, subtotal: 95000 },
-      ],
-    },
-  ]);
+  const cambiarEstado = (id: number, nuevo: EstadoPedido) => {
+    setPedidos((prev) => prev.map((p) => (p.id === id ? { ...p, estado: nuevo } : p)));
+    startTransition(() => {
+      actualizarEstadoPedidoOnline(id, nuevo);
+    });
+  };
 
-  const cambiarEstado = (id: string, nuevo: PedidoOnline['estado']) => {
-    setPedidos((prev) =>
-      prev.map((p) => (p.id === id ? { ...p, estado: nuevo } : p))
-    );
+  const toggleContactado = (id: number, contactado: boolean) => {
+    setLeads((prev) => prev.map((l) => (l.id === id ? { ...l, contactado } : l)));
+    startTransition(() => {
+      marcarLeadContactado(id, contactado);
+    });
   };
 
   const copiarEnlaceTienda = () => {
@@ -100,19 +82,21 @@ export default function VentasOnlineClient() {
     if (busqueda.trim()) {
       const q = busqueda.toLowerCase();
       return (
-        p.id.toLowerCase().includes(q) ||
-        p.cliente.toLowerCase().includes(q) ||
+        String(p.consecutivo).includes(q) ||
+        p.clienteNombre.toLowerCase().includes(q) ||
         p.ciudad.toLowerCase().includes(q)
       );
     }
     return true;
   });
 
+  const leadsSinContactar = leads.filter((l) => !l.contactado).length;
+
   return (
     <div className="space-y-6">
       <PageHeader
         title="Ventas Online & Pedidos Web"
-        description="Gestiona las solicitudes entrantes desde la tienda oficial KAOB MODERN WEAR y WhatsApp."
+        description="Gestiona las solicitudes entrantes desde la tienda oficial KAOB MODERN WEAR y recupera visitantes que no completaron su compra."
         actions={
           <div className="flex items-center gap-2">
             <Button
@@ -165,168 +149,267 @@ export default function VentasOnlineClient() {
         </div>
       </div>
 
-      {/* Barra de Filtros y Buscador */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-4 rounded-xl border border-slate-200 shadow-2xs">
-        <div className="flex items-center gap-2 flex-wrap">
-          <button
-            type="button"
-            onClick={() => setFiltroEstado('todos')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors ${
-              filtroEstado === 'todos' ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-            }`}
-          >
-            Todos ({pedidos.length})
-          </button>
-          <button
-            type="button"
-            onClick={() => setFiltroEstado('pendiente')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors ${
-              filtroEstado === 'pendiente' ? 'bg-amber-500 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-            }`}
-          >
-            Pendientes ({pedidos.filter((p) => p.estado === 'pendiente').length})
-          </button>
-          <button
-            type="button"
-            onClick={() => setFiltroEstado('empacado')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors ${
-              filtroEstado === 'empacado' ? 'bg-sky-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-            }`}
-          >
-            Empacados ({pedidos.filter((p) => p.estado === 'empacado').length})
-          </button>
-          <button
-            type="button"
-            onClick={() => setFiltroEstado('despachado')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors ${
-              filtroEstado === 'despachado' ? 'bg-brand-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-            }`}
-          >
-            Despachados ({pedidos.filter((p) => p.estado === 'despachado').length})
-          </button>
-        </div>
-
-        <div className="relative w-full sm:w-64">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-          <input
-            type="text"
-            placeholder="Buscar por cliente, pedido o ciudad…"
-            value={busqueda}
-            onChange={(e) => setBusqueda(e.target.value)}
-            className="w-full pl-9 pr-3 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-lg text-slate-800 placeholder-slate-400 focus:outline-none focus:border-brand-500"
-          />
-        </div>
+      {/* Pestañas */}
+      <div className="flex items-center gap-2 border-b border-slate-200">
+        <button
+          type="button"
+          onClick={() => setTab('pedidos')}
+          className={`flex items-center gap-1.5 px-4 py-2.5 text-xs font-bold border-b-2 transition-colors ${
+            tab === 'pedidos' ? 'border-slate-900 text-slate-900' : 'border-transparent text-slate-400 hover:text-slate-600'
+          }`}
+        >
+          <Package className="h-3.5 w-3.5" />
+          Pedidos Recibidos ({pedidos.length})
+        </button>
+        <button
+          type="button"
+          onClick={() => setTab('leads')}
+          className={`flex items-center gap-1.5 px-4 py-2.5 text-xs font-bold border-b-2 transition-colors ${
+            tab === 'leads' ? 'border-slate-900 text-slate-900' : 'border-transparent text-slate-400 hover:text-slate-600'
+          }`}
+        >
+          <Users className="h-3.5 w-3.5" />
+          Leads de Recuperación {leadsSinContactar > 0 && `(${leadsSinContactar} sin contactar)`}
+        </button>
       </div>
 
-      {/* Lista de Pedidos Online */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {pedidosFiltrados.map((ped) => (
-          <div
-            key={ped.id}
-            className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm space-y-4 flex flex-col justify-between"
-          >
-            <div className="space-y-3">
-              <div className="flex justify-between items-start">
-                <div>
-                  <span className="font-mono text-xs font-extrabold text-slate-900 bg-slate-100 px-2 py-0.5 rounded">
-                    {ped.id}
-                  </span>
-                  <p className="text-[11px] text-slate-400 mt-1 flex items-center gap-1">
-                    <Clock className="h-3 w-3" /> {ped.fecha}
-                  </p>
-                </div>
-
-                <Badge
-                  variant={
-                    ped.estado === 'pendiente'
-                      ? 'warning'
-                      : ped.estado === 'empacado'
-                      ? 'info'
-                      : ped.estado === 'despachado'
-                      ? 'success'
-                      : 'neutral'
-                  }
-                >
-                  {ped.estado === 'pendiente'
-                    ? 'Pendiente'
-                    : ped.estado === 'empacado'
-                    ? 'Empacado'
-                    : ped.estado === 'despachado'
-                    ? 'En camino'
-                    : 'Entregado'}
-                </Badge>
-              </div>
-
-              {/* Datos del Cliente */}
-              <div className="p-3 rounded-xl bg-slate-50 border border-slate-100 text-xs space-y-1">
-                <p className="font-bold text-slate-900">{ped.cliente}</p>
-                <p className="text-slate-600">📱 WhatsApp: {ped.telefono}</p>
-                <p className="text-slate-500 text-[11px]">📍 {ped.ciudad} - {ped.direccion}</p>
-              </div>
-
-              {/* Prendas */}
-              <div className="space-y-1.5 text-xs">
-                <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Prendas Solicitadas</p>
-                {ped.prendas.map((pr, i) => (
-                  <div key={i} className="flex justify-between items-center bg-white p-2 rounded-lg border border-slate-200/80">
-                    <div>
-                      <p className="font-semibold text-slate-800 line-clamp-1">{pr.nombre}</p>
-                      <p className="text-[10px] text-slate-400">Talla: {pr.talla} · Color: {pr.color} · Cant: {pr.cantidad}</p>
-                    </div>
-                    <span className="font-bold text-slate-900">{formatoCOP(pr.subtotal)}</span>
-                  </div>
-                ))}
-              </div>
+      {tab === 'pedidos' ? (
+        <>
+          {/* Barra de Filtros y Buscador */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-4 rounded-xl border border-slate-200 shadow-2xs">
+            <div className="flex items-center gap-2 flex-wrap">
+              <button
+                type="button"
+                onClick={() => setFiltroEstado('todos')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors ${
+                  filtroEstado === 'todos' ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                }`}
+              >
+                Todos ({pedidos.length})
+              </button>
+              <button
+                type="button"
+                onClick={() => setFiltroEstado('PENDIENTE')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors ${
+                  filtroEstado === 'PENDIENTE' ? 'bg-amber-500 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                }`}
+              >
+                Pendientes ({pedidos.filter((p) => p.estado === 'PENDIENTE').length})
+              </button>
+              <button
+                type="button"
+                onClick={() => setFiltroEstado('EMPACADO')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors ${
+                  filtroEstado === 'EMPACADO' ? 'bg-sky-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                }`}
+              >
+                Empacados ({pedidos.filter((p) => p.estado === 'EMPACADO').length})
+              </button>
+              <button
+                type="button"
+                onClick={() => setFiltroEstado('DESPACHADO')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors ${
+                  filtroEstado === 'DESPACHADO' ? 'bg-brand-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                }`}
+              >
+                Despachados ({pedidos.filter((p) => p.estado === 'DESPACHADO').length})
+              </button>
             </div>
 
-            {/* Total y Acciones */}
-            <div className="pt-3 border-t border-slate-100 space-y-3">
-              <div className="flex justify-between items-center">
-                <span className="text-xs text-slate-500 font-medium">Total Pedido</span>
-                <span className="text-base font-extrabold text-slate-900">{formatoCOP(ped.total)}</span>
-              </div>
-
-              <div className="grid grid-cols-2 gap-2">
-                <a
-                  href={`https://wa.me/57${ped.telefono}?text=${encodeURIComponent(`¡Hola ${ped.cliente}! Te contactamos de KAOB MODERN WEAR respecto a tu pedido ${ped.id}.`)}`}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="flex items-center justify-center gap-1 px-3 py-2 rounded-xl bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200 text-xs font-bold transition-colors"
-                >
-                  <Send className="h-3.5 w-3.5" /> WhatsApp
-                </a>
-
-                {ped.estado === 'pendiente' ? (
-                  <Button
-                    size="sm"
-                    onClick={() => cambiarEstado(ped.id, 'empacado')}
-                    className="text-xs font-bold"
-                  >
-                    Empacar
-                  </Button>
-                ) : ped.estado === 'empacado' ? (
-                  <Button
-                    size="sm"
-                    onClick={() => cambiarEstado(ped.id, 'despachado')}
-                    className="text-xs font-bold bg-brand-600 hover:bg-brand-700"
-                  >
-                    Despachar
-                  </Button>
-                ) : (
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => cambiarEstado(ped.id, 'entregado')}
-                    className="text-xs font-bold text-emerald-700 border-emerald-300"
-                  >
-                    ✓ Entregado
-                  </Button>
-                )}
-              </div>
+            <div className="relative w-full sm:w-64">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+              <input
+                type="text"
+                placeholder="Buscar por cliente, pedido o ciudad…"
+                value={busqueda}
+                onChange={(e) => setBusqueda(e.target.value)}
+                className="w-full pl-9 pr-3 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-lg text-slate-800 placeholder-slate-400 focus:outline-none focus:border-brand-500"
+              />
             </div>
           </div>
-        ))}
-      </div>
+
+          {/* Lista de Pedidos Online */}
+          {pedidosFiltrados.length === 0 ? (
+            <div className="p-10 text-center rounded-2xl border border-dashed border-slate-200 bg-white">
+              <p className="text-sm font-bold text-slate-700">Aún no hay pedidos que coincidan</p>
+              <p className="text-xs text-slate-400 mt-1">
+                Los pedidos se registran automáticamente cuando un cliente finaliza su compra en la tienda web.
+              </p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {pedidosFiltrados.map((ped) => {
+                const codigo = `PED-${String(ped.consecutivo).padStart(4, '0')}`;
+                const estado = ped.estado as EstadoPedido;
+                return (
+                  <div
+                    key={ped.id}
+                    className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm space-y-4 flex flex-col justify-between"
+                  >
+                    <div className="space-y-3">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <span className="font-mono text-xs font-extrabold text-slate-900 bg-slate-100 px-2 py-0.5 rounded">
+                            {codigo}
+                          </span>
+                          <p className="text-[11px] text-slate-400 mt-1 flex items-center gap-1">
+                            <Clock className="h-3 w-3" /> {formatoFechaHora(ped.createdAt)}
+                          </p>
+                        </div>
+
+                        <Badge
+                          variant={
+                            estado === 'PENDIENTE'
+                              ? 'warning'
+                              : estado === 'EMPACADO'
+                              ? 'info'
+                              : estado === 'DESPACHADO'
+                              ? 'success'
+                              : 'neutral'
+                          }
+                        >
+                          {ESTADO_LABEL[estado]}
+                        </Badge>
+                      </div>
+
+                      {/* Datos del Cliente */}
+                      <div className="p-3 rounded-xl bg-slate-50 border border-slate-100 text-xs space-y-1">
+                        <p className="font-bold text-slate-900">{ped.clienteNombre}</p>
+                        <p className="text-slate-600">📱 WhatsApp: {ped.clienteTelefono}</p>
+                        <p className="text-slate-500 text-[11px]">📍 {ped.ciudad} - {ped.direccion}</p>
+                        <p className="text-slate-500 text-[11px]">
+                          💳 {METODO_LABEL[ped.metodoFinanciacion] ?? ped.metodoFinanciacion}
+                        </p>
+                      </div>
+
+                      {/* Prendas */}
+                      <div className="space-y-1.5 text-xs">
+                        <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Prendas Solicitadas</p>
+                        {ped.items.map((pr) => (
+                          <div key={pr.id} className="flex justify-between items-center bg-white p-2 rounded-lg border border-slate-200/80">
+                            <div>
+                              <p className="font-semibold text-slate-800 line-clamp-1">{pr.nombreProducto}</p>
+                              <p className="text-[10px] text-slate-400">Talla: {pr.tallaValor} · Color: {pr.colorNombre} · Cant: {pr.cantidad}</p>
+                            </div>
+                            <span className="font-bold text-slate-900">{formatoCOP(pr.subtotal)}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Total y Acciones */}
+                    <div className="pt-3 border-t border-slate-100 space-y-3">
+                      <div className="flex justify-between items-center">
+                        <span className="text-xs text-slate-500 font-medium">Total Pedido</span>
+                        <span className="text-base font-extrabold text-slate-900">{formatoCOP(ped.total)}</span>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-2">
+                        <a
+                          href={`https://wa.me/57${ped.clienteTelefono.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(`¡Hola ${ped.clienteNombre}! Te contactamos de KAOB MODERN WEAR respecto a tu pedido ${codigo}.`)}`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="flex items-center justify-center gap-1 px-3 py-2 rounded-xl bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200 text-xs font-bold transition-colors"
+                        >
+                          <Send className="h-3.5 w-3.5" /> WhatsApp
+                        </a>
+
+                        {estado === 'PENDIENTE' ? (
+                          <Button size="sm" onClick={() => cambiarEstado(ped.id, 'EMPACADO')} className="text-xs font-bold">
+                            Empacar
+                          </Button>
+                        ) : estado === 'EMPACADO' ? (
+                          <Button
+                            size="sm"
+                            onClick={() => cambiarEstado(ped.id, 'DESPACHADO')}
+                            className="text-xs font-bold bg-brand-600 hover:bg-brand-700"
+                          >
+                            Despachar
+                          </Button>
+                        ) : estado === 'DESPACHADO' ? (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => cambiarEstado(ped.id, 'ENTREGADO')}
+                            className="text-xs font-bold text-emerald-700 border-emerald-300"
+                          >
+                            ✓ Entregado
+                          </Button>
+                        ) : (
+                          <span className="flex items-center justify-center text-[11px] font-bold text-slate-400">
+                            {ESTADO_LABEL[estado]}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </>
+      ) : (
+        <div className="space-y-3">
+          <p className="text-xs text-slate-500 max-w-2xl">
+            Visitantes que estaban a punto de irse sin comprar y dejaron sus datos a cambio de un descuento (exit-intent). Contáctalos
+            manualmente por WhatsApp o correo para recuperar la venta.
+          </p>
+          {leads.length === 0 ? (
+            <div className="p-10 text-center rounded-2xl border border-dashed border-slate-200 bg-white">
+              <p className="text-sm font-bold text-slate-700">Aún no hay leads capturados</p>
+              <p className="text-xs text-slate-400 mt-1">
+                Aparecerán aquí cuando un visitante reciba el cupón de descuento por intención de salida en la tienda.
+              </p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {leads.map((lead) => (
+                <div key={lead.id} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm space-y-2.5">
+                  <div className="flex items-center justify-between">
+                    <Badge variant={lead.origen === 'EXIT_INTENT' ? 'warning' : 'info'}>
+                      {lead.origen === 'EXIT_INTENT' ? 'Intención de salida' : lead.origen === 'CARRITO_ABANDONADO' ? 'Carrito abandonado' : 'Newsletter'}
+                    </Badge>
+                    <span className="text-[10px] text-slate-400">{formatoFechaHora(lead.createdAt)}</span>
+                  </div>
+                  <div className="text-xs space-y-1">
+                    {lead.telefono && <p className="text-slate-700 font-semibold">📱 {lead.telefono}</p>}
+                    {lead.email && <p className="text-slate-700 font-semibold">✉️ {lead.email}</p>}
+                    {lead.cuponOfrecido && (
+                      <p className="text-slate-500">
+                        Cupón ofrecido: <span className="font-mono font-bold text-slate-800">{lead.cuponOfrecido}</span> ({lead.descuentoPct}%)
+                      </p>
+                    )}
+                    {lead.carritoResumen && <p className="text-slate-400 text-[11px] line-clamp-2">🛍 {lead.carritoResumen}</p>}
+                  </div>
+                  <div className="flex items-center gap-2 pt-2 border-t border-slate-100">
+                    {lead.telefono && (
+                      <a
+                        href={`https://wa.me/57${lead.telefono.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(`¡Hola! Vimos que estabas armando tu pedido en KAOB MODERN WEAR. Tu cupón ${lead.cuponOfrecido ?? ''} sigue disponible, ¿te ayudo a completarlo?`)}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200 text-[11px] font-bold"
+                      >
+                        <PhoneCall className="h-3 w-3" /> Contactar
+                      </a>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => toggleContactado(lead.id, !lead.contactado)}
+                      className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] font-bold border transition-colors ${
+                        lead.contactado
+                          ? 'bg-slate-900 text-white border-slate-900'
+                          : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300'
+                      }`}
+                    >
+                      <Check className="h-3 w-3" /> {lead.contactado ? 'Contactado' : 'Marcar contactado'}
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

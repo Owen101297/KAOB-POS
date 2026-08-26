@@ -1,10 +1,12 @@
 'use client';
 
 import { useState } from 'react';
-import { X, Trash2, ShoppingBag, ArrowRight, Phone, Send, CheckCircle2 } from 'lucide-react';
+import { X, Trash2, ShoppingBag, ArrowRight, Phone, Send, CheckCircle2, CreditCard, Landmark, Smartphone, Wallet } from 'lucide-react';
 import { formatoCOP } from '@/lib/format';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
+import FinanciacionCalculadora, { type MetodoFinanciacion } from './FinanciacionCalculadora';
+import { crearPedidoOnline } from '@/lib/actions/tienda';
 
 export interface ItemBolsa {
   varianteId: number;
@@ -45,11 +47,20 @@ export default function CartDrawerTienda({
   const [ciudad, setCiudad] = useState('');
   const [notas, setNotas] = useState('');
   const [enviando, setEnviando] = useState(false);
+  const [metodoPago, setMetodoPago] = useState<'CONTADO' | MetodoFinanciacion>('CONTADO');
+  const [mostrarFinanciacion, setMostrarFinanciacion] = useState(false);
 
   if (!abierto) return null;
 
   const total = items.reduce((acc, it) => acc + it.precio * it.cantidad, 0);
   const totalPrendas = items.reduce((acc, it) => acc + it.cantidad, 0);
+
+  const METODO_PAGO_LABEL: Record<string, string> = {
+    CONTADO: 'Pago de contado (efectivo/transferencia/tarjeta)',
+    PLAN_SEPARE: 'Plan Separe',
+    ADDI: 'Addi',
+    SISTECREDITO: 'Sistecrédito',
+  };
 
   const generarMensajeWhatsApp = () => {
     let msg = `🛒 *NUEVO PEDIDO - KAOB MODERN WEAR*\n`;
@@ -57,6 +68,7 @@ export default function CartDrawerTienda({
     msg += `👤 *Cliente:* ${nombre.trim()}\n`;
     msg += `📱 *WhatsApp:* ${celular.trim()}\n`;
     msg += `📍 *Ciudad / Dirección:* ${ciudad.trim()} - ${direccion.trim()}\n`;
+    msg += `💳 *Método de pago:* ${METODO_PAGO_LABEL[metodoPago]}\n`;
     if (notas.trim()) msg += `📝 *Notas:* ${notas.trim()}\n`;
     msg += `--------------------------------------\n`;
     msg += `📦 *PRENDAS SOLICITADAS:*\n\n`;
@@ -75,17 +87,46 @@ export default function CartDrawerTienda({
     return encodeURIComponent(msg);
   };
 
-  const handleEnviarPedidoWhatsApp = (e: React.FormEvent) => {
+  const handleEnviarPedidoWhatsApp = async (e: React.FormEvent) => {
     e.preventDefault();
     if (items.length === 0 || !nombre || !celular) return;
 
     setEnviando(true);
+
+    try {
+      await crearPedidoOnline({
+        clienteNombre: nombre.trim(),
+        clienteTelefono: celular.trim(),
+        ciudad: ciudad.trim(),
+        direccion: direccion.trim(),
+        notas: notas.trim() || undefined,
+        metodoFinanciacion: metodoPago,
+        subtotal: total,
+        total,
+        items: items.map((it) => ({
+          varianteId: it.varianteId,
+          nombreProducto: it.nombre,
+          referencia: it.referencia,
+          tallaValor: it.tallaValor,
+          colorNombre: it.colorNombre,
+          cantidad: it.cantidad,
+          precioUnitario: it.precio,
+          subtotal: it.precio * it.cantidad,
+        })),
+      });
+    } catch {
+      // Si falla el registro interno, igual dejamos continuar el pedido por WhatsApp
+    }
+
     const mensajeCodificado = generarMensajeWhatsApp();
     const telLimpio = telefonoWhatsAppTienda.replace(/[^0-9]/g, '');
     const url = `https://wa.me/${telLimpio}?text=${mensajeCodificado}`;
 
     window.open(url, '_blank');
+    onVaciarBolsa();
+    setPaso('carrito');
     setEnviando(false);
+    onCerrar();
   };
 
   const MONTO_ENVIO_GRATIS = 150000;
@@ -245,6 +286,46 @@ export default function CartDrawerTienda({
                 </p>
               </div>
 
+              {/* Método de pago / financiación */}
+              <div>
+                <label className="block text-xs font-bold text-zinc-700 mb-1.5">¿Cómo quieres pagar?</label>
+                <div className="grid grid-cols-2 gap-1.5">
+                  {(
+                    [
+                      { id: 'CONTADO', label: 'Contado', icono: Landmark },
+                      { id: 'PLAN_SEPARE', label: 'Plan Separe', icono: Wallet },
+                      { id: 'ADDI', label: 'Addi', icono: CreditCard },
+                      { id: 'SISTECREDITO', label: 'Sistecrédito', icono: Smartphone },
+                    ] as const
+                  ).map((m) => {
+                    const Icono = m.icono;
+                    const activo = metodoPago === m.id;
+                    return (
+                      <button
+                        key={m.id}
+                        type="button"
+                        onClick={() => {
+                          setMetodoPago(m.id);
+                          setMostrarFinanciacion(m.id !== 'CONTADO');
+                        }}
+                        className={`flex items-center justify-center gap-1.5 px-2 py-2 rounded-xl text-[11px] font-bold border transition-all ${
+                          activo ? 'bg-black text-white border-black' : 'bg-white text-zinc-600 border-zinc-200 hover:border-zinc-300'
+                        }`}
+                      >
+                        <Icono className="h-3.5 w-3.5" />
+                        {m.label}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {mostrarFinanciacion && metodoPago !== 'CONTADO' && (
+                  <div className="mt-2.5">
+                    <FinanciacionCalculadora precio={total} variante="completa" metodoSeleccionado={metodoPago} />
+                  </div>
+                )}
+              </div>
+
               <div>
                 <label className="block text-xs font-bold text-zinc-700 mb-1">Nombre completo *</label>
                 <Input
@@ -314,6 +395,15 @@ export default function CartDrawerTienda({
             <div className="flex justify-between items-center text-base font-black">
               <span className="text-zinc-900 uppercase">Total a pagar</span>
               <span className="text-xl text-zinc-900">{formatoCOP(total)}</span>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-1.5 text-[9px] font-semibold text-zinc-400 uppercase tracking-wide">
+              <span className="px-2 py-0.5 rounded bg-zinc-100">Efectivo</span>
+              <span className="px-2 py-0.5 rounded bg-zinc-100">Nequi / Daviplata</span>
+              <span className="px-2 py-0.5 rounded bg-zinc-100">Tarjeta (Wompi)</span>
+              <span className="px-2 py-0.5 rounded bg-zinc-100">Addi</span>
+              <span className="px-2 py-0.5 rounded bg-zinc-100">Sistecrédito</span>
+              <span className="px-2 py-0.5 rounded bg-zinc-100">Plan Separe</span>
             </div>
 
             {paso === 'carrito' ? (

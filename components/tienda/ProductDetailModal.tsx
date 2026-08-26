@@ -6,6 +6,7 @@ import type { ProductoLista } from '@/lib/actions/productos';
 import { formatoCOP } from '@/lib/format';
 import { CALIDAD_LABEL } from '@/lib/constants';
 import { Button } from '@/components/ui/Button';
+import FinanciacionCalculadora from './FinanciacionCalculadora';
 
 interface ItemBolsa {
   varianteId: number;
@@ -154,6 +155,10 @@ export default function ProductDetailModal({
                 </p>
               )}
 
+              <div className="mt-4">
+                <FinanciacionCalculadora precio={precio} variante="completa" />
+              </div>
+
               {/* Selector de Color */}
               <div className="mt-4 pt-3 border-t border-zinc-100">
                 <div className="flex justify-between text-xs font-semibold text-zinc-700 mb-2">
@@ -250,8 +255,8 @@ export default function ProductDetailModal({
               )}
             </div>
 
-            {/* Botón Añadir a la Bolsa */}
-            <div className="pt-4 border-t border-zinc-100">
+            {/* Botón Añadir a la Bolsa (sticky en móvil para que siempre esté visible) */}
+            <div className="sticky bottom-0 -mx-6 sm:mx-0 px-6 sm:px-0 pt-4 pb-1 sm:pb-0 bg-white sm:bg-transparent border-t border-zinc-100 sm:static">
               <Button
                 size="lg"
                 disabled={stockDisponible <= 0}
