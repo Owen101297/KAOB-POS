@@ -1,20 +1,30 @@
 "use client";
 
-import { useActionState } from "react";
 import { loginWithCredentials, loginWithGoogle } from "@/lib/actions/auth";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 import { useState } from "react";
 import type { ActionResult } from "@/lib/validations";
 
-const initialState: ActionResult = { ok: false, error: "" };
-
 export default function LoginForm() {
-  const [state, formAction, isPending] = useActionState(
-    loginWithCredentials,
-    initialState
-  );
   const [showPassword, setShowPassword] = useState(false);
-  const errorMsg = !state.ok && state.error ? state.error : null;
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setLoading(true);
+    setError(null);
+
+    const formData = new FormData(e.currentTarget);
+    const result: ActionResult = await loginWithCredentials(
+      { ok: false, error: "" },
+      formData
+    );
+    if (!result.ok) {
+      setError(result.error);
+      setLoading(false);
+    }
+  }
 
   return (
     <div className="w-full max-w-sm">
@@ -36,10 +46,10 @@ export default function LoginForm() {
       </div>
 
       {/* Form */}
-      <form action={formAction} className="space-y-4">
-        {errorMsg && (
+      <form onSubmit={handleSubmit} className="space-y-4">
+        {error && (
           <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-            {errorMsg}
+            {error}
           </div>
         )}
 
@@ -95,10 +105,10 @@ export default function LoginForm() {
 
         <button
           type="submit"
-          disabled={isPending}
+          disabled={loading}
           className="flex w-full items-center justify-center gap-2 rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-800 active:bg-slate-700 disabled:opacity-50"
         >
-          {isPending ? (
+          {loading ? (
             <>
               <Loader2 className="h-4 w-4 animate-spin" />
               Ingresando...
