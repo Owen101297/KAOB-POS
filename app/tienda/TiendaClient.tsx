@@ -37,6 +37,14 @@ interface PromocionDestacada {
   fechaFin: Date | string | null;
 }
 
+export interface CuentaBancariaTienda {
+  id: number;
+  nombre: string;
+  tipo: string;
+  numeroCuenta: string | null;
+  titular: string | null;
+}
+
 interface Props {
   productos: ProductoLista[];
   categorias: { id: number; nombre: string }[];
@@ -46,6 +54,7 @@ interface Props {
     direccion?: string;
     ciudad?: string;
   };
+  cuentasBancarias?: CuentaBancariaTienda[];
   ventasPorProducto?: Record<number, number>;
   actividadReciente?: ActividadReciente[];
   promocionDestacada?: PromocionDestacada | null;
@@ -55,6 +64,7 @@ export default function TiendaClient({
   productos,
   categorias,
   configuracion,
+  cuentasBancarias = [],
   ventasPorProducto = {},
   actividadReciente = [],
   promocionDestacada = null,
@@ -632,7 +642,7 @@ export default function TiendaClient({
           setGeneroActivo(gen);
           handleExplorarCatalogo();
         }}
-        telefonoWhatsApp={configuracion?.telefono || '573000000000'}
+        telefonoWhatsApp={configuracion?.telefono || '3136332887'}
       />
 
       {/* MODAL DE VISTA RÁPIDA / DETALLE DE PRODUCTO */}
@@ -651,7 +661,8 @@ export default function TiendaClient({
         onActualizarCantidad={actualizarCantidadItem}
         onEliminarItem={eliminarItem}
         onVaciarBolsa={() => setItemsBolsa([])}
-        telefonoWhatsAppTienda={configuracion?.telefono || '573000000000'}
+        telefonoWhatsAppTienda={configuracion?.telefono || '3136332887'}
+        cuentasBancarias={cuentasBancarias}
       />
 
       {/* MODAL DE LISTA DE DESEOS (WISHLIST) */}

@@ -1,11 +1,11 @@
 'use client';
 
 import { useState } from 'react';
-import { X, Trash2, ShoppingBag, ArrowRight, Phone, Send, CheckCircle2, ShieldCheck } from 'lucide-react';
+import { X, Trash2, ShoppingBag, ArrowRight, Phone, Send, CheckCircle2, ShieldCheck, Copy, Check, Info, CreditCard, Sparkles, Smartphone, Landmark, Wallet } from 'lucide-react';
 import { formatoCOP } from '@/lib/format';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
-import { AddiLogo, SistecreditoLogo, NequiLogo, BancolombiaLogo, PlanSepareLogo, CardBrandsLogo } from './PaymentMethodsBadges';
+import { AddiLogo, SistecreditoLogo, NequiLogo, BancolombiaLogo, PlanSepareLogo } from './PaymentMethodsBadges';
 import { crearPedidoOnline } from '@/lib/actions/tienda';
 
 export interface ItemBolsa {
@@ -21,6 +21,14 @@ export interface ItemBolsa {
   stockDisponible: number;
 }
 
+export interface CuentaBancariaTienda {
+  id: number;
+  nombre: string;
+  tipo: string;
+  numeroCuenta: string | null;
+  titular: string | null;
+}
+
 interface Props {
   abierto: boolean;
   onCerrar: () => void;
@@ -29,6 +37,7 @@ interface Props {
   onEliminarItem: (varianteId: number) => void;
   onVaciarBolsa: () => void;
   telefonoWhatsAppTienda?: string;
+  cuentasBancarias?: CuentaBancariaTienda[];
 }
 
 export default function CartDrawerTienda({
@@ -38,7 +47,8 @@ export default function CartDrawerTienda({
   onActualizarCantidad,
   onEliminarItem,
   onVaciarBolsa,
-  telefonoWhatsAppTienda = '573000000000',
+  telefonoWhatsAppTienda = '3136332887',
+  cuentasBancarias = [],
 }: Props) {
   const [paso, setPaso] = useState<'carrito' | 'datos'>('carrito');
   const [nombre, setNombre] = useState('');
@@ -47,42 +57,71 @@ export default function CartDrawerTienda({
   const [ciudad, setCiudad] = useState('');
   const [notas, setNotas] = useState('');
   const [enviando, setEnviando] = useState(false);
-  const [metodoPago, setMetodoPago] = useState<'CONTADO' | 'ADDI' | 'SISTECREDITO' | 'PLAN_SEPARE' | 'TRANSFERENCIA'>('TRANSFERENCIA');
+  const [metodoPago, setMetodoPago] = useState<'TRANSFERENCIA' | 'ADDI' | 'SISTECREDITO' | 'PLAN_SEPARE' | 'CONTADO'>('TRANSFERENCIA');
+  const [cuentaCopiada, setCuentaCopiada] = useState<string | null>(null);
 
   if (!abierto) return null;
 
   const total = items.reduce((acc, it) => acc + it.precio * it.cantidad, 0);
   const totalPrendas = items.reduce((acc, it) => acc + it.cantidad, 0);
 
+  const MONTO_ENVIO_GRATIS = 200000;
+  const tieneEnvioGratis = total >= MONTO_ENVIO_GRATIS;
+  const faltaParaGratis = Math.max(0, MONTO_ENVIO_GRATIS - total);
+  const porcentajeGratis = Math.min(100, Math.round((total / MONTO_ENVIO_GRATIS) * 100));
+
   const METODO_PAGO_LABEL: Record<string, string> = {
-    TRANSFERENCIA: 'Transferencia (Nequi / Bancolombia / Daviplata)',
-    ADDI: 'Financiación con Addi (0% interés en cuotas)',
-    SISTECREDITO: 'Financiación con Sistecrédito',
-    PLAN_SEPARE: 'Plan Separe KΛOB (Aparta con 30%)',
-    CONTADO: 'Efectivo / Tarjeta en Tienda',
+    TRANSFERENCIA: 'TRANSFERENCIA BANCARIA (Nequi / Bancolombia)',
+    ADDI: 'FINANCIACIÓN CON ADDI (0% Interés)',
+    SISTECREDITO: 'CRÉDITO SISTECRÉDITO',
+    PLAN_SEPARE: 'PLAN SEPARE KΛOB (30% Abono Inicial)',
+    CONTADO: 'EFECTIVO / PAGO EN TIENDA',
   };
 
-  const generarMensajeWhatsApp = () => {
-    let msg = `🛒 *NUEVO PEDIDO - KΛOB MODERN WEAR*\n`;
-    msg += `--------------------------------------\n`;
-    msg += `👤 *Cliente:* ${nombre.trim()}\n`;
-    msg += `📱 *WhatsApp:* ${celular.trim()}\n`;
-    msg += `📍 *Ciudad / Dirección:* ${ciudad.trim()} - ${direccion.trim()}\n`;
-    msg += `💳 *Método de pago:* ${METODO_PAGO_LABEL[metodoPago]}\n`;
-    if (notas.trim()) msg += `📝 *Notas:* ${notas.trim()}\n`;
-    msg += `--------------------------------------\n`;
-    msg += `📦 *PRENDAS SOLICITADAS:*\n\n`;
+  const METODO_PAGO_CTA: Record<string, string> = {
+    TRANSFERENCIA: '👉 "Ya tengo los datos de Nequi / Bancolombia. Quedo atento a la confirmación de disponibilidad para enviar el comprobante de transferencia."',
+    ADDI: '👉 "Deseo financiar a cuotas con Addi (0% interés). Quedo atento al link de pago seguro para autorizar con mi cédula."',
+    SISTECREDITO: '👉 "Tengo cupo activo en Sistecrédito. Quedo atento para validar con mi número de cédula y aprobar el crédito."',
+    PLAN_SEPARE: `👉 "Deseo apartar estas prendas abonando el 30% inicial (${formatoCOP(Math.round(total * 0.3))}) y congelar mi talla por 30 días."`,
+    CONTADO: '👉 "Deseo coordinar la entrega y confirmación de mis prendas."',
+  };
 
+  const copiarAlPortapapeles = (texto: string, id: string) => {
+    navigator.clipboard.writeText(texto);
+    setCuentaCopiada(id);
+    setTimeout(() => setCuentaCopiada(null), 2000);
+  };
+
+  const generarMensajeWhatsApp = (codigoPedido: string) => {
+    const separador = '━━━━━━━━━━━━━━━━━━━━';
+    let msg = `${separador}\n`;
+    msg += `👑 *KΛOB MODERN WEAR // ORDEN #${codigoPedido}*\n`;
+    msg += `${separador}\n\n`;
+
+    msg += `👋 ¡Hola! Acabo de armar mi pedido en la tienda online y quiero confirmar mi compra:\n\n`;
+
+    msg += `📦 *PRENDAS SOLICITADAS:*\n`;
     items.forEach((it, idx) => {
-      msg += `${idx + 1}. *${it.nombre}* (Ref: ${it.referencia})\n`;
-      msg += `   • Talla: ${it.tallaValor} | Color: ${it.colorNombre}\n`;
-      msg += `   • Cantidad: ${it.cantidad} x ${formatoCOP(it.precio)} = *${formatoCOP(it.precio * it.cantidad)}*\n\n`;
+      msg += `• *${it.nombre}* (Ref: ${it.referencia})\n`;
+      msg += `  └ Talla: ${it.tallaValor} | Color: ${it.colorNombre}\n`;
+      msg += `  └ Cantidad: ${it.cantidad} x ${formatoCOP(it.precio)} = *${formatoCOP(it.precio * it.cantidad)} COP*\n`;
     });
 
-    msg += `--------------------------------------\n`;
-    msg += `💰 *TOTAL A PAGAR:* ${formatoCOP(total)}\n`;
-    msg += `--------------------------------------\n`;
-    msg += `¡Hola! Acabo de armar mi pedido desde la tienda online KΛOB. Quedo atento a la confirmación y datos de pago.`;
+    msg += `\n💰 *TOTAL DE LA ORDEN:* *${formatoCOP(total)} COP*\n`;
+    msg += `🚚 *ENVÍO:* ${tieneEnvioGratis ? '🎉 GRATIS A TODA COLOMBIA' : `Por coordinar con asesor (${ciudad.trim()})`}\n\n`;
+
+    msg += `${separador}\n`;
+    msg += `📋 *DATOS DE DESPACHO:*\n`;
+    msg += `• *Cliente:* ${nombre.trim()}\n`;
+    msg += `• *WhatsApp:* ${celular.trim()}\n`;
+    msg += `• *Ciudad:* ${ciudad.trim()}\n`;
+    msg += `• *Dirección:* ${direccion.trim()}\n`;
+    if (notas.trim()) msg += `• *Notas:* ${notas.trim()}\n`;
+    msg += `${separador}\n\n`;
+
+    msg += `💳 *MÉTODO ELEGIDO:* ${METODO_PAGO_LABEL[metodoPago]}\n`;
+    msg += `${METODO_PAGO_CTA[metodoPago]}\n\n`;
+    msg += `Quedo atento a la atención de mi asesor.`;
 
     return encodeURIComponent(msg);
   };
@@ -92,9 +131,10 @@ export default function CartDrawerTienda({
     if (items.length === 0 || !nombre || !celular) return;
 
     setEnviando(true);
+    let codigoPedido = `KB-${Date.now().toString().slice(-4)}`;
 
     try {
-      await crearPedidoOnline({
+      const res = await crearPedidoOnline({
         clienteNombre: nombre.trim(),
         clienteTelefono: celular.trim(),
         ciudad: ciudad.trim(),
@@ -114,13 +154,18 @@ export default function CartDrawerTienda({
           subtotal: it.precio * it.cantidad,
         })),
       });
+
+      if (res.ok && res.data?.codigo) {
+        codigoPedido = res.data.codigo;
+      }
     } catch {
-      // Si falla el registro en BD, dejamos continuar al cliente con el mensaje a WhatsApp
+      // Continuar con el código fallback
     }
 
-    const mensajeCodificado = generarMensajeWhatsApp();
+    const mensajeCodificado = generarMensajeWhatsApp(codigoPedido);
     const telLimpio = telefonoWhatsAppTienda.replace(/[^0-9]/g, '');
-    const url = `https://wa.me/${telLimpio}?text=${mensajeCodificado}`;
+    const telFinal = telLimpio.startsWith('57') ? telLimpio : `57${telLimpio}`;
+    const url = `https://wa.me/${telFinal}?text=${mensajeCodificado}`;
 
     window.open(url, '_blank');
     onVaciarBolsa();
@@ -129,12 +174,11 @@ export default function CartDrawerTienda({
     onCerrar();
   };
 
-  const MONTO_ENVIO_GRATIS = 200000;
-  const faltaParaGratis = Math.max(0, MONTO_ENVIO_GRATIS - total);
-  const porcentajeGratis = Math.min(100, Math.round((total / MONTO_ENVIO_GRATIS) * 100));
+  // Cuentas bancarias a mostrar
+  const numeroNequiOficial = telefonoWhatsAppTienda.replace(/[^0-9]/g, '').slice(-10) || '3136332887';
 
   return (
-    <div className="fixed inset-0 z-[1500] flex justify-end bg-black/70 backdrop-blur-xs animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-[1500] flex justify-end bg-black/75 backdrop-blur-xs animate-in fade-in duration-200">
       <div className="relative w-full max-w-md bg-white h-full shadow-2xl flex flex-col justify-between animate-in slide-in-from-right duration-300 text-zinc-950">
         
         {/* Cabecera del Drawer */}
@@ -149,7 +193,7 @@ export default function CartDrawerTienda({
                   BOLSA DE COMPRAS
                 </h2>
                 <p className="text-[10px] text-zinc-400 font-mono">
-                  {totalPrendas === 1 ? '1 PRENDA' : `${totalPrendas} PRENDAS`}
+                  {totalPrendas === 1 ? '1 PRENDA SELECCIONADA' : `${totalPrendas} PRENDAS SELECCIONADAS`}
                 </p>
               </div>
             </div>
@@ -168,8 +212,8 @@ export default function CartDrawerTienda({
           {items.length > 0 && (
             <div className="pt-2 border-t border-zinc-800/80 space-y-1.5">
               <div className="flex justify-between text-[10px] font-bold uppercase tracking-wider">
-                {faltaParaGratis === 0 ? (
-                  <span className="text-emerald-400">
+                {tieneEnvioGratis ? (
+                  <span className="text-emerald-400 flex items-center gap-1">
                     🎉 ¡TIENES ENVÍO GRATIS A TODA COLOMBIA!
                   </span>
                 ) : (
@@ -278,19 +322,19 @@ export default function CartDrawerTienda({
               </div>
             </div>
           ) : (
-            /* PASO 2: DATOS DEL CLIENTE Y MÉTODO DE PAGO */
+            /* PASO 2: DATOS DEL CLIENTE + TARJETAS DE PAGO INMEDIATAS */
             <form id="form-checkout-wa" onSubmit={handleEnviarPedidoWhatsApp} className="space-y-4">
-              <div className="p-3 bg-zinc-100 border border-zinc-200 text-xs text-zinc-800 space-y-1">
+              <div className="p-3.5 bg-zinc-100 border border-zinc-200 text-xs text-zinc-800 space-y-1">
                 <p className="font-bold uppercase tracking-wider">Completa tus datos de despacho</p>
-                <p className="text-zinc-500 text-[11px] font-light">
-                  Se generará tu pedido y serás redirigido a WhatsApp para confirmar pago y envío.
+                <p className="text-zinc-500 text-[11px] font-light leading-relaxed">
+                  Tu orden quedará registrada y serás atendido por un asesor oficial en WhatsApp para coordinar despacho inmediato.
                 </p>
               </div>
 
               {/* Selector de Método de Pago con Logos SVG */}
               <div>
                 <label className="block text-[11px] font-bold text-zinc-900 uppercase tracking-wider mb-2">
-                  Selecciona Método de Pago o Financiación:
+                  1. Selecciona tu Método de Pago:
                 </label>
                 
                 <div className="space-y-2">
@@ -320,7 +364,7 @@ export default function CartDrawerTienda({
                   >
                     <div className="flex items-center gap-2">
                       <input type="radio" checked={metodoPago === 'ADDI'} readOnly className="accent-black" />
-                      <span className="text-xs font-bold">Financiación con Addi</span>
+                      <span className="text-xs font-bold">Financiación Addi (0% Int)</span>
                     </div>
                     <AddiLogo className="h-4 w-auto rounded" />
                   </label>
@@ -355,60 +399,185 @@ export default function CartDrawerTienda({
                 </div>
               </div>
 
-              <div>
-                <label className="block text-[11px] font-bold text-zinc-900 uppercase tracking-wider mb-1">Nombre completo *</label>
-                <Input
-                  required
-                  value={nombre}
-                  onChange={(e) => setNombre(e.target.value)}
-                  placeholder="Ej. Juan Pérez"
-                  className="rounded-none text-xs"
-                />
-              </div>
+              {/* ────────────────── DATOS DE PAGO INMEDIATOS INTERACTIVOS ────────────────── */}
+              {metodoPago === 'TRANSFERENCIA' && (
+                <div className="p-3.5 bg-zinc-950 text-white border border-zinc-800 space-y-2.5 animate-in fade-in duration-200">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-400 flex items-center gap-1">
+                      <Smartphone className="w-3.5 h-3.5" /> Datos para Transferir al Instante:
+                    </span>
+                    <span className="text-[10px] font-mono text-zinc-400">Total: {formatoCOP(total)}</span>
+                  </div>
 
-              <div>
-                <label className="block text-[11px] font-bold text-zinc-900 uppercase tracking-wider mb-1">WhatsApp de contacto *</label>
-                <Input
-                  required
-                  type="tel"
-                  value={celular}
-                  onChange={(e) => setCelular(e.target.value)}
-                  placeholder="Ej. 300 123 4567"
-                  className="rounded-none text-xs"
-                />
-              </div>
+                  {/* Tarjeta Nequi */}
+                  <div className="flex items-center justify-between p-2 bg-zinc-900 border border-zinc-800">
+                    <div>
+                      <span className="text-[10px] text-zinc-400 block font-medium">Nequi / Daviplata</span>
+                      <span className="font-mono text-xs font-bold text-white tracking-wider">{numeroNequiOficial}</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => copiarAlPortapapeles(numeroNequiOficial, 'nequi')}
+                      className="px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider bg-white text-black hover:bg-zinc-200 flex items-center gap-1 transition-colors"
+                    >
+                      {cuentaCopiada === 'nequi' ? (
+                        <>
+                          <Check className="w-3 h-3 text-emerald-600" />
+                          <span>¡Copiado!</span>
+                        </>
+                      ) : (
+                        <>
+                          <Copy className="w-3 h-3" />
+                          <span>Copiar</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
 
-              <div className="grid grid-cols-2 gap-2">
+                  {/* Cuentas adicionales de la base de datos si existen */}
+                  {cuentasBancarias.map((cta) => (
+                    <div key={cta.id} className="flex items-center justify-between p-2 bg-zinc-900 border border-zinc-800">
+                      <div>
+                        <span className="text-[10px] text-zinc-400 block font-medium">{cta.nombre}</span>
+                        <span className="font-mono text-xs font-bold text-white tracking-wider">{cta.numeroCuenta}</span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => copiarAlPortapapeles(cta.numeroCuenta || '', `cta-${cta.id}`)}
+                        className="px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider bg-white text-black hover:bg-zinc-200 flex items-center gap-1 transition-colors"
+                      >
+                        {cuentaCopiada === `cta-${cta.id}` ? (
+                          <>
+                            <Check className="w-3 h-3 text-emerald-600" />
+                            <span>¡Copiado!</span>
+                          </>
+                        ) : (
+                          <>
+                            <Copy className="w-3 h-3" />
+                            <span>Copiar</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  ))}
+
+                  <p className="text-[10px] text-zinc-400 font-light leading-snug">
+                    * Puedes transferir ahora mismo y adjuntar el comprobante en WhatsApp al enviar el pedido.
+                  </p>
+                </div>
+              )}
+
+              {metodoPago === 'ADDI' && (
+                <div className="p-3.5 bg-emerald-950/40 text-emerald-200 border border-emerald-800/80 space-y-1 text-xs animate-in fade-in duration-200">
+                  <p className="font-bold text-emerald-300 uppercase tracking-wider flex items-center gap-1">
+                    <Sparkles className="w-3.5 h-3.5 text-emerald-400" /> Financiación Addi en 3 Cuotas
+                  </p>
+                  <p className="text-[11px] font-light text-emerald-100/90 leading-relaxed">
+                    0% de interés y sin papeleos. Al enviar tu pedido, nuestro asesor te enviará de inmediato el link oficial de Addi para autorizar con tu número de cédula en 1 minuto.
+                  </p>
+                </div>
+              )}
+
+              {metodoPago === 'SISTECREDITO' && (
+                <div className="p-3.5 bg-blue-950/40 text-blue-200 border border-blue-800/80 space-y-1 text-xs animate-in fade-in duration-200">
+                  <p className="font-bold text-blue-300 uppercase tracking-wider flex items-center gap-1">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-blue-400" /> Crédito Inmediato Sistecrédito
+                  </p>
+                  <p className="text-[11px] font-light text-blue-100/90 leading-relaxed">
+                    Al abrir WhatsApp, ten a la mano tu número de cédula para validar tu cupo y autorizar tu compra en 30 segundos sin tarjetas.
+                  </p>
+                </div>
+              )}
+
+              {metodoPago === 'PLAN_SEPARE' && (
+                <div className="p-3.5 bg-zinc-950 text-white border border-zinc-800 space-y-2 text-xs animate-in fade-in duration-200">
+                  <p className="font-bold text-zinc-200 uppercase tracking-wider flex items-center gap-1">
+                    <Wallet className="w-3.5 h-3.5 text-amber-400" /> Plan Separe KΛOB (30 Días)
+                  </p>
+                  <div className="grid grid-cols-2 gap-2 text-[11px] font-mono p-2 bg-zinc-900 border border-zinc-800">
+                    <div>
+                      <span className="text-zinc-400 block text-[10px]">Abono inicial (30%):</span>
+                      <strong className="text-emerald-400">{formatoCOP(Math.round(total * 0.3))}</strong>
+                    </div>
+                    <div>
+                      <span className="text-zinc-400 block text-[10px]">Saldo a 30 días (70%):</span>
+                      <strong className="text-zinc-300">{formatoCOP(total - Math.round(total * 0.3))}</strong>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between pt-1">
+                    <span className="text-[10px] text-zinc-400">Nequi: {numeroNequiOficial}</span>
+                    <button
+                      type="button"
+                      onClick={() => copiarAlPortapapeles(numeroNequiOficial, 'separe-nequi')}
+                      className="px-2 py-0.5 text-[10px] font-bold uppercase bg-white text-black"
+                    >
+                      {cuentaCopiada === 'separe-nequi' ? '¡Copiado!' : 'Copiar Nequi'}
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Formulario de Despacho */}
+              <div className="space-y-3 pt-2">
+                <label className="block text-[11px] font-bold text-zinc-900 uppercase tracking-wider">
+                  2. Datos de Envío:
+                </label>
+
                 <div>
-                  <label className="block text-[11px] font-bold text-zinc-900 uppercase tracking-wider mb-1">Ciudad *</label>
+                  <label className="block text-[10px] font-bold text-zinc-600 uppercase mb-1">Nombre completo *</label>
                   <Input
                     required
-                    value={ciudad}
-                    onChange={(e) => setCiudad(e.target.value)}
-                    placeholder="Ej. Bogotá"
+                    value={nombre}
+                    onChange={(e) => setNombre(e.target.value)}
+                    placeholder="Ej. Carlos Mendoza"
                     className="rounded-none text-xs"
                   />
                 </div>
+
                 <div>
-                  <label className="block text-[11px] font-bold text-zinc-900 uppercase tracking-wider mb-1">Dirección *</label>
+                  <label className="block text-[10px] font-bold text-zinc-600 uppercase mb-1">WhatsApp de contacto *</label>
                   <Input
                     required
-                    value={direccion}
-                    onChange={(e) => setDireccion(e.target.value)}
-                    placeholder="Ej. Cra 15 # 85-30"
+                    type="tel"
+                    value={celular}
+                    onChange={(e) => setCelular(e.target.value)}
+                    placeholder="Ej. 311 221 9386"
                     className="rounded-none text-xs"
                   />
                 </div>
-              </div>
 
-              <div>
-                <label className="block text-[11px] font-bold text-zinc-900 uppercase tracking-wider mb-1">Notas o Apto</label>
-                <Input
-                  value={notas}
-                  onChange={(e) => setNotas(e.target.value)}
-                  placeholder="Ej. Torre 2 Apto 501…"
-                  className="rounded-none text-xs"
-                />
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="block text-[10px] font-bold text-zinc-600 uppercase mb-1">Ciudad *</label>
+                    <Input
+                      required
+                      value={ciudad}
+                      onChange={(e) => setCiudad(e.target.value)}
+                      placeholder="Ej. Villagarzón"
+                      className="rounded-none text-xs"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-bold text-zinc-600 uppercase mb-1">Dirección / Barrio *</label>
+                    <Input
+                      required
+                      value={direccion}
+                      onChange={(e) => setDireccion(e.target.value)}
+                      placeholder="Ej. Villa - Casa 2"
+                      className="rounded-none text-xs"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-bold text-zinc-600 uppercase mb-1">Notas adicionales (opcional)</label>
+                  <Input
+                    value={notas}
+                    onChange={(e) => setNotas(e.target.value)}
+                    placeholder="Ej. Dejar en portería o llamar antes de entregar…"
+                    className="rounded-none text-xs"
+                  />
+                </div>
               </div>
             </form>
           )}

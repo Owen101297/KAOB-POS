@@ -24,7 +24,7 @@ const crearPedidoOnlineSchema = z.object({
   ciudad: z.string().trim().min(2).max(80),
   direccion: z.string().trim().min(3).max(200),
   notas: z.string().trim().max(300).optional().or(z.literal("")),
-  metodoFinanciacion: z.enum(["CONTADO", "PLAN_SEPARE", "ADDI", "SISTECREDITO"]).default("CONTADO"),
+  metodoFinanciacion: z.enum(["CONTADO", "PLAN_SEPARE", "ADDI", "SISTECREDITO", "TRANSFERENCIA"]).default("TRANSFERENCIA"),
   subtotal: z.number().int().nonnegative(),
   total: z.number().int().nonnegative(),
   items: z.array(itemPedidoSchema).min(1),

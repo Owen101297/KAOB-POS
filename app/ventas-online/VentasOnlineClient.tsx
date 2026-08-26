@@ -305,17 +305,35 @@ export default function VentasOnlineClient({ pedidosIniciales, leadsIniciales }:
                       </div>
 
                       <div className="grid grid-cols-2 gap-2">
-                        <a
-                          href={`https://wa.me/57${ped.clienteTelefono.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(`¡Hola ${ped.clienteNombre}! Te contactamos de KAOB MODERN WEAR respecto a tu pedido ${codigo}.`)}`}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="flex items-center justify-center gap-1 px-3 py-2 rounded-xl bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200 text-xs font-bold transition-colors"
-                        >
-                          <Send className="h-3.5 w-3.5" /> WhatsApp
-                        </a>
+                        {(() => {
+                          let textoMensaje = `¡Hola ${ped.clienteNombre}! Te contactamos de KΛOB MODERN WEAR respecto a tu orden ${codigo} por ${formatoCOP(ped.total)}.`;
+                          if (ped.metodoFinanciacion === 'TRANSFERENCIA') {
+                            textoMensaje = `¡Hola ${ped.clienteNombre}! Un gusto saludarte de KΛOB MODERN WEAR. Tu pedido ${codigo} por ${formatoCOP(ped.total)} está reservado con éxito. Puedes realizar la transferencia a Nequi: 3136332887 y enviarnos tu comprobante por este medio para despachar hoy mismo.`;
+                          } else if (ped.metodoFinanciacion === 'ADDI') {
+                            textoMensaje = `¡Hola ${ped.clienteNombre}! Un gusto saludarte de KΛOB MODERN WEAR. Para procesar tu compra ${codigo} con Addi (0% interés), por favor confírmanos tu número de cédula para enviarte el link oficial de pago seguro.`;
+                          } else if (ped.metodoFinanciacion === 'SISTECREDITO') {
+                            textoMensaje = `¡Hola ${ped.clienteNombre}! Un gusto saludarte de KΛOB MODERN WEAR. Para validar tu crédito de la orden ${codigo} (${formatoCOP(ped.total)}) con Sistecrédito, compártenos tu número de cédula.`;
+                          } else if (ped.metodoFinanciacion === 'PLAN_SEPARE') {
+                            textoMensaje = `¡Hola ${ped.clienteNombre}! Con gusto apartamos tus prendas de la orden ${codigo}. El abono inicial requerido (30%) es de ${formatoCOP(Math.round(ped.total * 0.3))} a Nequi: 3136332887 para congelar tu talla.`;
+                          }
+
+                          const telLimpio = ped.clienteTelefono.replace(/[^0-9]/g, '');
+                          const telFinal = telLimpio.startsWith('57') ? telLimpio : `57${telLimpio}`;
+
+                          return (
+                            <a
+                              href={`https://wa.me/${telFinal}?text=${encodeURIComponent(textoMensaje)}`}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition-all shadow-xs"
+                            >
+                              <Send className="h-3.5 w-3.5" /> Atender en WA
+                            </a>
+                          );
+                        })()}
 
                         {estado === 'PENDIENTE' ? (
-                          <Button size="sm" onClick={() => cambiarEstado(ped.id, 'EMPACADO')} className="text-xs font-bold">
+                          <Button size="sm" onClick={() => cambiarEstado(ped.id, 'EMPACADO')} className="text-xs font-bold bg-slate-900 hover:bg-slate-800 text-white">
                             Empacar
                           </Button>
                         ) : estado === 'EMPACADO' ? (
