@@ -32,8 +32,22 @@ export async function loginWithCredentials(
   }
 }
 
-export async function loginWithGoogle() {
-  await signIn("google", { redirectTo: "/" });
+export async function loginWithGoogle(): Promise<ActionResult> {
+  if (!process.env.AUTH_GOOGLE_ID || !process.env.AUTH_GOOGLE_SECRET) {
+    return {
+      ok: false,
+      error: "Inicio con Google no configurado en Railway (faltan AUTH_GOOGLE_ID y AUTH_GOOGLE_SECRET)",
+    };
+  }
+  try {
+    await signIn("google", { redirectTo: "/" });
+    return { ok: true };
+  } catch (error: unknown) {
+    if (error instanceof Error && error.message.includes("NEXT_REDIRECT")) {
+      throw error;
+    }
+    return { ok: false, error: "Error al conectar con Google" };
+  }
 }
 
 export async function logout() {
