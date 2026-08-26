@@ -102,16 +102,36 @@
 - **Limpieza en Cascada de Productos**: En `lib/actions/productos.ts`, `eliminarProducto` y `eliminarMultiplesProductos` limpian automáticamente registros huérfanos de pruebas (ítems de planes separe cancelados, ventas/compras anuladas) permitiendo borrar productos sin bloqueos de base de datos.
 - **Filtro de Categorías Activas**: `listarCategorias(true)` en POS (`/ventas/nueva`) y Tienda (`/tienda`) para mostrar únicamente las categorías que contienen productos reales activos (ocultando categorías plantilla como `COMPLETO`, `PRENDA INFERIOR`, `PRENDA SUPERIOR`).
 
+### ✅ Fase 15 - Cockpit POS & Modal de Cobro Multimétodo 21st.dev
+- **Arquitectura Cockpit en `/ventas/nueva`**: Catálogo interactivo de alta densidad, swatches de tallas/colores en vivo, carrito lateral compacto y atajos rápidos.
+- **Modal de Cobro en 2 Columnas**: 5 métodos limpios (Efectivo, Tarjeta/Datáfono, Transferencia Bancaria, Plataforma Digital BNPL, Fiado/Crédito Directo).
+- **Integración BNPL & Plataformas de Crédito**: Gestión de Addi, Sistecrédito y plataformas dinámicas con dinero en tránsito, liquidación de lotes y conciliación bancaria.
+- **Buscador & Registro de Clientes en Vivo**: Búsqueda por CC/NIT o nombre y creación ágil de clientes directamente desde el modal de cobro.
+- **Teclado Táctil & Billetes**: Teclado numérico táctil integrado, botones de denominaciones colombianas y cálculo automático de cambio express.
+
+### ✅ Fase 16 - Responsividad Global 100% y Diseño Móvil
+- **Adaptabilidad Total**: Optimización en todos los módulos del sistema para teléfonos, tablets, laptops y pantallas táctiles POS de mostrador.
+- **Sidebar Móvil Deslizable**: Menú colapsable con backdrop táctil para navegación fluida en celulares.
+- **Tablas y Formularios Adaptativos**: DataTable con scroll horizontal protegido y encabezados legibles en pantallas reducidas.
+- **Modal de Tickets Térmico 80mm**: Diseño blanco puro de alto contraste, legible en cualquier resolución y eliminación de impresión automática no deseada.
+
+### ✅ Fase 17 - Sincronización Staging / Develop & Skills
+- **Ramas Sincronizadas**: Rama `develop` (Staging) fusionada y al 100% con `main` (Producción).
+- **Librerías de Skills**: Integración de guías de diseño, UI/UX y tokens en `.opencode/skills/`.
+
 ---
 
-## ⏭️ Próximos Pasos para Mañana
-1. **Pruebas Integrales de Usuario en Producción**:
-   - Probar flujo de venta en mostrador (POS) y flujo de compra en la tienda web (`/tienda`).
-   - Validar responsive en móvil y escritorio.
-2. **Puesta a Cero de Datos de Prueba (Cuando el usuario lo indique)**:
-   - Script o procedimiento para limpiar ventas/inventario de prueba y dejar la base de datos limpia para arranque en producción.
-3. **Módulo de Producción / Confección de Prendas (`/produccion`)**:
-   - Registro de lotes de corte, materias primas (telas/hilos/botones) y costo de confección por prenda.
+## ⏭️ Próximos Pasos y Roadmap
+
+1. **Pruebas Integrales E2E en Staging (`develop`)**:
+   - Flujo completo de mostrador: Apertura de caja → Venta Cockpit POS → Métodos de pago (Efectivo, Tarjeta, Addi/Sistecrédito, Fiado) → Ticket térmico → Descuento de stock por variantes → Cierre y arqueo ciego de caja.
+   - Flujo de tienda online: Pedidos desde el catálogo e-commerce (`/tienda`) → Conversión a WhatsApp → Despacho en `/ventas-online`.
+2. **Facturación Electrónica (DIAN / POS Electrónico)**:
+   - Evaluación y conexión con API de proveedor tecnológico para emisión de documentos electrónicos válidos en Colombia.
+3. **Módulo de Producción / Taller de Confección (`/produccion`)**:
+   - Registro de órdenes de confección, corte, consumo de insumos (telas, avíos) y liquidación de costos de producción.
+4. **Puesta a Cero de Base de Datos para Lanzamiento**:
+   - Script de purga de datos demo/pruebas para arrancar operaciones oficiales con inventario inicial real.
 
 ---
 
@@ -124,9 +144,9 @@ npx prisma migrate dev --name <nombre>
 npx prisma generate
 npx tsc --noEmit     # verificación de tipos
 
-# Deploy
-git push origin main:develop   # staging
-git push origin main           # producción
+# Deploy / Flujo Git
+git checkout develop && git push origin develop  # despliegue automático a staging (railway)
+git checkout main && git push origin main        # despliegue automático a producción (railway)
 ```
 
 ## Contact & Credits
