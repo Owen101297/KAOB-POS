@@ -101,6 +101,16 @@ enum TipoDocumento {
   @@map("tipo_documento")
 }
 
+enum Rol {
+  ADMIN
+  GERENTE
+  CAJERO
+  VENDEDOR
+  BODEGUERO
+
+  @@map("rol")
+}
+
 // ─────────────────────── CATÁLOGOS BASE ──────────────────────
 
 model Bodega {
@@ -702,6 +712,8 @@ model Auditoria {
   descripcion String
   detalles    String?  // JSON string con metadata o diferencias antes/después
   usuario     String   @default("Administrador")
+  usuarioId   String?
+  usuarioRel  Usuario? @relation(fields: [usuarioId], references: [id], onDelete: SetNull)
   ip          String?
   createdAt   DateTime @default(now())
 
@@ -819,6 +831,66 @@ model Gasto {
   @@index([fecha])
   @@index([estado])
   @@map("gastos")
+}
+
+// ───────────────────────── AUTENTICACIÓN Y USUARIOS ─────────────────────────
+
+model Usuario {
+  id              String    @id @default(cuid())
+  email           String    @unique
+  nombre          String
+  passwordHash    String?   // null si solo usa Google OAuth
+  imagen          String?
+  rol             Rol       @default(CAJERO)
+  activo          Boolean   @default(true)
+  emailVerified   DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  accounts             Account[]
+  sessions             Session[]
+  auditoriasCreadas    Auditoria[]
+
+  @@index([email])
+  @@map("usuarios")
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+  usuario           Usuario @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("cuentas_auth")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  usuario      Usuario  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sesiones_auth")
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@map("tokens_verificacion")
 }
 
 

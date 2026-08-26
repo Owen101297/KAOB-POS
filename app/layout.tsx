@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import './globals.css';
 import Shell from '@/components/layout/Shell';
-import { BodegaProvider } from '@/components/providers/BodegaProvider';
+import Providers from '@/components/providers/Providers';
 import { asegurarBodegaPrincipal } from '@/lib/actions/catalogos';
 import { db } from '@/lib/db';
 import type { Bodega } from '@prisma/client';
@@ -39,9 +39,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   return (
     <html lang="es" className={inter.variable}>
       <body className="font-sans">
-        <BodegaProvider bodegas={bodegas}>
+        <Providers bodegas={bodegas}>
           <Shell>{children}</Shell>
-        </BodegaProvider>
+        </Providers>
       </body>
     </html>
   );

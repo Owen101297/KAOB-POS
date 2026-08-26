@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Bell, ChevronDown, LayoutGrid, LogOut, Menu, Package, Settings, Store, User } from 'lucide-react';
+import { Bell, ChevronDown, LayoutGrid, LogOut, Menu, Package, Settings, Store, User, Shield } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -12,11 +12,29 @@ import {
 } from '@/components/ui/DropdownMenu';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/Select';
 import { useBodega } from '@/components/providers/BodegaProvider';
+import { useSession, signOut } from 'next-auth/react';
 
 const NOTIFICATIONS = [
   { title: 'Stock bajo', detail: '2 productos por debajo del mínimo', time: 'Hace 5 min' },
   { title: 'Cierre de caja pendiente', detail: 'Turno de ayer sin cerrar', time: 'Hace 1 h' },
 ];
+
+const ROL_LABELS: Record<string, string> = {
+  ADMIN: 'Administrador',
+  GERENTE: 'Gerente',
+  CAJERO: 'Cajero',
+  VENDEDOR: 'Vendedor',
+  BODEGUERO: 'Bodeguero',
+};
+
+function getInitials(name: string): string {
+  return name
+    .split(' ')
+    .map((w) => w[0])
+    .slice(0, 2)
+    .join('')
+    .toUpperCase();
+}
 
 function BodegaSelector() {
   const { bodegas, bodegaActiva, setBodegaActivaId } = useBodega();
@@ -41,6 +59,13 @@ function BodegaSelector() {
 }
 
 export default function Topbar({ onMenuClick }: { onMenuClick?: () => void }) {
+  const { data: session, status } = useSession();
+  const user = session?.user;
+  const userName = user?.name || 'Usuario';
+  const userRol = user?.rol || 'CAJERO';
+  const initials = getInitials(userName);
+  const isLoading = status === 'loading';
+
   return (
     <header className="fixed inset-x-0 top-0 z-[1300] flex h-16 items-stretch border-b border-slate-200/70 bg-white/90 backdrop-blur">
       {/* Zona izquierda: hamburguesa (móvil) + marca (desktop) */}
@@ -92,31 +117,6 @@ export default function Topbar({ onMenuClick }: { onMenuClick?: () => void }) {
 
       {/* Zona derecha */}
       <div className="flex items-center gap-1 pr-3">
-        {/* Aplicaciones */}
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <button
-              type="button"
-              aria-label="Aplicaciones"
-              className="relative flex h-10 w-10 items-center justify-center rounded-xl text-slate-500 outline-none transition-colors hover:bg-slate-100 hover:text-slate-900 focus-visible:ring-2 focus-visible:ring-brand-500/40"
-            >
-              <LayoutGrid className="h-5 w-5" />
-            </button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="min-w-[220px]">
-            <DropdownMenuLabel>Aplicaciones</DropdownMenuLabel>
-            <DropdownMenuItem>
-              <Store /> Tienda Virtual
-            </DropdownMenuItem>
-            <DropdownMenuItem>
-              <Package /> Inventario
-            </DropdownMenuItem>
-            <DropdownMenuItem>
-              <Settings /> Configuración
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-
         {/* Notificaciones */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -154,20 +154,27 @@ export default function Topbar({ onMenuClick }: { onMenuClick?: () => void }) {
               aria-label="Menú de usuario"
               className="ml-1 flex items-center gap-2 rounded-xl py-1 pl-1 pr-2 outline-none transition-colors hover:bg-slate-100 focus-visible:ring-2 focus-visible:ring-brand-500/40"
             >
-              <span className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-slate-600 to-slate-800 text-[11px] font-bold text-white">
-                US
-              </span>
+              {isLoading ? (
+                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-200 animate-pulse" />
+              ) : (
+                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-slate-600 to-slate-800 text-[11px] font-bold text-white">
+                  {initials}
+                </span>
+              )}
               <ChevronDown className="hidden h-4 w-4 text-slate-400 sm:block" />
             </button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="min-w-[200px]">
+          <DropdownMenuContent align="end" className="min-w-[220px]">
             <div className="flex items-center gap-3 px-2.5 py-2">
               <span className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-slate-600 to-slate-800 text-[11px] font-bold text-white">
-                US
+                {initials}
               </span>
               <div>
-                <p className="text-[13px] font-semibold text-slate-900">Usuario</p>
-                <p className="text-xs text-slate-400">Plan Emprendedor</p>
+                <p className="text-[13px] font-semibold text-slate-900">{userName}</p>
+                <p className="flex items-center gap-1 text-xs text-slate-400">
+                  <Shield className="h-3 w-3" />
+                  {ROL_LABELS[userRol] || userRol}
+                </p>
               </div>
             </div>
             <DropdownMenuSeparator />
@@ -178,7 +185,10 @@ export default function Topbar({ onMenuClick }: { onMenuClick?: () => void }) {
               <Settings /> Configuración
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem destructive>
+            <DropdownMenuItem
+              destructive
+              onClick={() => signOut({ callbackUrl: '/login' })}
+            >
               <LogOut /> Cerrar sesión
             </DropdownMenuItem>
           </DropdownMenuContent>

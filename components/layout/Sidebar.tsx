@@ -101,6 +101,7 @@ const MENU: MenuItem[] = [
     sub: [
       { label: 'General y Tickets', href: '/configuracion' },
       { label: 'Catálogos', href: '/configuracion/catalogos' },
+      { label: 'Usuarios', href: '/usuarios' },
     ],
   },
 ];
