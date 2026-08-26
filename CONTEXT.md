@@ -153,21 +153,17 @@
 - **Nota de despliegue**: igual que en fases anteriores, la migración se escribió a mano (sin `DATABASE_URL` en este entorno) y se aplicará sola en el próximo `prisma migrate deploy` de Railway. Las variables del bucket ya están configuradas en Railway (production y staging), así que el panel de fotos debería funcionar en cuanto se despliegue.
 
 ### ✅ Fase 21 - Rediseño Editorial UI/UX Pro Max con Jerarquía de 9 Secciones e Insignias SVG de Pagos
+- **Jerarquía Editorial de 9 Secciones**: `<HeroBanner />` (50/50), `<TrustBadges />` (3 cols), `<CategoryGrid />` (3:4), `<ProductSection title="NEW ARRIVALS" />` (6 cols), `<SplitBanner />` (asimétrico beige), `<ProductSection title="BEST SELLERS" />` (6 cols), `<JournalSection />` (3 cols con modal), `<NewsletterForm />` (lead capture), `<FooterTienda />` (sellos SVG).
+- **Insignias SVG de Pagos (`PaymentMethodsBadges.tsx`)**: Addi, Sistecrédito, Nequi, Bancolombia, Visa, Mastercard, Plan Separe. Exclusión total de contraentrega.
 
-- **Jerarquía Editorial de 9 Secciones**:
-  1. `<HeroBanner />`: Grid 50/50 editorial con Eyebrow `NEW COLLECTION // DROP 01`, H1 Serif `TIMELESS BY NATURE`, subtítulo y CTAs de acción directa.
-  2. `<TrustBadges />`: Value Proposition Bar de 3 columnas (Premium Fabrics 240+ GSM, Timeless Design y Envíos & Financiación con logos SVG).
-  3. `<CategoryGrid />`: Showcase de 4 columnas verticales (3:4) con tarjetas lookbook (`MEN`, `WOMEN`, `TOPS & HOODIES`, `ACCESSORIES`).
-  4. `<ProductSection title="NEW ARRIVALS" />`: Grid de 6 columnas con tarjetas verticales (4:5), Wishlist flotante, Swatches interactivos, Quick-Add de tallas y tira de pagos SVG.
-  5. `<SplitBanner />`: Campaña editorial secundaria asimétrica con fondo beige arena (`#F5F0EB`) y fotografía de detalle textil.
-  6. `<ProductSection title="BEST SELLERS" />`: Grid de 6 columnas conectado a los productos más vendidos en el POS y la tienda online.
-  7. `<JournalSection />`: Blog editorial de 3 columnas con artículos sobre estilo, cultura y cuidado de prendas, con modal de lectura rápida.
-  8. `<NewsletterForm />`: Barra horizontal de suscripción y captura de leads conectada a `LeadTienda`.
-  9. `<FooterTienda />`: Footer arquitectónico con branding KΛOB centrado, enlaces, garantías y franja oficial de sellos de pago SVG.
-- **Sustitución de Calculadora por SVGs Oficiales (`PaymentMethodsBadges.tsx`)**: Eliminación de la calculadora matemática anterior y creación de biblioteca vectorial con insignias nítidas para **Addi**, **Sistecrédito**, **Nequi**, **Bancolombia**, **Visa/Mastercard** y **Plan Separe KΛOB**.
-- **Exclusión de Contraentrega**: Se retiró cualquier opción o mención de contraentrega hasta contar con convenios logísticos formales.
-- **Wishlist Integrado**: Botón de favoritos con persistencia local (`localStorage`), contador dinámico en Navbar y modal de favoritos.
-- **Limpieza de Componentes**: Eliminados componentes legacy deprecados (`FinanciacionCalculadora.tsx`, `HeroTienda.tsx`, `CategoryGridBento.tsx`).
+### ✅ Fase 22 - Matriz Bidimensional de Navegación (Género × Categorías Reales de Inventario)
+- **Sincronización 100% Automática de Inventario**:
+  - `CategoryGrid.tsx`: Mapea dinámicamente las categorías reales de la base de datos (`Categoria`) con conteo de prendas activas y foto de portada automática del primer producto de la categoría.
+  - `NavbarTienda.tsx`: Menú desplegable dinámico de "CATEGORÍAS" que lista todas las categorías activas en tiempo real.
+- **Navegación de Doble Nivel (Género × Subcategorías)**:
+  - **Nivel 1 (Macro)**: `[ TODO ] [ MEN ] [ WOMEN ] [ OVERSIZE ] [ ACCESSORIES ]`.
+  - **Nivel 2 (Subcategorías Dinámicas)**: Al seleccionar un género (ej: `MEN`), calcula en tiempo real qué categorías de inventario contienen ropa para hombre y muestra chips filtrables: `[ Todo Men (24) ] [ Camisetas (12) ] [ Hoodies (8) ] [ Pantalones (4) ]`.
+  - **Breadcrumbs Interactivos**: `INICIO > MEN > HOODIES` con chips de remoción individual para navegación intuitiva.
 
 ---
 

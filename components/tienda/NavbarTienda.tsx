@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { Search, ShoppingBag, Menu, X, Heart, Sparkles, User, Users, Gem } from 'lucide-react';
+import { Search, ShoppingBag, Menu, X, Heart, ChevronDown, Sparkles, User, Users, Gem } from 'lucide-react';
 import { formatoCOP } from '@/lib/format';
 import OfertaFlashBanner from './OfertaFlashBanner';
 
@@ -49,6 +49,7 @@ export default function NavbarTienda({
   const [menuMovilAbierto, setMenuMovilAbierto] = useState(false);
   const [mostrarBuscador, setMostrarBuscador] = useState(false);
   const [buscadorEnfocado, setBuscadorEnfocado] = useState(false);
+  const [dropdownCategoriasAbierto, setDropdownCategoriasAbierto] = useState(false);
 
   const mostrarSugerencias = buscadorEnfocado && busqueda.trim().length > 0 && sugerencias.length > 0;
 
@@ -62,7 +63,7 @@ export default function NavbarTienda({
     <header className="sticky top-0 z-50 bg-[#09090B] border-b border-zinc-800 text-white transition-all">
       <OfertaFlashBanner promocion={promocionDestacada} />
       
-      {/* Barra de anuncios / Marquee Superior */}
+      {/* Barra de anuncios Superior */}
       <div className="bg-zinc-950 border-b border-zinc-800/60 py-2 px-4 text-center text-[10px] sm:text-[11px] font-bold tracking-[0.25em] uppercase text-zinc-300 flex items-center justify-center gap-3 overflow-hidden">
         <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping shrink-0" />
         <span>ENVÍOS A TODA COLOMBIA • PAGOS SEGUROS CON ADDI, SISTECRÉDITO & PLAN SEPARE • 100% HEAVYWEIGHT COTTON</span>
@@ -107,8 +108,8 @@ export default function NavbarTienda({
             </Link>
           </div>
 
-          {/* Menú de Navegación Lookbook */}
-          <nav className="hidden lg:flex items-center gap-8 text-xs font-bold tracking-[0.2em] uppercase">
+          {/* Menú de Navegación por Departamento y Categorías Reales */}
+          <nav className="hidden lg:flex items-center gap-7 text-xs font-bold tracking-[0.2em] uppercase">
             <button
               type="button"
               onClick={() => {
@@ -128,7 +129,6 @@ export default function NavbarTienda({
               type="button"
               onClick={() => {
                 onSeleccionarGenero('CABALLERO');
-                onSeleccionarCategoria(null);
               }}
               className={`transition-colors hover:text-white pb-1 ${
                 generoActivo === 'CABALLERO'
@@ -143,7 +143,6 @@ export default function NavbarTienda({
               type="button"
               onClick={() => {
                 onSeleccionarGenero('DAMA');
-                onSeleccionarCategoria(null);
               }}
               className={`transition-colors hover:text-white pb-1 ${
                 generoActivo === 'DAMA'
@@ -158,7 +157,6 @@ export default function NavbarTienda({
               type="button"
               onClick={() => {
                 onSeleccionarGenero('UNISEX');
-                onSeleccionarCategoria(null);
               }}
               className={`transition-colors hover:text-white pb-1 ${
                 generoActivo === 'UNISEX'
@@ -173,7 +171,6 @@ export default function NavbarTienda({
               type="button"
               onClick={() => {
                 onSeleccionarGenero('ACCESORIOS');
-                onSeleccionarCategoria(null);
               }}
               className={`transition-colors hover:text-white pb-1 ${
                 generoActivo === 'ACCESORIOS'
@@ -183,6 +180,60 @@ export default function NavbarTienda({
             >
               ACCESSORIES
             </button>
+
+            {/* Dropdown Dinámico de Categorías Reales de Inventario */}
+            {categorias.length > 0 && (
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={() => setDropdownCategoriasAbierto(!dropdownCategoriasAbierto)}
+                  onBlur={() => setTimeout(() => setDropdownCategoriasAbierto(false), 200)}
+                  className={`flex items-center gap-1 transition-colors hover:text-white pb-1 ${
+                    categoriaActiva ? 'text-white font-bold border-b-2 border-white' : 'text-zinc-400'
+                  }`}
+                >
+                  <span>{categoriaActiva ? `CAT: ${categoriaActiva}` : 'CATEGORÍAS'}</span>
+                  <ChevronDown className="w-3 h-3 transition-transform duration-200" />
+                </button>
+
+                {dropdownCategoriasAbierto && (
+                  <div className="absolute top-full mt-3 left-0 w-64 bg-[#0F0F12] border border-zinc-800 shadow-2xl p-2 z-50 animate-in fade-in slide-in-from-top-1 duration-150">
+                    <div className="p-2 border-b border-zinc-800 text-[10px] font-bold text-zinc-500 tracking-wider uppercase">
+                      Categorías en Inventario:
+                    </div>
+                    <div className="max-h-60 overflow-y-auto py-1">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          onSeleccionarCategoria(null);
+                          setDropdownCategoriasAbierto(false);
+                        }}
+                        className={`w-full text-left px-3 py-2 text-xs uppercase tracking-wider transition-colors ${
+                          categoriaActiva === null ? 'bg-white text-black font-bold' : 'text-zinc-300 hover:bg-zinc-900'
+                        }`}
+                      >
+                        Todas las Categorías
+                      </button>
+                      {categorias.map((cat) => (
+                        <button
+                          key={cat.id}
+                          type="button"
+                          onClick={() => {
+                            onSeleccionarCategoria(cat.nombre);
+                            setDropdownCategoriasAbierto(false);
+                          }}
+                          className={`w-full text-left px-3 py-2 text-xs uppercase tracking-wider transition-colors ${
+                            categoriaActiva === cat.nombre ? 'bg-white text-black font-bold' : 'text-zinc-300 hover:bg-zinc-900'
+                          }`}
+                        >
+                          {cat.nombre}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
           </nav>
 
           {/* Acciones Derecha: Buscador, Wishlist y Carrito */}
@@ -320,7 +371,7 @@ export default function NavbarTienda({
       {menuMovilAbierto && (
         <div className="lg:hidden border-t border-zinc-800 bg-[#09090B] px-4 py-4 space-y-4 animate-in slide-in-from-top-2">
           <div>
-            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-400 mb-2">Colecciones</p>
+            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-400 mb-2">Departamentos</p>
             <div className="grid grid-cols-2 gap-2">
               <button
                 type="button"
@@ -340,7 +391,6 @@ export default function NavbarTienda({
                 type="button"
                 onClick={() => {
                   onSeleccionarGenero('CABALLERO');
-                  onSeleccionarCategoria(null);
                   setMenuMovilAbierto(false);
                 }}
                 className={`text-left px-3 py-2 text-xs font-bold uppercase ${
@@ -354,7 +404,6 @@ export default function NavbarTienda({
                 type="button"
                 onClick={() => {
                   onSeleccionarGenero('DAMA');
-                  onSeleccionarCategoria(null);
                   setMenuMovilAbierto(false);
                 }}
                 className={`text-left px-3 py-2 text-xs font-bold uppercase ${
@@ -368,7 +417,6 @@ export default function NavbarTienda({
                 type="button"
                 onClick={() => {
                   onSeleccionarGenero('UNISEX');
-                  onSeleccionarCategoria(null);
                   setMenuMovilAbierto(false);
                 }}
                 className={`text-left px-3 py-2 text-xs font-bold uppercase ${
@@ -379,6 +427,29 @@ export default function NavbarTienda({
               </button>
             </div>
           </div>
+
+          {categorias.length > 0 && (
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-400 mb-2">Categorías de Inventario</p>
+              <div className="flex flex-wrap gap-1">
+                {categorias.map((cat) => (
+                  <button
+                    key={cat.id}
+                    type="button"
+                    onClick={() => {
+                      onSeleccionarCategoria(cat.nombre);
+                      setMenuMovilAbierto(false);
+                    }}
+                    className={`px-2.5 py-1.5 text-xs font-medium uppercase tracking-wider ${
+                      categoriaActiva === cat.nombre ? 'bg-white text-black font-bold' : 'bg-zinc-900 text-zinc-400'
+                    }`}
+                  >
+                    {cat.nombre}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       )}
     </header>

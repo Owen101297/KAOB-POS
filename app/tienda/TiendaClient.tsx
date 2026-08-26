@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
-import { Sparkles, SlidersHorizontal, Package, RefreshCw, Phone, MapPin, X, Heart, ShoppingBag, ArrowRight } from 'lucide-react';
+import { Sparkles, SlidersHorizontal, Package, RefreshCw, Phone, MapPin, X, Heart, ShoppingBag, ArrowRight, Layers, Tag, ChevronRight } from 'lucide-react';
 import type { ProductoLista } from '@/lib/actions/productos';
 import NavbarTienda from '@/components/tienda/NavbarTienda';
 import HeroBanner from '@/components/tienda/HeroBanner';
@@ -153,51 +153,83 @@ export default function TiendaClient({
     return itemsBolsa.map((it) => `${it.cantidad}x ${it.nombre} (${it.tallaValor}/${it.colorNombre})`).join('; ');
   }, [itemsBolsa]);
 
-  // Filtrado y Ordenamiento
-  const productosFiltrados = useMemo(() => {
-    let list = productos.filter((p) => p.activo);
+  // ───────────────────────────────────────────────────────────────────────────
+  // MATRIZ BIDIMENSIONAL DINÁMICA: GÉNERO × CATEGORÍA DE INVENTARIO
+  // ───────────────────────────────────────────────────────────────────────────
 
-    if (generoActivo) {
-      if (generoActivo === 'DAMA') {
-        list = list.filter(
-          (p) =>
-            p.genero === 'DAMA' ||
+  // 1. Productos filtrados por Género (para calcular qué subcategorías reales existen)
+  const productosPorGenero = useMemo(() => {
+    if (!generoActivo) return productos.filter((p) => p.activo);
+    if (generoActivo === 'DAMA') {
+      return productos.filter(
+        (p) =>
+          p.activo &&
+          (p.genero === 'DAMA' ||
             (p.categoria?.nombre && p.categoria.nombre.toLowerCase().includes('dama')) ||
             p.nombre.toLowerCase().includes('dama') ||
-            p.nombre.toLowerCase().includes('mujer')
-        );
-      } else if (generoActivo === 'CABALLERO') {
-        list = list.filter(
-          (p) =>
-            p.genero === 'CABALLERO' ||
+            p.nombre.toLowerCase().includes('mujer'))
+      );
+    }
+    if (generoActivo === 'CABALLERO') {
+      return productos.filter(
+        (p) =>
+          p.activo &&
+          (p.genero === 'CABALLERO' ||
             (p.categoria?.nombre && p.categoria.nombre.toLowerCase().includes('caballero')) ||
             p.nombre.toLowerCase().includes('caballero') ||
-            p.nombre.toLowerCase().includes('hombre')
-        );
-      } else if (generoActivo === 'UNISEX') {
-        list = list.filter(
-          (p) =>
-            p.genero === 'UNISEX' ||
+            p.nombre.toLowerCase().includes('hombre'))
+      );
+    }
+    if (generoActivo === 'UNISEX') {
+      return productos.filter(
+        (p) =>
+          p.activo &&
+          (p.genero === 'UNISEX' ||
             (p.categoria?.nombre && p.categoria.nombre.toLowerCase().includes('unisex')) ||
-            !p.genero
-        );
-      } else if (generoActivo === 'ACCESORIOS') {
-        list = list.filter(
-          (p) =>
-            (p.categoria?.nombre && p.categoria.nombre.toLowerCase().includes('accesorio')) ||
+            !p.genero)
+      );
+    }
+    if (generoActivo === 'ACCESORIOS') {
+      return productos.filter(
+        (p) =>
+          p.activo &&
+          ((p.categoria?.nombre && p.categoria.nombre.toLowerCase().includes('accesorio')) ||
             (p.categoria?.nombre && p.categoria.nombre.toLowerCase().includes('gorra')) ||
             p.nombre.toLowerCase().includes('gorra') ||
             p.nombre.toLowerCase().includes('cap') ||
             p.nombre.toLowerCase().includes('morral') ||
-            p.nombre.toLowerCase().includes('accesorio')
-        );
-      }
+            p.nombre.toLowerCase().includes('accesorio'))
+      );
     }
+    return productos.filter((p) => p.activo);
+  }, [productos, generoActivo]);
 
+  // 2. Subcategorías reales dinámicas que tienen productos en el género actual
+  const subcategoriasDinamicas = useMemo(() => {
+    const map = new Map<string, number>();
+    productosPorGenero.forEach((p) => {
+      const nombreCat = p.categoria?.nombre;
+      if (nombreCat) {
+        map.set(nombreCat, (map.get(nombreCat) || 0) + 1);
+      }
+    });
+
+    return Array.from(map.entries()).map(([nombre, conteo]) => ({
+      nombre,
+      conteo,
+    }));
+  }, [productosPorGenero]);
+
+  // 3. Filtrado completo aplicando Género + Categoría + Búsqueda + Orden
+  const productosFiltrados = useMemo(() => {
+    let list = [...productosPorGenero];
+
+    // Filtrar por Categoría
     if (categoriaActiva) {
       list = list.filter((p) => p.categoria?.nombre === categoriaActiva);
     }
 
+    // Filtrar por Búsqueda
     if (busqueda.trim()) {
       const q = busqueda.toLowerCase().trim();
       list = list.filter(
@@ -208,17 +240,17 @@ export default function TiendaClient({
       );
     }
 
-    const copy = [...list];
+    // Ordenamiento
     if (orden === 'precio-asc') {
-      copy.sort((a, b) => a.precioBase - b.precioBase);
+      list.sort((a, b) => a.precioBase - b.precioBase);
     } else if (orden === 'precio-desc') {
-      copy.sort((a, b) => b.precioBase - a.precioBase);
+      list.sort((a, b) => b.precioBase - a.precioBase);
     } else if (orden === 'nombre') {
-      copy.sort((a, b) => a.nombre.localeCompare(b.nombre));
+      list.sort((a, b) => a.nombre.localeCompare(b.nombre));
     }
 
-    return copy;
-  }, [productos, generoActivo, categoriaActiva, busqueda, orden]);
+    return list;
+  }, [productosPorGenero, categoriaActiva, busqueda, orden]);
 
   // New Arrivals (productos más recientes)
   const newArrivals = useMemo(() => {
@@ -279,6 +311,13 @@ export default function TiendaClient({
 
   const hayFiltroActivo = Boolean(busqueda || categoriaActiva || generoActivo);
 
+  const GENERO_LABEL: Record<string, string> = {
+    CABALLERO: 'MEN',
+    DAMA: 'WOMEN',
+    UNISEX: 'OVERSIZE & UNISEX',
+    ACCESORIOS: 'ACCESSORIES',
+  };
+
   return (
     <div className="min-h-screen bg-[#FFFFFF] font-sans text-zinc-950 flex flex-col justify-between selection:bg-black selection:text-white">
       
@@ -291,9 +330,15 @@ export default function TiendaClient({
         busqueda={busqueda}
         onCambiarBusqueda={setBusqueda}
         categoriaActiva={categoriaActiva}
-        onSeleccionarCategoria={setCategoriaActiva}
+        onSeleccionarCategoria={(cat) => {
+          setCategoriaActiva(cat);
+          handleExplorarCatalogo();
+        }}
         generoActivo={generoActivo}
-        onSeleccionarGenero={setGeneroActivo}
+        onSeleccionarGenero={(gen) => {
+          setGeneroActivo(gen);
+          handleExplorarCatalogo();
+        }}
         categorias={categorias}
         sugerencias={sugerenciasBusqueda}
         onSeleccionarSugerencia={handleSeleccionarSugerencia}
@@ -306,14 +351,19 @@ export default function TiendaClient({
           {/* SECCIÓN 1: HERO BANNER (50/50 Grid Editorial) */}
           <HeroBanner
             onExplorarClick={handleExplorarCatalogo}
-            onCategoriaClick={(cat) => setCategoriaActiva(cat)}
+            onCategoriaClick={(cat) => {
+              setCategoriaActiva(cat);
+              handleExplorarCatalogo();
+            }}
           />
 
           {/* SECCIÓN 2: VALUE PROPOSITION BAR (Trust Badges 3 Columnas) */}
           <TrustBadges />
 
-          {/* SECCIÓN 3: CATEGORY SHOWCASE (Grid 4 Columnas 3:4) */}
+          {/* SECCIÓN 3: CATEGORY SHOWCASE DINÁMICO 100% SINCRONIZADO CON INVENTARIO */}
           <CategoryGrid
+            categorias={categorias}
+            productos={productos}
             onSelectCategory={(cat, gen) => {
               if (cat) setCategoriaActiva(cat);
               if (gen) setGeneroActivo(gen);
@@ -359,9 +409,47 @@ export default function TiendaClient({
           <NewsletterForm />
         </>
       ) : (
-        /* VISTA DE FILTRADO Y BÚSQUEDA DEL CATÁLOGO */
-        <main id="catalogo-prendas" className="max-w-[1520px] mx-auto px-4 sm:px-8 py-12 flex-1 w-full">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-zinc-200">
+        /* ────────────────── VISTA DEL CATÁLOGO CON MATRIZ DINÁMICA DE DOBLE NIVEL ────────────────── */
+        <main id="catalogo-prendas" className="max-w-[1520px] mx-auto px-4 sm:px-8 py-10 flex-1 w-full animate-in fade-in duration-300">
+          
+          {/* Breadcrumb Visual */}
+          <div className="flex items-center gap-2 text-xs font-mono text-zinc-400 uppercase mb-4 tracking-wider">
+            <button
+              type="button"
+              onClick={() => {
+                setGeneroActivo(null);
+                setCategoriaActiva(null);
+                setBusqueda('');
+              }}
+              className="hover:text-black transition-colors"
+            >
+              INICIO
+            </button>
+
+            {generoActivo && (
+              <>
+                <ChevronRight className="w-3.5 h-3.5" />
+                <span className="text-zinc-950 font-bold">{GENERO_LABEL[generoActivo] || generoActivo}</span>
+              </>
+            )}
+
+            {categoriaActiva && (
+              <>
+                <ChevronRight className="w-3.5 h-3.5" />
+                <span className="text-zinc-950 font-bold">{categoriaActiva}</span>
+              </>
+            )}
+
+            {busqueda && (
+              <>
+                <ChevronRight className="w-3.5 h-3.5" />
+                <span className="text-zinc-950 font-bold">"{busqueda}"</span>
+              </>
+            )}
+          </div>
+
+          {/* Encabezado del Explorador */}
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 pb-6 border-b border-zinc-200">
             <div>
               <span className="text-[10px] font-bold tracking-[0.25em] text-zinc-400 uppercase block mb-1">
                 EXPLORADOR DE COLECCIÓN
@@ -369,19 +457,22 @@ export default function TiendaClient({
               <h1 className="font-serif text-2xl sm:text-4xl font-light text-zinc-950 uppercase">
                 {busqueda
                   ? `RESULTADOS PARA "${busqueda}"`
+                  : generoActivo && categoriaActiva
+                  ? `${GENERO_LABEL[generoActivo] || generoActivo} // ${categoriaActiva}`
                   : generoActivo
-                  ? `COLECCIÓN ${generoActivo}`
+                  ? `COLECCIÓN ${GENERO_LABEL[generoActivo] || generoActivo}`
                   : categoriaActiva
                   ? `CATEGORÍA: ${categoriaActiva}`
                   : 'CATÁLOGO COMPLETO'}
               </h1>
               <p className="text-xs text-zinc-500 font-light mt-1">
                 {productosFiltrados.length === 1
-                  ? '1 prenda encontrada'
-                  : `${productosFiltrados.length} prendas disponibles`}
+                  ? '1 prenda encontrada en inventario'
+                  : `${productosFiltrados.length} prendas disponibles en inventario`}
               </p>
             </div>
 
+            {/* Acciones y Orden */}
             <div className="flex items-center gap-3 flex-wrap">
               <button
                 type="button"
@@ -413,13 +504,89 @@ export default function TiendaClient({
             </div>
           </div>
 
+          {/* ────────────────── DOBLE NIVEL DE FILTRADO DINÁMICO ────────────────── */}
+          <div className="py-6 border-b border-zinc-200 space-y-4">
+            {/* NIVEL 1: Selector de Departamento / Género Macro */}
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-400 mr-1">
+                DEPARTAMENTO:
+              </span>
+              <button
+                type="button"
+                onClick={() => setGeneroActivo(null)}
+                className={`px-4 py-1.5 text-xs font-bold uppercase tracking-wider transition-all ${
+                  generoActivo === null
+                    ? 'bg-black text-white shadow-xs'
+                    : 'bg-zinc-100 hover:bg-zinc-200 text-zinc-700'
+                }`}
+              >
+                TODO
+              </button>
+              {(['CABALLERO', 'DAMA', 'UNISEX', 'ACCESORIOS'] as const).map((gen) => (
+                <button
+                  key={gen}
+                  type="button"
+                  onClick={() => setGeneroActivo(gen)}
+                  className={`px-4 py-1.5 text-xs font-bold uppercase tracking-wider transition-all ${
+                    generoActivo === gen
+                      ? 'bg-black text-white shadow-xs'
+                      : 'bg-zinc-100 hover:bg-zinc-200 text-zinc-700'
+                  }`}
+                >
+                  {GENERO_LABEL[gen] || gen}
+                </button>
+              ))}
+            </div>
+
+            {/* NIVEL 2: Subcategorías Reales de Inventario correspondientes al Género */}
+            {subcategoriasDinamicas.length > 0 && (
+              <div className="flex items-center gap-2 flex-wrap pt-2">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-400 mr-1">
+                  SUBCATEGORÍAS ({subcategoriasDinamicas.length}):
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setCategoriaActiva(null)}
+                  className={`px-3.5 py-1 text-xs font-bold uppercase tracking-wider transition-all ${
+                    categoriaActiva === null
+                      ? 'bg-zinc-950 text-white'
+                      : 'bg-zinc-100 hover:bg-zinc-200 text-zinc-600'
+                  }`}
+                >
+                  Todas ({productosPorGenero.length})
+                </button>
+
+                {subcategoriasDinamicas.map((subcat) => {
+                  const activa = categoriaActiva === subcat.nombre;
+                  return (
+                    <button
+                      key={subcat.nombre}
+                      type="button"
+                      onClick={() => setCategoriaActiva(activa ? null : subcat.nombre)}
+                      className={`px-3.5 py-1 text-xs font-bold uppercase tracking-wider transition-all ${
+                        activa
+                          ? 'bg-black text-white'
+                          : 'bg-zinc-100 hover:bg-zinc-200 text-zinc-700'
+                      }`}
+                    >
+                      <span>{subcat.nombre}</span>
+                      <span className="ml-1.5 opacity-60 font-mono text-[10px]">({subcat.conteo})</span>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
           {/* Grid de Productos Filtrados */}
           {productosFiltrados.length === 0 ? (
             <div className="my-20 text-center p-12 bg-zinc-50 border border-zinc-200 max-w-lg mx-auto">
               <Package className="h-10 w-10 text-zinc-400 mx-auto mb-3" />
               <h3 className="text-base font-bold text-zinc-950 uppercase tracking-wider">No se encontraron prendas</h3>
               <p className="text-xs text-zinc-500 mt-1 max-w-xs mx-auto font-light">
-                Intenta con otra palabra clave o restablece los filtros.
+                {busqueda
+                  ? `No hay resultados para "${busqueda}". Intenta con otra palabra clave.`
+                  : 'No hay prendas disponibles en esta combinación de departamento y categoría.'}
               </p>
               <Button
                 variant="outline"
@@ -457,8 +624,14 @@ export default function TiendaClient({
       {/* SECCIÓN 9: FOOTER ARQUITECTÓNICO (Centrado, Enlaces & SVGs de Pago) */}
       <FooterTienda
         categorias={categorias}
-        onSeleccionarCategoria={setCategoriaActiva}
-        onSeleccionarGenero={setGeneroActivo}
+        onSeleccionarCategoria={(cat) => {
+          setCategoriaActiva(cat);
+          handleExplorarCatalogo();
+        }}
+        onSeleccionarGenero={(gen) => {
+          setGeneroActivo(gen);
+          handleExplorarCatalogo();
+        }}
         telefonoWhatsApp={configuracion?.telefono || '573000000000'}
       />
 
