@@ -1,7 +1,8 @@
 'use client';
 
 import Link from 'next/link';
-import { Phone, MapPin, ShieldCheck, MessageCircle, ArrowUp, Wallet, CreditCard, Landmark, Smartphone } from 'lucide-react';
+import { Phone, MapPin, MessageCircle, ArrowUp, Sparkles, ShieldCheck } from 'lucide-react';
+import { AllPaymentTrustStrip } from './PaymentMethodsBadges';
 
 interface Props {
   categorias: { id: number; nombre: string }[];
@@ -21,113 +22,82 @@ export default function FooterTienda({
   };
 
   return (
-    <footer className="bg-black text-white border-t border-zinc-800">
-      {/* Banner superior de newsletter / llamada a la acción */}
-      <div className="border-b border-zinc-800/80 bg-gradient-to-r from-zinc-950 via-zinc-900 to-zinc-950 py-10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row items-center justify-between gap-6">
+    <footer className="bg-[#09090B] text-white border-t border-zinc-800">
+      {/* Barra de Asesoría Directa por WhatsApp */}
+      <div className="border-b border-zinc-800/80 bg-zinc-950 py-10">
+        <div className="max-w-[1520px] mx-auto px-4 sm:px-8 flex flex-col md:flex-row items-center justify-between gap-6">
           <div>
-            <span className="text-[11px] font-bold uppercase tracking-widest text-brand-400">
-              ¿Tienes dudas con tu talla o pedido?
+            <span className="text-[10px] font-bold uppercase tracking-[0.25em] text-zinc-400 block mb-1">
+              CONCIERGE & ASESORÍA PERSONALIZADA
             </span>
-            <h3 className="text-xl font-black uppercase text-white mt-0.5">
-              Habla directamente con un asesor de moda
+            <h3 className="font-serif text-xl sm:text-2xl font-light uppercase text-white">
+              ¿Dudas con tu talla o pedido? Habla con nuestro equipo
             </h3>
           </div>
           <a
-            href={`https://wa.me/${telefonoWhatsApp.replace(/[^0-9]/g, '')}?text=${encodeURIComponent('¡Hola! Me gustaría recibir asesoría sobre las prendas de KAOB MODERN WEAR.')}`}
+            href={`https://wa.me/${telefonoWhatsApp.replace(/[^0-9]/g, '')}?text=${encodeURIComponent('¡Hola! Me gustaría recibir asesoría sobre las prendas de KΛOB MODERN WEAR.')}`}
             target="_blank"
             rel="noreferrer"
-            className="inline-flex items-center gap-2 px-6 py-3.5 rounded-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs uppercase tracking-widest transition-transform hover:scale-105 active:scale-95 shadow-lg shrink-0"
+            className="inline-flex items-center gap-2 px-8 py-4 bg-white hover:bg-zinc-200 text-black font-bold text-xs uppercase tracking-[0.2em] transition-all duration-300 shadow-md shrink-0"
           >
             <MessageCircle className="h-4 w-4" />
-            <span>Chatear por WhatsApp</span>
+            <span>Chat de WhatsApp</span>
           </a>
         </div>
       </div>
 
-      {/* Franja de métodos de pago y financiación */}
-      <div className="border-b border-zinc-800/80 py-6">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-500 mb-3 text-center sm:text-left">
-            Métodos de pago y financiación disponibles
-          </p>
-          <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
-            {[
-              { icono: Landmark, label: 'Efectivo contraentrega' },
-              { icono: Smartphone, label: 'Nequi / Daviplata' },
-              { icono: CreditCard, label: 'Tarjeta · Wompi' },
-              { icono: Wallet, label: 'Addi' },
-              { icono: Wallet, label: 'Sistecrédito' },
-              { icono: Wallet, label: 'Plan Separe' },
-            ].map((m, i) => {
-              const Icono = m.icono;
-              return (
-                <span
-                  key={i}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-zinc-900 border border-zinc-800 text-[11px] font-semibold text-zinc-300"
-                >
-                  <Icono className="h-3.5 w-3.5 text-zinc-400" />
-                  {m.label}
-                </span>
-              );
-            })}
-          </div>
+      {/* Franja Oficial de Métodos de Pago y Financiación en SVG */}
+      <div className="border-b border-zinc-800/80 py-8 bg-[#0C0C0E]">
+        <div className="max-w-[1520px] mx-auto px-4 sm:px-8 flex flex-col md:flex-row items-center justify-between gap-4">
+          <span className="text-[10px] font-bold uppercase tracking-[0.25em] text-zinc-500 text-center md:text-left">
+            PAGOS SEGUROS & FINANCIACIÓN DIGITAL EN COLOMBIA
+          </span>
+          <AllPaymentTrustStrip />
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14">
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-10">
+      {/* Contenido Principal del Footer */}
+      <div className="max-w-[1520px] mx-auto px-4 sm:px-8 py-16 sm:py-20">
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-10 lg:gap-14">
           
-          {/* Marca e Información */}
-          <div className="md:col-span-2 space-y-4">
-            <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-full bg-white p-0.5 flex items-center justify-center">
-                <img src="/brand/isotype.svg" alt="KAOB" className="h-9 w-9 rounded-full object-contain" />
+          {/* Marca Centrada / Resumen (4 cols) */}
+          <div className="md:col-span-4 space-y-5">
+            <div className="flex items-center gap-3.5">
+              <div className="h-10 w-10 rounded-full bg-white p-1 flex items-center justify-center">
+                <img src="/brand/isotype.svg" alt="KAOB" className="h-8 w-8 object-contain" />
               </div>
-              <div className="flex flex-col">
-                <span className="font-extrabold text-lg tracking-[0.25em] text-white font-sans uppercase">
+              <div>
+                <span className="font-bold text-lg tracking-[0.25em] text-white uppercase block">
                   KΛOB
                 </span>
-                <span className="text-[9px] font-semibold tracking-[0.35em] text-zinc-400 uppercase -mt-0.5">
+                <span className="text-[9px] font-semibold tracking-[0.35em] text-zinc-400 uppercase block -mt-0.5">
                   MODERN WEAR
                 </span>
               </div>
             </div>
 
-            <p className="text-xs text-zinc-400 max-w-sm leading-relaxed">
-              Marca de moda contemporánea diseñada con cortes modernos, materiales de máxima calidad y confección superior. Cada prenda está pensada para elevar tu estilo diario.
+            <p className="text-xs text-zinc-400 max-w-sm leading-relaxed font-light">
+              Atelier contemporáneo de moda urbana. Confección de alta densidad (240+ GSM), patronaje estructurado y siluetas atemporales diseñadas en Colombia.
             </p>
 
-            <div className="pt-2 text-xs text-zinc-400 space-y-2">
+            <div className="pt-2 text-xs text-zinc-400 space-y-2 font-light">
               <p className="flex items-center gap-2">
-                <Phone className="h-3.5 w-3.5 text-brand-400" />
-                <span>Atención y despachos: Lunes a Sábado 8:00 AM - 7:00 PM</span>
+                <MapPin className="h-3.5 w-3.5 text-zinc-300" />
+                <span>Envíos asegurados a todo el territorio colombiano</span>
               </p>
               <p className="flex items-center gap-2">
-                <MapPin className="h-3.5 w-3.5 text-sky-400" />
-                <span>Envíos seguros a nivel nacional en Colombia</span>
+                <ShieldCheck className="h-3.5 w-3.5 text-emerald-400" />
+                <span>Garantía de confección y cambios sin complicaciones</span>
               </p>
             </div>
           </div>
 
-          {/* Colecciones por Sexo */}
-          <div className="space-y-3">
-            <p className="text-xs font-bold uppercase tracking-widest text-zinc-200">
+          {/* Enlaces a Colecciones (3 cols) */}
+          <div className="md:col-span-3 space-y-4">
+            <p className="text-xs font-bold uppercase tracking-[0.2em] text-white">
               Colecciones
             </p>
-            <ul className="space-y-2 text-xs text-zinc-400">
-              <li>
-                <button
-                  type="button"
-                  onClick={() => {
-                    onSeleccionarGenero('DAMA');
-                    scrollToTop();
-                  }}
-                  className="hover:text-white transition-colors"
-                >
-                  Ropa de Dama 👩
-                </button>
-              </li>
+            <ul className="space-y-2.5 text-xs text-zinc-400 font-light">
               <li>
                 <button
                   type="button"
@@ -137,19 +107,31 @@ export default function FooterTienda({
                   }}
                   className="hover:text-white transition-colors"
                 >
-                  Ropa de Caballero 👨
+                  Caballero & Oversize
                 </button>
               </li>
               <li>
                 <button
                   type="button"
                   onClick={() => {
-                    onSeleccionarGenero('UNISEX');
+                    onSeleccionarGenero('DAMA');
                     scrollToTop();
                   }}
                   className="hover:text-white transition-colors"
                 >
-                  Línea Unisex & Urban ⚡
+                  Dama & Siluetas Femeninas
+                </button>
+              </li>
+              <li>
+                <button
+                  type="button"
+                  onClick={() => {
+                    onSeleccionarCategoria('HOODIES & CHAQUETAS');
+                    scrollToTop();
+                  }}
+                  className="hover:text-white transition-colors"
+                >
+                  Hoodies & Outerwear
                 </button>
               </li>
               <li>
@@ -161,75 +143,60 @@ export default function FooterTienda({
                   }}
                   className="hover:text-white transition-colors"
                 >
-                  Gorras & Accesorios 🎒
+                  Headwear & Accesorios
                 </button>
               </li>
             </ul>
           </div>
 
-          {/* Categorías */}
-          <div className="space-y-3">
-            <p className="text-xs font-bold uppercase tracking-widest text-zinc-200">
-              Categorías
+          {/* Servicio al Cliente (3 cols) */}
+          <div className="md:col-span-3 space-y-4">
+            <p className="text-xs font-bold uppercase tracking-[0.2em] text-white">
+              Atelier & Soporte
             </p>
-            <ul className="space-y-2 text-xs text-zinc-400">
-              {categorias.slice(0, 6).map((cat) => (
-                <li key={cat.id}>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      onSeleccionarCategoria(cat.nombre);
-                      scrollToTop();
-                    }}
-                    className="hover:text-white transition-colors"
-                  >
-                    {cat.nombre}
-                  </button>
-                </li>
-              ))}
+            <ul className="space-y-2.5 text-xs text-zinc-400 font-light">
+              <li>
+                <span className="text-zinc-300">Guía de Tallas: Boxy / Oversize Fit</span>
+              </li>
+              <li>
+                <span className="text-zinc-300">Cuidado de Prendas Heavyweight</span>
+              </li>
+              <li>
+                <span className="text-zinc-300">Plan Separe (Separa con el 30%)</span>
+              </li>
+              <li>
+                <span className="text-zinc-300">Financiación con Addi y Sistecrédito</span>
+              </li>
             </ul>
           </div>
 
-          {/* Garantías y Seguridad */}
-          <div className="space-y-3">
-            <p className="text-xs font-bold uppercase tracking-widest text-zinc-200">
-              Seguridad & Envíos
-            </p>
-            <div className="space-y-2 text-xs text-zinc-400">
-              <div className="p-3 rounded-2xl bg-zinc-900 border border-zinc-800 space-y-1">
-                <p className="font-bold text-white text-[11px] flex items-center gap-1.5">
-                  <ShieldCheck className="h-3.5 w-3.5 text-emerald-400" />
-                  Compra 100% Protegida
-                </p>
-                <p className="text-[10px] text-zinc-400 leading-tight">
-                  Tus pedidos son despachados con número de guía rastreable en transportadora oficial.
-                </p>
-              </div>
+          {/* Botón Volver Arriba (2 cols) */}
+          <div className="md:col-span-2 flex flex-col justify-between items-start md:items-end">
+            <button
+              type="button"
+              onClick={scrollToTop}
+              className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.2em] text-zinc-400 hover:text-white transition-colors p-2 border border-zinc-800 hover:border-white"
+            >
+              <span>TOP</span>
+              <ArrowUp className="w-3.5 h-3.5" />
+            </button>
 
-              <button
-                type="button"
-                onClick={scrollToTop}
-                className="w-full flex items-center justify-center gap-1.5 p-2 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-zinc-300 text-xs font-semibold transition-colors mt-2"
-              >
-                <ArrowUp className="h-3.5 w-3.5" />
-                <span>Volver arriba</span>
-              </button>
-            </div>
+            <span className="text-[10px] font-mono text-zinc-600 uppercase mt-8 md:mt-0">
+              COLOMBIA // 2026
+            </span>
           </div>
 
         </div>
 
-        {/* Barra de Copyright */}
-        <div className="mt-14 pt-8 border-t border-zinc-800/80 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-zinc-500">
-          <p>© {new Date().getFullYear()} KAOB MODERN WEAR. Todos los derechos reservados.</p>
-          <div className="flex items-center gap-4 text-[11px]">
-            <span>Privacidad</span>
-            <span>·</span>
-            <span>Términos y Condiciones</span>
-            <span>·</span>
-            <span>Guía de Tallas</span>
+        {/* Línea Final y Copyright */}
+        <div className="mt-14 pt-8 border-t border-zinc-800/80 flex flex-col sm:flex-row items-center justify-between gap-4 text-[11px] text-zinc-500 font-light">
+          <p>© 2026 KΛOB MODERN WEAR. TODOS LOS DERECHOS RESERVADOS.</p>
+          <div className="flex items-center gap-6">
+            <span className="hover:text-zinc-300 transition-colors">Términos del Servicio</span>
+            <span className="hover:text-zinc-300 transition-colors">Política de Privacidad</span>
           </div>
         </div>
+
       </div>
     </footer>
   );

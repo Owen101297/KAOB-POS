@@ -1,21 +1,27 @@
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
-import { Sparkles, SlidersHorizontal, Package, RefreshCw, Phone, MapPin, X } from 'lucide-react';
+import { Sparkles, SlidersHorizontal, Package, RefreshCw, Phone, MapPin, X, Heart, ShoppingBag, ArrowRight } from 'lucide-react';
 import type { ProductoLista } from '@/lib/actions/productos';
 import NavbarTienda from '@/components/tienda/NavbarTienda';
-import HeroTienda from '@/components/tienda/HeroTienda';
-import CategoryGridBento from '@/components/tienda/CategoryGridBento';
-import SocialProofSection from '@/components/tienda/SocialProofSection';
+import HeroBanner from '@/components/tienda/HeroBanner';
+import TrustBadges from '@/components/tienda/TrustBadges';
+import CategoryGrid from '@/components/tienda/CategoryGrid';
+import ProductSection from '@/components/tienda/ProductSection';
+import SplitBanner from '@/components/tienda/SplitBanner';
+import JournalSection from '@/components/tienda/JournalSection';
+import NewsletterForm from '@/components/tienda/NewsletterForm';
 import FooterTienda from '@/components/tienda/FooterTienda';
-import ProductCardTienda from '@/components/tienda/ProductCardTienda';
+import ProductCardTienda, { type ItemBolsa } from '@/components/tienda/ProductCardTienda';
 import ProductDetailModal from '@/components/tienda/ProductDetailModal';
-import CartDrawerTienda, { type ItemBolsa } from '@/components/tienda/CartDrawerTienda';
+import CartDrawerTienda from '@/components/tienda/CartDrawerTienda';
 import RecentlyViewedTienda from '@/components/tienda/RecentlyViewedTienda';
 import RecentPurchaseToast from '@/components/tienda/RecentPurchaseToast';
 import ExitIntentModal from '@/components/tienda/ExitIntentModal';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/Select';
 import { Button } from '@/components/ui/Button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/Dialog';
+import { formatoCOP } from '@/lib/format';
 
 interface ActividadReciente {
   nombre: string;
@@ -28,7 +34,7 @@ interface PromocionDestacada {
   nombre: string;
   tipo: string;
   valor: number;
-  fechaFin: Date | string;
+  fechaFin: Date | string | null;
 }
 
 interface Props {
@@ -62,36 +68,53 @@ export default function TiendaClient({
   const [bolsaAbierta, setBolsaAbierta] = useState(false);
   const [itemsBolsa, setItemsBolsa] = useState<ItemBolsa[]>([]);
 
+  // Wishlist (Lista de Deseos)
+  const [wishlistAbierto, setWishlistAbierto] = useState(false);
+  const [wishlistIds, setWishlistIds] = useState<number[]>([]);
+
   // Modal de Detalle
   const [productoSeleccionado, setProductoSeleccionado] = useState<ProductoLista | null>(null);
 
   // Vistos recientemente
   const [vistosIds, setVistosIds] = useState<number[]>([]);
 
-  // Cargar carrito guardado en localStorage
+  // Cargar carrito y wishlist guardados en localStorage
   useEffect(() => {
     try {
-      const guardado = localStorage.getItem('kaob_cart_items');
-      if (guardado) {
-        setItemsBolsa(JSON.parse(guardado));
-      }
+      const cart = localStorage.getItem('kaob_cart_items');
+      if (cart) setItemsBolsa(JSON.parse(cart));
+      
+      const wish = localStorage.getItem('kaob_wishlist');
+      if (wish) setWishlistIds(JSON.parse(wish));
+
       const vistos = localStorage.getItem('kaob_vistos');
-      if (vistos) {
-        setVistosIds(JSON.parse(vistos));
-      }
+      if (vistos) setVistosIds(JSON.parse(vistos));
     } catch {
-      // Ignorar error de JSON parse
+      // Ignorar error de parse
     }
   }, []);
 
-  // Guardar carrito en localStorage cuando cambie
+  // Guardar carrito
   useEffect(() => {
     try {
       localStorage.setItem('kaob_cart_items', JSON.stringify(itemsBolsa));
-    } catch {
-      // Ignorar
-    }
+    } catch {}
   }, [itemsBolsa]);
+
+  // Guardar wishlist
+  useEffect(() => {
+    try {
+      localStorage.setItem('kaob_wishlist', JSON.stringify(wishlistIds));
+    } catch {}
+  }, [wishlistIds]);
+
+  const toggleWishlist = (productoId: number) => {
+    setWishlistIds((prev) => {
+      const exists = prev.includes(productoId);
+      if (exists) return prev.filter((id) => id !== productoId);
+      return [...prev, productoId];
+    });
+  };
 
   const abrirDetalleProducto = (producto: ProductoLista) => {
     setProductoSeleccionado(producto);
@@ -99,14 +122,12 @@ export default function TiendaClient({
       const siguiente = [producto.id, ...prev.filter((id) => id !== producto.id)].slice(0, 8);
       try {
         localStorage.setItem('kaob_vistos', JSON.stringify(siguiente));
-      } catch {
-        // Ignorar
-      }
+      } catch {}
       return siguiente;
     });
   };
 
-  // Sugerencias de búsqueda predictiva para el navbar
+  // Sugerencias predictivas
   const sugerenciasBusqueda = useMemo(() => {
     if (!busqueda.trim()) return [];
     const q = busqueda.toLowerCase().trim();
@@ -136,7 +157,6 @@ export default function TiendaClient({
   const productosFiltrados = useMemo(() => {
     let list = productos.filter((p) => p.activo);
 
-    // Filtrar por Sexo / Colección
     if (generoActivo) {
       if (generoActivo === 'DAMA') {
         list = list.filter(
@@ -174,12 +194,10 @@ export default function TiendaClient({
       }
     }
 
-    // Filtrar por Categoría
     if (categoriaActiva) {
       list = list.filter((p) => p.categoria?.nombre === categoriaActiva);
     }
 
-    // Filtrar por Búsqueda de texto
     if (busqueda.trim()) {
       const q = busqueda.toLowerCase().trim();
       list = list.filter(
@@ -190,7 +208,6 @@ export default function TiendaClient({
       );
     }
 
-    // Ordenamiento
     const copy = [...list];
     if (orden === 'precio-asc') {
       copy.sort((a, b) => a.precioBase - b.precioBase);
@@ -203,7 +220,24 @@ export default function TiendaClient({
     return copy;
   }, [productos, generoActivo, categoriaActiva, busqueda, orden]);
 
-  // Manejadores de Carrito
+  // New Arrivals (productos más recientes)
+  const newArrivals = useMemo(() => {
+    return [...productos.filter((p) => p.activo)].slice(0, 6);
+  }, [productos]);
+
+  // Best Sellers (ordenados por mayor venta)
+  const bestSellers = useMemo(() => {
+    return [...productos.filter((p) => p.activo)]
+      .sort((a, b) => (ventasPorProducto[b.id] ?? 0) - (ventasPorProducto[a.id] ?? 0))
+      .slice(0, 6);
+  }, [productos, ventasPorProducto]);
+
+  // Productos en Wishlist
+  const productosWishlist = useMemo(() => {
+    return productos.filter((p) => wishlistIds.includes(p.id));
+  }, [productos, wishlistIds]);
+
+  // Manejadores de Bolsa
   const agregarABolsa = (nuevoItem: ItemBolsa) => {
     setItemsBolsa((prev) => {
       const idx = prev.findIndex((it) => it.varianteId === nuevoItem.varianteId);
@@ -238,27 +272,22 @@ export default function TiendaClient({
 
   const totalItemsEnBolsa = itemsBolsa.reduce((acc, it) => acc + it.cantidad, 0);
 
-  const handleExplorar = () => {
+  const handleExplorarCatalogo = () => {
     const el = document.getElementById('catalogo-prendas');
     el?.scrollIntoView({ behavior: 'smooth' });
   };
 
-  const tituloSeccion = useMemo(() => {
-    if (busqueda) return `Resultados para "${busqueda}"`;
-    if (generoActivo === 'DAMA') return 'Colección Dama 👩';
-    if (generoActivo === 'CABALLERO') return 'Colección Caballero 👨';
-    if (generoActivo === 'UNISEX') return 'Línea Unisex & Urban ⚡';
-    if (generoActivo === 'ACCESORIOS') return 'Accesorios & Gorras 🎒';
-    if (categoriaActiva) return `Categoría: ${categoriaActiva}`;
-    return 'Catálogo Completo';
-  }, [busqueda, generoActivo, categoriaActiva]);
+  const hayFiltroActivo = Boolean(busqueda || categoriaActiva || generoActivo);
 
   return (
-    <div className="min-h-screen bg-[#F8F5F0] font-sans text-zinc-900 flex flex-col justify-between selection:bg-zinc-900 selection:text-white">
+    <div className="min-h-screen bg-[#FFFFFF] font-sans text-zinc-950 flex flex-col justify-between selection:bg-black selection:text-white">
+      
       {/* NAVBAR */}
       <NavbarTienda
         totalItemsEnBolsa={totalItemsEnBolsa}
         onAbrirBolsa={() => setBolsaAbierta(true)}
+        totalWishlist={wishlistIds.length}
+        onAbrirWishlist={() => setWishlistAbierto(true)}
         busqueda={busqueda}
         onCambiarBusqueda={setBusqueda}
         categoriaActiva={categoriaActiva}
@@ -268,49 +297,92 @@ export default function TiendaClient({
         categorias={categorias}
         sugerencias={sugerenciasBusqueda}
         onSeleccionarSugerencia={handleSeleccionarSugerencia}
-        promocionDestacada={promocionDestacada}
+        promocionDestacada={promocionDestacada ? { ...promocionDestacada, fechaFin: promocionDestacada.fechaFin ?? '' } : null}
       />
 
-      {/* HERO BANNER EDITORIAL */}
-      {!busqueda && (
-        <HeroTienda
-          onExplorar={handleExplorar}
-          onSeleccionarGenero={setGeneroActivo}
-          categorias={categorias}
-          categoriaSeleccionada={categoriaActiva}
-          onSeleccionarCategoria={setCategoriaActiva}
-        />
-      )}
+      {/* ────────────────── JERARQUÍA EDITORIAL DE 9 SECCIONES ────────────────── */}
+      {!hayFiltroActivo ? (
+        <>
+          {/* SECCIÓN 1: HERO BANNER (50/50 Grid Editorial) */}
+          <HeroBanner
+            onExplorarClick={handleExplorarCatalogo}
+            onCategoriaClick={(cat) => setCategoriaActiva(cat)}
+          />
 
-      {/* BENTO GRID DE COLECCIONES POR GÉNERO */}
-      {!busqueda && (
-        <CategoryGridBento
-          onSeleccionarGenero={setGeneroActivo}
-          generoSeleccionado={generoActivo}
-        />
-      )}
+          {/* SECCIÓN 2: VALUE PROPOSITION BAR (Trust Badges 3 Columnas) */}
+          <TrustBadges />
 
-      {/* CATÁLOGO DE PRODUCTOS */}
-      <main id="catalogo-prendas" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14 flex-1 w-full">
-        {/* Cabecera del Catálogo */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-zinc-300/70">
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="h-2.5 w-2.5 rounded-full bg-emerald-500 animate-pulse" />
-              <h2 className="font-display text-2xl sm:text-3xl font-bold tracking-tight text-zinc-900">
-                {tituloSeccion}
-              </h2>
+          {/* SECCIÓN 3: CATEGORY SHOWCASE (Grid 4 Columnas 3:4) */}
+          <CategoryGrid
+            onSelectCategory={(cat, gen) => {
+              if (cat) setCategoriaActiva(cat);
+              if (gen) setGeneroActivo(gen);
+              handleExplorarCatalogo();
+            }}
+          />
+
+          {/* SECCIÓN 4: NEW ARRIVALS (Grid 6 Columnas) */}
+          <ProductSection
+            title="NEW ARRIVALS"
+            eyebrow="LATEST DROPS // 2026"
+            subtitle="Las siluetas más recientes incorporadas a nuestra vitrina oficial."
+            productos={newArrivals}
+            ventasPorProducto={ventasPorProducto}
+            onAgregarABolsa={agregarABolsa}
+            onVerDetalle={abrirDetalleProducto}
+            onVerTodos={handleExplorarCatalogo}
+            wishlistIds={wishlistIds}
+            onToggleWishlist={toggleWishlist}
+          />
+
+          {/* SECCIÓN 5: EDITORIAL FEATURE BANNER (Campaña Asimétrica) */}
+          <SplitBanner onExplorarClick={handleExplorarCatalogo} />
+
+          {/* SECCIÓN 6: BEST SELLERS (Grid 6 Columnas) */}
+          <ProductSection
+            title="BEST SELLERS"
+            eyebrow="COMMUNITY ESSENTIALS"
+            subtitle="Las prendas con mayor demanda y rotación de nuestro atelier."
+            productos={bestSellers}
+            ventasPorProducto={ventasPorProducto}
+            onAgregarABolsa={agregarABolsa}
+            onVerDetalle={abrirDetalleProducto}
+            onVerTodos={handleExplorarCatalogo}
+            wishlistIds={wishlistIds}
+            onToggleWishlist={toggleWishlist}
+          />
+
+          {/* SECCIÓN 7: JOURNAL / BLOG EDITORIAL (3 Columnas) */}
+          <JournalSection />
+
+          {/* SECCIÓN 8: NEWSLETTER / LEAD CAPTURE BAR */}
+          <NewsletterForm />
+        </>
+      ) : (
+        /* VISTA DE FILTRADO Y BÚSQUEDA DEL CATÁLOGO */
+        <main id="catalogo-prendas" className="max-w-[1520px] mx-auto px-4 sm:px-8 py-12 flex-1 w-full">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-zinc-200">
+            <div>
+              <span className="text-[10px] font-bold tracking-[0.25em] text-zinc-400 uppercase block mb-1">
+                EXPLORADOR DE COLECCIÓN
+              </span>
+              <h1 className="font-serif text-2xl sm:text-4xl font-light text-zinc-950 uppercase">
+                {busqueda
+                  ? `RESULTADOS PARA "${busqueda}"`
+                  : generoActivo
+                  ? `COLECCIÓN ${generoActivo}`
+                  : categoriaActiva
+                  ? `CATEGORÍA: ${categoriaActiva}`
+                  : 'CATÁLOGO COMPLETO'}
+              </h1>
+              <p className="text-xs text-zinc-500 font-light mt-1">
+                {productosFiltrados.length === 1
+                  ? '1 prenda encontrada'
+                  : `${productosFiltrados.length} prendas disponibles`}
+              </p>
             </div>
-            <p className="text-xs text-zinc-500 mt-1">
-              {productosFiltrados.length === 1
-                ? '1 prenda disponible en vitrina'
-                : `${productosFiltrados.length} prendas disponibles en vitrina`}
-            </p>
-          </div>
 
-          {/* Filtros Activos & Ordenamiento */}
-          <div className="flex items-center gap-3 flex-wrap">
-            {(generoActivo || categoriaActiva || busqueda) && (
+            <div className="flex items-center gap-3 flex-wrap">
               <button
                 type="button"
                 onClick={() => {
@@ -318,43 +390,37 @@ export default function TiendaClient({
                   setCategoriaActiva(null);
                   setBusqueda('');
                 }}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-zinc-200 hover:bg-zinc-300 text-xs font-bold text-zinc-800 transition-colors"
+                className="inline-flex items-center gap-1.5 px-4 py-2 bg-zinc-100 hover:bg-black hover:text-white text-xs font-bold uppercase tracking-wider text-zinc-950 transition-colors"
               >
-                <span>Limpiar filtros</span>
+                <span>LIMPIAR FILTROS</span>
                 <X className="h-3.5 w-3.5" />
               </button>
-            )}
 
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-semibold text-zinc-500 whitespace-nowrap">Ordenar:</span>
-              <Select value={orden} onValueChange={(v: any) => setOrden(v)}>
-                <SelectTrigger className="w-[170px] text-xs h-9 bg-white border-zinc-300">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="recientes">Más recientes</SelectItem>
-                  <SelectItem value="precio-asc">Menor precio</SelectItem>
-                  <SelectItem value="precio-desc">Mayor precio</SelectItem>
-                  <SelectItem value="nombre">Nombre A - Z</SelectItem>
-                </SelectContent>
-              </Select>
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-semibold text-zinc-500 whitespace-nowrap">ORDEN:</span>
+                <Select value={orden} onValueChange={(v: any) => setOrden(v)}>
+                  <SelectTrigger className="w-[170px] text-xs h-9 bg-white border-zinc-300 rounded-none">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="recientes">Más recientes</SelectItem>
+                    <SelectItem value="precio-asc">Menor precio</SelectItem>
+                    <SelectItem value="precio-desc">Mayor precio</SelectItem>
+                    <SelectItem value="nombre">Nombre A - Z</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
           </div>
-        </div>
 
-        {/* Rejilla de Productos */}
-        {productosFiltrados.length === 0 ? (
-          <div className="my-16 text-center p-10 bg-white rounded-3xl border border-zinc-200 max-w-lg mx-auto shadow-sm">
-            <div className="w-16 h-16 rounded-full bg-zinc-100 flex items-center justify-center mx-auto text-zinc-400">
-              <Package className="h-8 w-8" />
-            </div>
-            <h3 className="mt-4 text-base font-bold text-zinc-900">No se encontraron prendas</h3>
-            <p className="text-xs text-zinc-500 mt-1 max-w-xs mx-auto">
-              {busqueda
-                ? `No hay resultados para "${busqueda}". Intenta con otra palabra clave.`
-                : 'No hay productos disponibles en esta sección actualmente.'}
-            </p>
-            {(busqueda || categoriaActiva || generoActivo) && (
+          {/* Grid de Productos Filtrados */}
+          {productosFiltrados.length === 0 ? (
+            <div className="my-20 text-center p-12 bg-zinc-50 border border-zinc-200 max-w-lg mx-auto">
+              <Package className="h-10 w-10 text-zinc-400 mx-auto mb-3" />
+              <h3 className="text-base font-bold text-zinc-950 uppercase tracking-wider">No se encontraron prendas</h3>
+              <p className="text-xs text-zinc-500 mt-1 max-w-xs mx-auto font-light">
+                Intenta con otra palabra clave o restablece los filtros.
+              </p>
               <Button
                 variant="outline"
                 onClick={() => {
@@ -362,34 +428,33 @@ export default function TiendaClient({
                   setCategoriaActiva(null);
                   setGeneroActivo(null);
                 }}
-                className="mt-5 text-xs font-bold uppercase tracking-wider rounded-full"
+                className="mt-5 text-xs font-bold uppercase tracking-[0.2em] rounded-none px-6 py-4"
               >
-                Ver todo el catálogo
+                VER TODO EL CATÁLOGO
               </Button>
-            )}
-          </div>
-        ) : (
-          <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {productosFiltrados.map((prod) => (
-              <ProductCardTienda
-                key={prod.id}
-                producto={prod}
-                onAgregarABolsa={agregarABolsa}
-                onVerDetalle={abrirDetalleProducto}
-                vendidosRecientes={ventasPorProducto[prod.id] ?? 0}
-              />
-            ))}
-          </div>
-        )}
-      </main>
+            </div>
+          ) : (
+            <div className="mt-8 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 sm:gap-4 lg:gap-5">
+              {productosFiltrados.map((prod) => (
+                <ProductCardTienda
+                  key={prod.id}
+                  producto={prod}
+                  onAgregarABolsa={agregarABolsa}
+                  onVerDetalle={abrirDetalleProducto}
+                  vendidosRecientes={ventasPorProducto[prod.id] ?? 0}
+                  isWishlisted={wishlistIds.includes(prod.id)}
+                  onToggleWishlist={toggleWishlist}
+                />
+              ))}
+            </div>
+          )}
+        </main>
+      )}
 
       {/* VISTOS RECIENTEMENTE */}
       <RecentlyViewedTienda productos={productos} idsVistos={vistosIds} onVerDetalle={abrirDetalleProducto} />
 
-      {/* SECCIÓN SOCIAL PROOF Y GARANTÍAS */}
-      <SocialProofSection />
-
-      {/* FOOTER OFICIAL */}
+      {/* SECCIÓN 9: FOOTER ARQUITECTÓNICO (Centrado, Enlaces & SVGs de Pago) */}
       <FooterTienda
         categorias={categorias}
         onSeleccionarCategoria={setCategoriaActiva}
@@ -397,7 +462,7 @@ export default function TiendaClient({
         telefonoWhatsApp={configuracion?.telefono || '573000000000'}
       />
 
-      {/* MODALES INTERACTIVOS */}
+      {/* MODAL DE VISTA RÁPIDA / DETALLE DE PRODUCTO */}
       <ProductDetailModal
         producto={productoSeleccionado}
         abierto={Boolean(productoSeleccionado)}
@@ -405,6 +470,7 @@ export default function TiendaClient({
         onAgregarABolsa={agregarABolsa}
       />
 
+      {/* DRAWER DE LA BOLSA DE COMPRAS */}
       <CartDrawerTienda
         abierto={bolsaAbierta}
         onCerrar={() => setBolsaAbierta(false)}
@@ -415,10 +481,62 @@ export default function TiendaClient({
         telefonoWhatsAppTienda={configuracion?.telefono || '573000000000'}
       />
 
-      {/* PRUEBA SOCIAL EN TIEMPO REAL (basada en pedidos reales) */}
+      {/* MODAL DE LISTA DE DESEOS (WISHLIST) */}
+      {wishlistAbierto && (
+        <Dialog open={wishlistAbierto} onOpenChange={setWishlistAbierto}>
+          <DialogContent className="max-w-xl bg-white border border-zinc-200 text-zinc-950 p-6">
+            <DialogHeader>
+              <DialogTitle className="font-serif text-xl font-light uppercase tracking-wider flex items-center gap-2">
+                <Heart className="w-5 h-5 text-red-500 fill-red-500" />
+                <span>TUS FAVORITOS ({productosWishlist.length})</span>
+              </DialogTitle>
+            </DialogHeader>
+
+            {productosWishlist.length === 0 ? (
+              <div className="py-12 text-center text-zinc-500">
+                <p className="text-xs font-light">Aún no has guardado ninguna prenda en tus favoritos.</p>
+                <p className="text-[11px] text-zinc-400 mt-1">Haz clic en el corazón en cualquier tarjeta para guardarla.</p>
+              </div>
+            ) : (
+              <div className="max-h-[60vh] overflow-y-auto divide-y divide-zinc-100 space-y-2">
+                {productosWishlist.map((p) => (
+                  <div key={p.id} className="pt-3 flex items-center justify-between gap-3">
+                    <div
+                      onClick={() => {
+                        abrirDetalleProducto(p);
+                        setWishlistAbierto(false);
+                      }}
+                      className="flex items-center gap-3 cursor-pointer flex-1"
+                    >
+                      <div className="w-12 h-12 bg-zinc-100 flex items-center justify-center font-serif font-bold text-xs">
+                        {p.nombre.slice(0, 2).toUpperCase()}
+                      </div>
+                      <div>
+                        <p className="text-xs font-bold uppercase tracking-wider">{p.nombre}</p>
+                        <p className="text-xs font-black text-zinc-950">{formatoCOP(p.precioBase)}</p>
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => toggleWishlist(p.id)}
+                      className="text-zinc-400 hover:text-red-600 text-xs p-1"
+                      title="Eliminar de favoritos"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {/* PRUEBA SOCIAL REAL EN TIEMPO REAL */}
       <RecentPurchaseToast actividad={actividadReciente} />
 
-      {/* RECUPERACIÓN DE VISITANTES QUE VAN A ABANDONAR LA TIENDA */}
+      {/* MODAL EXIT-INTENT PARA CUPÓN DE BIENVENIDA */}
       <ExitIntentModal totalItemsEnBolsa={totalItemsEnBolsa} resumenCarrito={resumenCarrito} />
     </div>
   );

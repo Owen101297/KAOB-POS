@@ -152,6 +152,23 @@
 - **Rediseño visual (dirección híbrida)**: fondo cálido tipo editorial (`#F8F5F0`) en el cuerpo de la tienda, tipografía serif `Playfair Display` (`font-display`, cargada solo en `/tienda` vía `app/tienda/layout.tsx`) para titulares, con Navbar y Footer negros como anclas fuertes de marca KAOB. `HeroTienda` y `CategoryGridBento` pasaron de fondo oscuro a paleta clara premium con acentos CTA negros.
 - **Nota de despliegue**: igual que en fases anteriores, la migración se escribió a mano (sin `DATABASE_URL` en este entorno) y se aplicará sola en el próximo `prisma migrate deploy` de Railway. Las variables del bucket ya están configuradas en Railway (production y staging), así que el panel de fotos debería funcionar en cuanto se despliegue.
 
+### ✅ Fase 21 - Rediseño Editorial UI/UX Pro Max con Jerarquía de 9 Secciones e Insignias SVG de Pagos
+
+- **Jerarquía Editorial de 9 Secciones**:
+  1. `<HeroBanner />`: Grid 50/50 editorial con Eyebrow `NEW COLLECTION // DROP 01`, H1 Serif `TIMELESS BY NATURE`, subtítulo y CTAs de acción directa.
+  2. `<TrustBadges />`: Value Proposition Bar de 3 columnas (Premium Fabrics 240+ GSM, Timeless Design y Envíos & Financiación con logos SVG).
+  3. `<CategoryGrid />`: Showcase de 4 columnas verticales (3:4) con tarjetas lookbook (`MEN`, `WOMEN`, `TOPS & HOODIES`, `ACCESSORIES`).
+  4. `<ProductSection title="NEW ARRIVALS" />`: Grid de 6 columnas con tarjetas verticales (4:5), Wishlist flotante, Swatches interactivos, Quick-Add de tallas y tira de pagos SVG.
+  5. `<SplitBanner />`: Campaña editorial secundaria asimétrica con fondo beige arena (`#F5F0EB`) y fotografía de detalle textil.
+  6. `<ProductSection title="BEST SELLERS" />`: Grid de 6 columnas conectado a los productos más vendidos en el POS y la tienda online.
+  7. `<JournalSection />`: Blog editorial de 3 columnas con artículos sobre estilo, cultura y cuidado de prendas, con modal de lectura rápida.
+  8. `<NewsletterForm />`: Barra horizontal de suscripción y captura de leads conectada a `LeadTienda`.
+  9. `<FooterTienda />`: Footer arquitectónico con branding KΛOB centrado, enlaces, garantías y franja oficial de sellos de pago SVG.
+- **Sustitución de Calculadora por SVGs Oficiales (`PaymentMethodsBadges.tsx`)**: Eliminación de la calculadora matemática anterior y creación de biblioteca vectorial con insignias nítidas para **Addi**, **Sistecrédito**, **Nequi**, **Bancolombia**, **Visa/Mastercard** y **Plan Separe KΛOB**.
+- **Exclusión de Contraentrega**: Se retiró cualquier opción o mención de contraentrega hasta contar con convenios logísticos formales.
+- **Wishlist Integrado**: Botón de favoritos con persistencia local (`localStorage`), contador dinámico en Navbar y modal de favoritos.
+- **Limpieza de Componentes**: Eliminados componentes legacy deprecados (`FinanciacionCalculadora.tsx`, `HeroTienda.tsx`, `CategoryGridBento.tsx`).
+
 ---
 
 ## ⏭️ Próximos Pasos y Roadmap
