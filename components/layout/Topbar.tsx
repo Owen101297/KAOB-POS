@@ -43,20 +43,8 @@ function BodegaSelector() {
 export default function Topbar({ onMenuClick }: { onMenuClick?: () => void }) {
   return (
     <header className="fixed inset-x-0 top-0 z-[1300] flex h-16 items-stretch border-b border-slate-200/70 bg-white/90 backdrop-blur">
-      {/* Marca — alineada con el rail */}
-      <div className="flex w-[76px] shrink-0 items-center justify-center bg-slate-950 border-r border-slate-800">
-        <Link
-          href="/"
-          title="KAOB | MODERN WEAR"
-          aria-label="Ir al Inicio"
-          className="flex h-10 w-10 items-center justify-center rounded-full bg-black shadow-md shadow-black/50 transition-transform hover:scale-105 active:scale-95 focus:outline-none focus:ring-2 focus:ring-slate-400"
-        >
-          <img src="/brand/isotype.svg" alt="KAOB" className="h-8 w-8 object-contain rounded-full" />
-        </Link>
-      </div>
-
-      {/* Zona izquierda: menú móvil + selector de almacén */}
-      <div className="flex flex-1 items-center gap-3 px-4">
+      {/* Zona izquierda: hamburguesa (móvil) + marca (desktop) */}
+      <div className="flex w-[76px] shrink-0 items-center justify-center">
         <button
           type="button"
           onClick={onMenuClick}
@@ -66,11 +54,32 @@ export default function Topbar({ onMenuClick }: { onMenuClick?: () => void }) {
           <Menu className="h-5 w-5" />
         </button>
 
-        <div className="hidden items-center gap-2 sm:flex">
+        <Link
+          href="/"
+          title="KAOB | MODERN WEAR"
+          aria-label="Ir al Inicio"
+          className="hidden h-10 w-10 items-center justify-center rounded-full bg-transparent transition-transform hover:scale-105 active:scale-95 focus:outline-none focus:ring-2 focus:ring-slate-400 lg:flex"
+        >
+          <img src="/brand/isotype.svg" alt="KAOB" className="h-8 w-8 object-contain rounded-full" />
+        </Link>
+      </div>
+
+      {/* Zona central: logo centrado (móvil) + selector de almacén y tienda (desktop) */}
+      <div className="flex flex-1 items-center gap-3 px-4">
+        <Link
+          href="/"
+          title="KAOB | MODERN WEAR"
+          aria-label="Ir al Inicio"
+          className="absolute left-1/2 top-1/2 flex h-10 w-10 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-transparent transition-transform hover:scale-105 active:scale-95 focus:outline-none focus:ring-2 focus:ring-slate-400 lg:hidden"
+        >
+          <img src="/brand/isotype.svg" alt="KAOB" className="h-8 w-8 object-contain rounded-full" />
+        </Link>
+
+        <div className="hidden items-center gap-2 lg:flex">
           <BodegaSelector />
         </div>
 
-        <div className="hidden md:flex items-center gap-2 pl-2 border-l border-slate-200">
+        <div className="hidden lg:flex items-center gap-2 pl-2 border-l border-slate-200">
           <Link
             href="/tienda"
             className="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-semibold rounded-full bg-slate-900 text-white hover:bg-slate-800 transition-colors"
