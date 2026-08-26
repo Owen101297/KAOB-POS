@@ -6,6 +6,7 @@ import {
   Archive,
   ArchiveRestore,
   Barcode,
+  Image as ImageIcon,
   Package,
   PackagePlus,
   Pencil,
@@ -21,6 +22,7 @@ import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { Input } from '@/components/ui/Input';
 import ImpresionEtiquetasModal from '@/components/productos/ImpresionEtiquetasModal';
+import GestionFotosModal from '@/components/productos/GestionFotosModal';
 import {
   Dialog,
   DialogContent,
@@ -79,6 +81,7 @@ export default function ProductosClient({ productos, catalogos }: Props) {
   const [dialogForm, setDialogForm] = useState(false);
   const [editando, setEditando] = useState<ProductoLista | null>(null);
   const [agregandoA, setAgregandoA] = useState<ProductoLista | null>(null);
+  const [gestionandoFotosId, setGestionandoFotosId] = useState<number | null>(null);
   const [abrirEtiquetas, setAbrirEtiquetas] = useState(false);
   const [variantesParaEtiquetas, setVariantesParaEtiquetas] = useState<
     {
@@ -296,6 +299,16 @@ export default function ProductosClient({ productos, catalogos }: Props) {
             >
               <Barcode className="h-4 w-4" />
             </Button>
+            <Button
+              size="icon"
+              variant="ghost"
+              aria-label={`Gestionar fotos de ${row.nombre}`}
+              title="Gestionar fotos"
+              onClick={() => setGestionandoFotosId(row.id)}
+              className="text-slate-600 hover:text-violet-600"
+            >
+              <ImageIcon className="h-4 w-4" />
+            </Button>
             <Button size="icon" variant="ghost" aria-label={`Editar ${row.nombre}`} onClick={() => { setEditando(original); setDialogForm(true); }}>
               <Pencil className="h-4 w-4" />
             </Button>
@@ -342,6 +355,11 @@ export default function ProductosClient({ productos, catalogos }: Props) {
   const productosSeleccionadosLista = useMemo(() => {
     return productos.filter((p) => seleccionados.has(p.id));
   }, [productos, seleccionados]);
+
+  const gestionandoFotos = useMemo(
+    () => productos.find((p) => p.id === gestionandoFotosId) ?? null,
+    [productos, gestionandoFotosId]
+  );
 
   return (
     <div className="space-y-4">
@@ -520,6 +538,12 @@ export default function ProductosClient({ productos, catalogos }: Props) {
         open={abrirEtiquetas}
         onClose={() => setAbrirEtiquetas(false)}
         variantes={variantesParaEtiquetas}
+      />
+
+      <GestionFotosModal
+        producto={gestionandoFotos}
+        onClose={() => setGestionandoFotosId(null)}
+        onCambio={refrescar}
       />
     </div>
   );

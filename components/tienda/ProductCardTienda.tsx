@@ -108,29 +108,47 @@ export default function ProductCardTienda({
   const estaAgotado = stockTotalProducto <= 0;
   const stockVarianteAgotado = stockDisponible <= 0;
 
+  const imagenMostrada = useMemo(() => {
+    const delColor = producto.imagenes?.find((im) => im.colorId === colorSeleccionadoId);
+    if (delColor) return delColor;
+    const principal = producto.imagenes?.find((im) => im.esPrincipal);
+    if (principal) return principal;
+    return producto.imagenes?.[0] ?? null;
+  }, [producto.imagenes, colorSeleccionadoId]);
+
   return (
     <div
       onClick={() => onVerDetalle(producto)}
       className="group relative flex flex-col justify-between rounded-2xl bg-white border border-zinc-200/80 overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 cursor-pointer"
     >
-      {/* Contenedor Superior de Imagen / Mockup */}
-      <div className="relative aspect-[4/5] w-full bg-gradient-to-b from-zinc-100 to-zinc-200 flex items-center justify-center overflow-hidden p-6">
-        {/* Isotipo de fondo de agua */}
-        <div className="absolute inset-0 flex items-center justify-center opacity-10 group-hover:scale-110 transition-transform duration-500">
-          <img src="/brand/isotype.svg" alt="" className="w-3/5 h-3/5 object-contain" />
-        </div>
+      {/* Contenedor Superior de Imagen */}
+      <div className="relative aspect-[4/5] w-full bg-gradient-to-b from-stone-100 to-stone-200 flex items-center justify-center overflow-hidden p-6">
+        {imagenMostrada ? (
+          <img
+            src={`/api/media/${imagenMostrada.key}`}
+            alt={imagenMostrada.alt ?? producto.nombre}
+            className="absolute inset-0 h-full w-full object-cover group-hover:scale-105 transition-transform duration-500"
+          />
+        ) : (
+          <>
+            {/* Isotipo de fondo de agua (placeholder mientras no hay foto real) */}
+            <div className="absolute inset-0 flex items-center justify-center opacity-10 group-hover:scale-110 transition-transform duration-500">
+              <img src="/brand/isotype.svg" alt="" className="w-3/5 h-3/5 object-contain" />
+            </div>
 
-        {/* Letra / Silueta central estilizada */}
-        <div className="relative z-10 text-center">
-          <div className="mx-auto w-24 h-24 rounded-full bg-white/80 shadow-md border border-zinc-200 flex items-center justify-center group-hover:rotate-6 transition-transform duration-300">
-            <span className="font-extrabold text-2xl font-serif text-zinc-900 tracking-wider">
-              {producto.nombre.slice(0, 2).toUpperCase()}
-            </span>
-          </div>
-          <span className="mt-3 block font-mono text-[11px] font-bold tracking-widest text-zinc-500 uppercase">
-            {producto.referencia}
-          </span>
-        </div>
+            {/* Letra / Silueta central estilizada */}
+            <div className="relative z-10 text-center">
+              <div className="mx-auto w-24 h-24 rounded-full bg-white/80 shadow-md border border-zinc-200 flex items-center justify-center group-hover:rotate-6 transition-transform duration-300">
+                <span className="font-extrabold text-2xl font-serif text-zinc-900 tracking-wider">
+                  {producto.nombre.slice(0, 2).toUpperCase()}
+                </span>
+              </div>
+              <span className="mt-3 block font-mono text-[11px] font-bold tracking-widest text-zinc-500 uppercase">
+                {producto.referencia}
+              </span>
+            </div>
+          </>
+        )}
 
         {/* Badges superiores */}
         <div className="absolute top-3 left-3 flex flex-col gap-1.5 z-20">

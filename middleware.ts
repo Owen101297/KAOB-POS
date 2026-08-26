@@ -10,7 +10,8 @@ export const config = {
      * - tienda (public storefront)
      * - api/auth (NextAuth API)
      * - api/health (healthcheck)
+     * - api/media (fotos de producto públicas, servidas desde el bucket privado)
      */
-    "/((?!_next|brand|icon|favicon|login|register|tienda|api/auth|api/health).*)",
+    "/((?!_next|brand|icon|favicon|login|register|tienda|api/auth|api/health|api/media).*)",
   ],
 };

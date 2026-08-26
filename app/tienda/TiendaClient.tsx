@@ -254,7 +254,7 @@ export default function TiendaClient({
   }, [busqueda, generoActivo, categoriaActiva]);
 
   return (
-    <div className="min-h-screen bg-zinc-50 font-sans text-zinc-900 flex flex-col justify-between selection:bg-zinc-900 selection:text-white">
+    <div className="min-h-screen bg-[#F8F5F0] font-sans text-zinc-900 flex flex-col justify-between selection:bg-zinc-900 selection:text-white">
       {/* NAVBAR */}
       <NavbarTienda
         totalItemsEnBolsa={totalItemsEnBolsa}
@@ -293,11 +293,11 @@ export default function TiendaClient({
       {/* CATÁLOGO DE PRODUCTOS */}
       <main id="catalogo-prendas" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14 flex-1 w-full">
         {/* Cabecera del Catálogo */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-zinc-200">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-zinc-300/70">
           <div>
             <div className="flex items-center gap-2">
               <span className="h-2.5 w-2.5 rounded-full bg-emerald-500 animate-pulse" />
-              <h2 className="text-xl sm:text-2xl font-black uppercase tracking-tight text-zinc-900">
+              <h2 className="font-display text-2xl sm:text-3xl font-bold tracking-tight text-zinc-900">
                 {tituloSeccion}
               </h2>
             </div>

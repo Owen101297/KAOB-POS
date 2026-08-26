@@ -18,6 +18,13 @@ module.exports = {
           'Arial',
           'sans-serif',
         ],
+        display: [
+          'var(--font-display)',
+          'Georgia',
+          'Cambria',
+          'Times New Roman',
+          'serif',
+        ],
       },
       colors: {
         // Escala brand derivada del verde Vendty #62cb31

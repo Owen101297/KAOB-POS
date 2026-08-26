@@ -73,6 +73,14 @@ export default function ProductDetailModal({
 
   const precio = varianteActiva?.precioOverride ?? producto.precioBase;
 
+  const imagenMostrada = useMemo(() => {
+    const delColor = producto.imagenes?.find((im) => im.colorId === colorSelId);
+    if (delColor) return delColor;
+    const principal = producto.imagenes?.find((im) => im.esPrincipal);
+    if (principal) return principal;
+    return producto.imagenes?.[0] ?? null;
+  }, [producto.imagenes, colorSelId]);
+
   const handleAgregar = () => {
     if (!varianteActiva || stockDisponible <= 0) return;
     onAgregarABolsa({
@@ -110,21 +118,31 @@ export default function ProductDetailModal({
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-6 sm:p-8">
           
-          {/* Columna Izquierda: Mockup Visual */}
-          <div className="relative aspect-square w-full rounded-2xl bg-gradient-to-b from-zinc-100 to-zinc-200 flex items-center justify-center overflow-hidden border border-zinc-200">
-            <div className="absolute inset-0 flex items-center justify-center opacity-15">
-              <img src="/brand/isotype.svg" alt="" className="w-3/4 h-3/4 object-contain" />
-            </div>
-            <div className="relative z-10 text-center">
-              <div className="w-28 h-28 rounded-full bg-white shadow-lg flex items-center justify-center mx-auto border border-zinc-200">
-                <span className="font-extrabold text-3xl font-serif text-zinc-900">
-                  {producto.nombre.slice(0, 2).toUpperCase()}
-                </span>
-              </div>
-              <span className="mt-3 block font-mono text-xs font-bold tracking-widest text-zinc-600">
-                REF: {producto.referencia}
-              </span>
-            </div>
+          {/* Columna Izquierda: Foto del producto */}
+          <div className="relative aspect-square w-full rounded-2xl bg-gradient-to-b from-stone-100 to-stone-200 flex items-center justify-center overflow-hidden border border-zinc-200">
+            {imagenMostrada ? (
+              <img
+                src={`/api/media/${imagenMostrada.key}`}
+                alt={imagenMostrada.alt ?? producto.nombre}
+                className="absolute inset-0 h-full w-full object-cover"
+              />
+            ) : (
+              <>
+                <div className="absolute inset-0 flex items-center justify-center opacity-15">
+                  <img src="/brand/isotype.svg" alt="" className="w-3/4 h-3/4 object-contain" />
+                </div>
+                <div className="relative z-10 text-center">
+                  <div className="w-28 h-28 rounded-full bg-white shadow-lg flex items-center justify-center mx-auto border border-zinc-200">
+                    <span className="font-extrabold text-3xl font-serif text-zinc-900">
+                      {producto.nombre.slice(0, 2).toUpperCase()}
+                    </span>
+                  </div>
+                  <span className="mt-3 block font-mono text-xs font-bold tracking-widest text-zinc-600">
+                    REF: {producto.referencia}
+                  </span>
+                </div>
+              </>
+            )}
           </div>
 
           {/* Columna Derecha: Detalles y Selección */}
@@ -141,7 +159,7 @@ export default function ProductDetailModal({
                 )}
               </div>
 
-              <h2 className="text-xl sm:text-2xl font-black text-zinc-900 mt-1 uppercase tracking-tight">
+              <h2 className="font-display text-xl sm:text-2xl font-bold text-zinc-900 mt-1 tracking-tight">
                 {producto.nombre}
               </h2>
 

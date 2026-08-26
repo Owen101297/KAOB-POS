@@ -140,6 +140,18 @@
 - **Confianza en checkout**: franja de métodos de pago aceptados (efectivo, Nequi/Daviplata, Wompi, Addi, Sistecrédito, Plan Separe) en el footer y en el carrito.
 - **Nota de despliegue**: la migración se escribió a mano (sin acceso a `DATABASE_URL` en este entorno) siguiendo el estilo exacto de Prisma; se aplicará automáticamente en el próximo despliegue vía `prisma migrate deploy` (Railway).
 
+### ✅ Fase 20 - Rediseño Editorial + Panel de Fotos con Railway Buckets
+
+- **Infraestructura (Railway MCP)**: se creó un bucket de almacenamiento S3-compatible `kaob-tienda-fotos` en cada entorno (`production` y `staging`, este último con nombre autogenerado por Railway). Las credenciales (`BUCKET_NAME`, `BUCKET_ACCESS_KEY_ID`, `BUCKET_SECRET_ACCESS_KEY`, `BUCKET_REGION`, `BUCKET_ENDPOINT`) se inyectaron como variables de entorno del servicio `app` en ambos entornos vía referencias `${{bucket.VAR}}`, documentadas también en `.env.example` para desarrollo local.
+- **Schema**: `ProductoImagen` (galería por producto, con `colorId` opcional para asociar una foto a un color específico, `orden` y `esPrincipal`). Migración [`20260826200000_add_producto_imagenes`](file:///f:/SISTEMAS-OWEN/KAOB-POS/prisma/migrations/20260826200000_add_producto_imagenes/migration.sql).
+- **Almacenamiento (`lib/storage.ts`)**: cliente S3 (`@aws-sdk/client-s3`) para subir/eliminar/leer objetos. Los buckets de Railway son privados (no hay modo público), así que las fotos se sirven mediante un proxy propio `app/api/media/[...key]/route.ts` (excluido del middleware de auth, con `Cache-Control: immutable` de 1 año) en vez de URLs firmadas que expiran.
+- **Subida (`app/api/upload/route.ts`)**: endpoint protegido (requiere sesión) que valida tipo/tamaño (máx. 8MB, JPG/PNG/WEBP/GIF), sube el archivo al bucket y crea el registro `ProductoImagen`.
+- **Acciones**: `lib/actions/productos.ts` — `eliminarImagenProducto`, `marcarImagenPrincipal`, `reordenarImagenesProducto`, `asignarColorImagen`. `listarProductos`/`obtenerProducto` ahora incluyen `imagenes`.
+- **Panel de gestión de fotos (`components/productos/GestionFotosModal.tsx`)**: se abre desde `/productos` (ícono de imagen por fila). Arrastrar-y-soltar o seleccionar archivos, galería con reordenar, marcar portada, eliminar y asignar una foto a un color específico de la variante.
+- **La tienda ahora muestra fotos reales**: `ProductCardTienda`, `ProductDetailModal` y `RecentlyViewedTienda` priorizan la foto del color seleccionado, luego la portada, y solo si no hay ninguna foto cargada usan el placeholder de monograma (nunca se pierde funcionalidad si un producto aún no tiene fotos).
+- **Rediseño visual (dirección híbrida)**: fondo cálido tipo editorial (`#F8F5F0`) en el cuerpo de la tienda, tipografía serif `Playfair Display` (`font-display`, cargada solo en `/tienda` vía `app/tienda/layout.tsx`) para titulares, con Navbar y Footer negros como anclas fuertes de marca KAOB. `HeroTienda` y `CategoryGridBento` pasaron de fondo oscuro a paleta clara premium con acentos CTA negros.
+- **Nota de despliegue**: igual que en fases anteriores, la migración se escribió a mano (sin `DATABASE_URL` en este entorno) y se aplicará sola en el próximo `prisma migrate deploy` de Railway. Las variables del bucket ya están configuradas en Railway (production y staging), así que el panel de fotos debería funcionar en cuanto se despliegue.
+
 ---
 
 ## ⏭️ Próximos Pasos y Roadmap

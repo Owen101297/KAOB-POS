@@ -31,6 +31,7 @@ export default function RecentlyViewedTienda({ productos, idsVistos, onVerDetall
         <div className="flex gap-3 overflow-x-auto pb-2 -mx-1 px-1 scrollbar-none">
           {vistos.map((p) => {
             const precio = p.variantes[0]?.precioOverride ?? p.precioBase;
+            const imagen = p.imagenes?.find((im) => im.esPrincipal) ?? p.imagenes?.[0] ?? null;
             return (
               <button
                 key={p.id}
@@ -38,10 +39,14 @@ export default function RecentlyViewedTienda({ productos, idsVistos, onVerDetall
                 onClick={() => onVerDetalle(p)}
                 className="shrink-0 w-36 text-left rounded-2xl border border-zinc-200 bg-zinc-50 hover:border-zinc-300 hover:shadow-sm transition-all p-3"
               >
-                <div className="aspect-square rounded-xl bg-white border border-zinc-200 flex items-center justify-center mb-2">
-                  <span className="font-extrabold text-sm font-serif text-zinc-800">
-                    {p.nombre.slice(0, 2).toUpperCase()}
-                  </span>
+                <div className="relative aspect-square rounded-xl bg-white border border-zinc-200 flex items-center justify-center mb-2 overflow-hidden">
+                  {imagen ? (
+                    <img src={`/api/media/${imagen.key}`} alt={imagen.alt ?? p.nombre} className="absolute inset-0 h-full w-full object-cover" />
+                  ) : (
+                    <span className="font-extrabold text-sm font-serif text-zinc-800">
+                      {p.nombre.slice(0, 2).toUpperCase()}
+                    </span>
+                  )}
                 </div>
                 <p className="text-[11px] font-bold text-zinc-900 line-clamp-1">{p.nombre}</p>
                 <p className="text-[11px] font-black text-zinc-700 mt-0.5">{formatoCOP(precio)}</p>

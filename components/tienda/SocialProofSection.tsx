@@ -37,8 +37,8 @@ export default function SocialProofSection() {
             <Star className="h-3 w-3 fill-amber-400" />
             <span>Opiniones Reales de Clientes</span>
           </div>
-          <h2 className="text-2xl sm:text-4xl font-black uppercase tracking-tight text-white">
-            EXPERIENCIAS KAOB
+          <h2 className="font-display text-2xl sm:text-4xl font-bold tracking-tight text-white">
+            Experiencias KAOB
           </h2>
           <p className="text-xs sm:text-sm text-zinc-400 mt-2">
             Más de 1.000 clientes satisfechos en toda Colombia disfrutan de nuestras prendas y servicio.

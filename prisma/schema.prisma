@@ -186,6 +186,7 @@ model Color {
   hex    String?
 
   variantes Variante[]
+  imagenes  ProductoImagen[]
 
   @@map("colores")
 }
@@ -212,8 +213,25 @@ model Producto {
   updatedAt   DateTime @updatedAt
 
   variantes Variante[]
+  imagenes  ProductoImagen[]
 
   @@map("productos")
+}
+
+model ProductoImagen {
+  id          Int      @id @default(autoincrement())
+  productoId  Int
+  producto    Producto @relation(fields: [productoId], references: [id], onDelete: Cascade)
+  colorId     Int?
+  color       Color?   @relation(fields: [colorId], references: [id], onDelete: SetNull)
+  key         String   @unique // ruta del objeto en el bucket S3 (Railway Buckets)
+  alt         String?
+  orden       Int      @default(0)
+  esPrincipal Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  @@index([productoId])
+  @@map("producto_imagenes")
 }
 
 model Variante {

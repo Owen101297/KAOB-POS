@@ -12,6 +12,7 @@ import {
 } from "@/lib/validations";
 import { generarSku } from "@/lib/constants";
 import type { Prisma, Variante } from "@prisma/client";
+import { eliminarObjeto } from "@/lib/storage";
 
 // ─────────────────────────── CONSULTAS ───────────────────────
 
@@ -27,6 +28,7 @@ export type ProductoLista = Prisma.ProductoGetPayload<{
         stocks: { include: { bodega: true } };
       };
     };
+    imagenes: { orderBy: { orden: "asc" } };
   };
 }>;
 
@@ -45,6 +47,7 @@ export async function listarProductos(soloActivos = false): Promise<ProductoList
           stocks: { include: { bodega: true } },
         },
       },
+      imagenes: { orderBy: { orden: "asc" } },
     },
   });
 }
@@ -67,6 +70,7 @@ export async function obtenerProducto(id: number) {
           stocks: { include: { bodega: true } },
         },
       },
+      imagenes: { orderBy: { orden: "asc" }, include: { color: true } },
     },
   });
 }
@@ -545,6 +549,86 @@ export async function agregarVariantes(
     revalidatePath("/productos");
     revalidatePath("/inventario");
     return { ok: true, data: { creadas: nuevas.length } };
+  } catch (e) {
+    return { ok: false as const, error: errorDesconocido(e) };
+  }
+}
+
+// ─────────────────────────── FOTOS DE PRODUCTO ────────────────────────
+
+export async function eliminarImagenProducto(id: number): Promise<ActionResult> {
+  try {
+    const imagen = await db.productoImagen.findUnique({ where: { id } });
+    if (!imagen) return { ok: false, error: "La imagen no existe." };
+
+    await db.productoImagen.delete({ where: { id } });
+    await eliminarObjeto(imagen.key).catch(() => {
+      // El registro ya se eliminó; si falla el borrado en el bucket no bloqueamos al usuario
+    });
+
+    if (imagen.esPrincipal) {
+      const siguiente = await db.productoImagen.findFirst({
+        where: { productoId: imagen.productoId },
+        orderBy: { orden: "asc" },
+      });
+      if (siguiente) {
+        await db.productoImagen.update({ where: { id: siguiente.id }, data: { esPrincipal: true } });
+      }
+    }
+
+    revalidatePath("/productos");
+    revalidatePath("/tienda");
+    return { ok: true };
+  } catch (e) {
+    return { ok: false as const, error: errorDesconocido(e) };
+  }
+}
+
+export async function marcarImagenPrincipal(id: number): Promise<ActionResult> {
+  try {
+    const imagen = await db.productoImagen.findUnique({ where: { id } });
+    if (!imagen) return { ok: false, error: "La imagen no existe." };
+
+    await db.$transaction([
+      db.productoImagen.updateMany({
+        where: { productoId: imagen.productoId },
+        data: { esPrincipal: false },
+      }),
+      db.productoImagen.update({ where: { id }, data: { esPrincipal: true } }),
+    ]);
+
+    revalidatePath("/productos");
+    revalidatePath("/tienda");
+    return { ok: true };
+  } catch (e) {
+    return { ok: false as const, error: errorDesconocido(e) };
+  }
+}
+
+export async function reordenarImagenesProducto(
+  productoId: number,
+  idsEnOrden: number[]
+): Promise<ActionResult> {
+  try {
+    await db.$transaction(
+      idsEnOrden.map((id, index) =>
+        db.productoImagen.update({ where: { id }, data: { orden: index } })
+      )
+    );
+    revalidatePath("/productos");
+    revalidatePath("/tienda");
+    return { ok: true };
+  } catch (e) {
+    return { ok: false as const, error: errorDesconocido(e) };
+  }
+}
+
+export async function asignarColorImagen(id: number, colorId: number | null): Promise<ActionResult> {
+  try {
+    await db.productoImagen.update({ where: { id }, data: { colorId } });
+    revalidatePath("/productos");
+    revalidatePath("/tienda");
+    return { ok: true };
   } catch (e) {
     return { ok: false as const, error: errorDesconocido(e) };
   }
