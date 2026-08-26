@@ -115,22 +115,34 @@
 - **Tablas y Formularios Adaptativos**: DataTable con scroll horizontal protegido y encabezados legibles en pantallas reducidas.
 - **Modal de Tickets Térmico 80mm**: Diseño blanco puro de alto contraste, legible en cualquier resolución y eliminación de impresión automática no deseada.
 
-### ✅ Fase 17 - Sincronización Staging / Develop & Skills
-- **Ramas Sincronizadas**: Rama `develop` (Staging) fusionada y al 100% con `main` (Producción).
-- **Librerías de Skills**: Integración de guías de diseño, UI/UX y tokens en `.opencode/skills/`.
+### ✅ Fase 18 - Autenticación, Roles, Migraciones y Despliegue CI/CD Staging
+- **NextAuth v5 (Auth.js)**: Implementación completa de sesión con estrategia JWT, credenciales seguras con `bcryptjs` y soporte condicional para Google OAuth.
+- **Modelos de Autenticación & Roles**: `Usuario`, `Account`, `Session`, `VerificationToken` y enum `Rol` (`ADMIN`, `GERENTE`, `CAJERO`, `VENDEDOR`, `BODEGUERO`).
+- **Migración SQL en Railway**: Generación y aplicación exitosa de la migración [`20260826082000_add_auth_tables`](file:///f:/SISTEMAS-OWEN/KAOB-POS/prisma/migrations/20260826082000_add_auth_tables/migration.sql) en PostgreSQL de staging.
+- **Auto-Aprovisionamiento & Resiliencia**:
+  - Auto-creación bajo demanda del usuario Admin inicial (`admin@kaob.com` / `Admin123!`).
+  - Búsqueda de email insensible a mayúsculas/minúsculas (`mode: "insensitive"`) y limpieza de espacios.
+  - Exclusión de `/api/health` en el middleware para garantizar que el healthcheck de Railway pase exitosamente.
+  - Corrección del filtro en `dashboard.ts` (remoción de `bodegaId` en consultas de `Gasto`).
+- **UI `/login`**: Formulario oficial de inicio de sesión con branding KΛOB, toggle de contraseña y retroalimentación de errores.
+- **Estado Actual de Railway**: Despliegue en staging (`develop`) en estado **SUCCESS**, base de datos migrada y login 100% operativo.
 
 ---
 
 ## ⏭️ Próximos Pasos y Roadmap
 
-1. **Pruebas Integrales E2E en Staging (`develop`)**:
-   - Flujo completo de mostrador: Apertura de caja → Venta Cockpit POS → Métodos de pago (Efectivo, Tarjeta, Addi/Sistecrédito, Fiado) → Ticket térmico → Descuento de stock por variantes → Cierre y arqueo ciego de caja.
+1. **Gestión de Usuarios y Permisos en el POS (`/usuarios`)**:
+   - Panel de administración de usuarios para crear cajeros, vendedores y gerentes, asignar roles y restablecer contraseñas.
+2. **Configuración de Google OAuth (Opcional)**:
+   - Configurar `AUTH_GOOGLE_ID` y `AUTH_GOOGLE_SECRET` en las variables de Railway si se desea habilitar el botón de Google.
+3. **Pruebas Integrales E2E en Staging (`develop`)**:
+   - Flujo completo de mostrador: Login como Admin/Cajero → Apertura de caja → Venta Cockpit POS → Métodos de pago (Efectivo, Tarjeta, Addi/Sistecrédito, Fiado) → Ticket térmico → Descuento de stock por variantes → Cierre y arqueo ciego de caja.
    - Flujo de tienda online: Pedidos desde el catálogo e-commerce (`/tienda`) → Conversión a WhatsApp → Despacho en `/ventas-online`.
-2. **Facturación Electrónica (DIAN / POS Electrónico)**:
+4. **Facturación Electrónica (DIAN / POS Electrónico)**:
    - Evaluación y conexión con API de proveedor tecnológico para emisión de documentos electrónicos válidos en Colombia.
-3. **Módulo de Producción / Taller de Confección (`/produccion`)**:
+5. **Módulo de Producción / Taller de Confección (`/produccion`)**:
    - Registro de órdenes de confección, corte, consumo de insumos (telas, avíos) y liquidación de costos de producción.
-4. **Puesta a Cero de Base de Datos para Lanzamiento**:
+6. **Puesta a Cero de Base de Datos para Lanzamiento**:
    - Script de purga de datos demo/pruebas para arrancar operaciones oficiales con inventario inicial real.
 
 ---
