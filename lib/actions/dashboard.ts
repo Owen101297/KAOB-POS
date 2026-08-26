@@ -136,7 +136,6 @@ export async function obtenerDatosDashboard(bodegaId?: number): Promise<Dashboar
       where: {
         estado: "REGISTRADO",
         fecha: { gte: startToday, lte: endToday },
-        ...(bodegaId ? { bodegaId } : {}),
       },
       select: { monto: true },
     });
@@ -146,7 +145,6 @@ export async function obtenerDatosDashboard(bodegaId?: number): Promise<Dashboar
       where: {
         estado: "REGISTRADO",
         fecha: { gte: startYesterday, lte: endYesterday },
-        ...(bodegaId ? { bodegaId } : {}),
       },
       select: { monto: true },
     });
