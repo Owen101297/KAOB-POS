@@ -191,6 +191,14 @@
   - `app/usuarios/page.tsx` protegido para rol `ADMIN`.
   - `components/usuarios/GestionUsuariosClient.tsx`: métricas de usuarios activos, tabla interactiva, modales para crear usuario, editar rol, restablecer contraseña y alternar estado activo/inactivo.
 
+### ✅ Fase 25 - Calculadora Inteligente de Margen y Precios Retail con Semáforo en Vivo
+- **Asistencia Financiera en Formulario de Productos (`ProductosClient.tsx`)**:
+  - Panel interactivo con cálculo en tiempo real de **Margen Bruto Real (%)**, **Multiplicador (Markup ×)** y **Ganancia Neta por Prenda (COP)**.
+  - **Chips de Margen Rápido (1 Clic)**: `50% (×2.0 Mínimo)`, `55% (×2.2 Estándar)`, `60% (×2.5 Premium)`, `70% (×3.3 Accesorios)`.
+  - **Redondeo Psicológico Comercial Automático**: Redondea los precios sugeridos a la terminación oficial de moda (`.900` COP) sin requerir cálculo mental.
+  - **Semáforo Diagnóstico de Rentabilidad**: Alertas visuales en vivo (Rojo `<45%` margen riesgoso, Amarillo `45-52%` margen moderado, Verde `53-64%` margen retail saludable, Púrpura `≥65%` margen accesorio de alta rentabilidad).
+  - **Desglose Opcional de Costo Total (Absorción)**: Campos desplegables para incluir empaque/bolsa KAOB y flete prorrateado en el costo base antes de aplicar margen.
+
 ---
 
 ## ⏭️ Próximos Pasos y Roadmap

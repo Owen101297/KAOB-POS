@@ -13,6 +13,13 @@ import {
   Plus,
   Printer,
   Trash2,
+  Calculator,
+  CheckCircle2,
+  AlertTriangle,
+  Sparkles,
+  ChevronDown,
+  ChevronUp,
+  Percent,
 } from 'lucide-react';
 import type { ProductoLista } from '@/lib/actions/productos';
 import type { CatalogosCompletos } from '@/lib/actions/catalogos';
@@ -580,6 +587,30 @@ function FormProducto({
   const [temporada, setTemporada] = useState(producto?.temporada ?? '');
   const [costo, setCosto] = useState(producto ? String(producto.costo) : '0');
   const [precioBase, setPrecioBase] = useState(producto ? String(producto.precioBase) : '0');
+  const [costoEmpaque, setCostoEmpaque] = useState('0');
+  const [costoFlete, setCostoFlete] = useState('0');
+  const [mostrarDesglose, setMostrarDesglose] = useState(false);
+
+  // Cálculos de rentabilidad en tiempo real
+  const numCostoBase = Number(costo) || 0;
+  const numEmpaque = Number(costoEmpaque) || 0;
+  const numFlete = Number(costoFlete) || 0;
+  const numCostoTotal = numCostoBase + (mostrarDesglose ? numEmpaque + numFlete : 0);
+  const numPrecio = Number(precioBase) || 0;
+
+  const gananciaBruta = numPrecio - numCostoTotal;
+  const margenPct = numPrecio > 0 ? ((numPrecio - numCostoTotal) / numPrecio) * 100 : 0;
+  const markupX = numCostoTotal > 0 ? numPrecio / numCostoTotal : 0;
+
+  const aplicarMargenSugerido = (pct: number) => {
+    if (numCostoTotal <= 0) return;
+    const bruto = numCostoTotal / (1 - pct / 100);
+    // Redondear a precio psicológico .900 en Colombia
+    let redondeado = Math.ceil(bruto / 1000) * 1000 - 100;
+    if (redondeado < bruto) redondeado += 1000;
+    if (redondeado < 1000) redondeado = Math.ceil(bruto / 500) * 500;
+    setPrecioBase(String(Math.max(0, Math.round(redondeado))));
+  };
 
   // constructor de variantes (solo creación)
   const [grupoId, setGrupoId] = useState<string>('');
@@ -613,7 +644,7 @@ function FormProducto({
       material,
       calidad: calidad === 'ninguna' ? null : calidad,
       temporada,
-      costo: Number(costo) || 0,
+      costo: numCostoTotal,
       precioBase: Number(precioBase) || 0,
     };
 
@@ -682,7 +713,7 @@ function FormProducto({
           </Select>
         </label>
         <label className="grid gap-1">
-          <span className="text-xs font-semibold text-slate-600">Género</span>
+          <span className="text-xs font-semibold text-slate-600">Género (Para Tienda Web)</span>
           <Select value={genero || undefined} onValueChange={setGenero}>
             <SelectTrigger><SelectValue placeholder="Sin género" /></SelectTrigger>
             <SelectContent>
@@ -713,14 +744,193 @@ function FormProducto({
           <span className="text-xs font-semibold text-slate-600">Temporada</span>
           <Input value={temporada} onChange={(e) => setTemporada(e.target.value)} maxLength={40} placeholder="Verano 2026" />
         </label>
-        <label className="grid gap-1">
-          <span className="text-xs font-semibold text-slate-600">Costo (COP) *</span>
-          <Input type="number" min={0} value={costo} onChange={(e) => setCosto(e.target.value)} required />
-        </label>
-        <label className="grid gap-1">
-          <span className="text-xs font-semibold text-slate-600">Precio venta (COP) *</span>
-          <Input type="number" min={0} value={precioBase} onChange={(e) => setPrecioBase(e.target.value)} required />
-        </label>
+
+        {/* ────────────────── CALCULADORA INTELIGENTE DE PRECIO Y MARGEN ────────────────── */}
+        <div className="sm:col-span-2 rounded-2xl border border-slate-200 bg-slate-50/70 p-4 space-y-3 shadow-inner">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-slate-900 text-white">
+                <Calculator className="h-4 w-4" />
+              </div>
+              <span className="text-xs font-bold uppercase tracking-wider text-slate-800">
+                Calculadora de Margen & Precios Retail
+              </span>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setMostrarDesglose(!mostrarDesglose)}
+              className="inline-flex items-center gap-1 text-[11px] font-semibold text-slate-600 hover:text-slate-900 transition-colors"
+            >
+              <span>{mostrarDesglose ? 'Ocultar empaque/flete' : 'Desglosar empaque y flete'}</span>
+              {mostrarDesglose ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+            </button>
+          </div>
+
+          {/* Desglose opcional de costos */}
+          {mostrarDesglose && (
+            <div className="grid grid-cols-2 gap-3 rounded-xl border border-slate-200 bg-white p-3 text-xs animate-fade-in">
+              <label className="grid gap-1">
+                <span className="text-[11px] font-medium text-slate-500">Empaque & Bolsa KAOB (COP)</span>
+                <Input
+                  type="number"
+                  min={0}
+                  value={costoEmpaque}
+                  onChange={(e) => setCostoEmpaque(e.target.value)}
+                  placeholder="3000"
+                  className="h-8 text-xs"
+                />
+              </label>
+              <label className="grid gap-1">
+                <span className="text-[11px] font-medium text-slate-500">Flete unitario prorrateado (COP)</span>
+                <Input
+                  type="number"
+                  min={0}
+                  value={costoFlete}
+                  onChange={(e) => setCostoFlete(e.target.value)}
+                  placeholder="2000"
+                  className="h-8 text-xs"
+                />
+              </label>
+              <div className="col-span-2 text-[11px] text-slate-500 pt-1 border-t border-slate-100 flex justify-between">
+                <span>Costo Total Absorción:</span>
+                <strong className="text-slate-900">{formatoCOP(numCostoTotal)}</strong>
+              </div>
+            </div>
+          )}
+
+          {/* Inputs de Costo y Precio */}
+          <div className="grid sm:grid-cols-2 gap-3">
+            <label className="grid gap-1">
+              <span className="text-xs font-semibold text-slate-700">
+                {mostrarDesglose ? 'Costo Base Fábrica (COP) *' : 'Costo de la Prenda (COP) *'}
+              </span>
+              <Input
+                type="number"
+                min={0}
+                value={costo}
+                onChange={(e) => setCosto(e.target.value)}
+                required
+                className="font-mono font-semibold"
+              />
+            </label>
+
+            <label className="grid gap-1">
+              <span className="text-xs font-semibold text-slate-700">Precio de Venta al Público (COP) *</span>
+              <Input
+                type="number"
+                min={0}
+                value={precioBase}
+                onChange={(e) => setPrecioBase(e.target.value)}
+                required
+                className="font-mono font-bold text-slate-900"
+              />
+            </label>
+          </div>
+
+          {/* Chips de márgenes sugeridos */}
+          <div className="space-y-1.5 pt-1">
+            <div className="flex items-center justify-between text-[11px] text-slate-500 font-medium">
+              <span>Sugerir precio automático por margen:</span>
+              <span className="text-[10px] text-slate-400">Redondeo psicológico (.900)</span>
+            </div>
+            <div className="flex flex-wrap gap-1.5">
+              <button
+                type="button"
+                onClick={() => aplicarMargenSugerido(50)}
+                className="px-2.5 py-1 rounded-lg border border-slate-200 bg-white hover:bg-slate-100 text-slate-700 text-xs font-bold transition-all hover:scale-105 active:scale-95 shadow-sm"
+              >
+                50% (×2.0)
+              </button>
+              <button
+                type="button"
+                onClick={() => aplicarMargenSugerido(55)}
+                className="px-2.5 py-1 rounded-lg border border-brand-200 bg-brand-50/60 hover:bg-brand-100 text-brand-800 text-xs font-bold transition-all hover:scale-105 active:scale-95 shadow-sm"
+              >
+                55% (×2.2) Estándar
+              </button>
+              <button
+                type="button"
+                onClick={() => aplicarMargenSugerido(60)}
+                className="px-2.5 py-1 rounded-lg border border-blue-200 bg-blue-50 hover:bg-blue-100 text-blue-800 text-xs font-bold transition-all hover:scale-105 active:scale-95 shadow-sm"
+              >
+                60% (×2.5) Premium
+              </button>
+              <button
+                type="button"
+                onClick={() => aplicarMargenSugerido(70)}
+                className="px-2.5 py-1 rounded-lg border border-purple-200 bg-purple-50 hover:bg-purple-100 text-purple-800 text-xs font-bold transition-all hover:scale-105 active:scale-95 shadow-sm"
+              >
+                70% (×3.3) Accesorios
+              </button>
+            </div>
+          </div>
+
+          {/* Semáforo en vivo e indicadores de rentabilidad */}
+          {numPrecio > 0 && numCostoTotal > 0 && (
+            <div className="rounded-xl border border-slate-200 bg-white p-3 space-y-2 animate-fade-in">
+              <div className="flex items-center justify-between text-xs">
+                <div className="flex items-center gap-1.5">
+                  <span className="font-semibold text-slate-600">Margen Real:</span>
+                  <span
+                    className={`font-black px-2 py-0.5 rounded-full text-xs ${
+                      margenPct >= 65
+                        ? 'bg-purple-100 text-purple-800 border border-purple-200'
+                        : margenPct >= 53
+                        ? 'bg-emerald-100 text-emerald-800 border border-emerald-200'
+                        : margenPct >= 45
+                        ? 'bg-amber-100 text-amber-800 border border-amber-200'
+                        : 'bg-red-100 text-red-800 border border-red-200'
+                    }`}
+                  >
+                    {margenPct.toFixed(1)}% ({markupX.toFixed(2)}x)
+                  </span>
+                </div>
+
+                <div className="text-right">
+                  <span className="text-slate-500 mr-1.5">Ganancia por prenda:</span>
+                  <strong className={gananciaBruta >= 0 ? 'text-emerald-700' : 'text-red-600'}>
+                    {formatoCOP(gananciaBruta)}
+                  </strong>
+                </div>
+              </div>
+
+              {/* Mensaje de semáforo */}
+              <div className="flex items-center gap-1.5 text-[11px] pt-1 border-t border-slate-100">
+                {margenPct >= 65 ? (
+                  <>
+                    <Sparkles className="h-3.5 w-3.5 text-purple-600 shrink-0" />
+                    <span className="text-purple-700 font-medium">
+                      Margen excelente de accesorio / compra por impulso. Máxima rentabilidad.
+                    </span>
+                  </>
+                ) : margenPct >= 53 ? (
+                  <>
+                    <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600 shrink-0" />
+                    <span className="text-emerald-700 font-medium">
+                      Margen saludable de moda retail. Cubre empaques, comisiones de pago y gastos de local.
+                    </span>
+                  </>
+                ) : margenPct >= 45 ? (
+                  <>
+                    <AlertTriangle className="h-3.5 w-3.5 text-amber-600 shrink-0" />
+                    <span className="text-amber-700 font-medium">
+                      Margen moderado. Recomendado solo para prendas de alto costo o colecciones en promoción.
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    <AlertTriangle className="h-3.5 w-3.5 text-red-600 shrink-0" />
+                    <span className="text-red-700 font-medium">
+                      Margen riesgoso (&lt; 45%). Podrías no cubrir gastos operativos ni comisiones de Addi/Datáfono.
+                    </span>
+                  </>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+
         <label className="grid gap-1 sm:col-span-2">
           <span className="text-xs font-semibold text-slate-600">Descripción</span>
           <textarea
