@@ -117,11 +117,11 @@ export default function LoginForm() {
 
         {/* Top brand header */}
         <div className="relative z-10 flex items-center gap-4">
-          <div className="h-12 w-12 rounded-2xl overflow-hidden flex items-center justify-center shadow-2xl shadow-white/10 ring-1 ring-white/20 bg-black shrink-0 border border-slate-800">
+          <div className="h-12 w-12 flex items-center justify-center shrink-0">
             <img
-              src="/brand/isotype.jpeg"
+              src="/brand/isotype.png"
               alt="KAOB"
-              className="h-full w-full object-cover"
+              className="h-full w-full object-contain"
             />
           </div>
           <div>
@@ -193,11 +193,11 @@ export default function LoginForm() {
         {/* Cabecera en móvil */}
         <div className="flex items-center justify-between lg:hidden mb-8">
           <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-xl overflow-hidden flex items-center justify-center shadow-md bg-black border border-slate-800 shrink-0">
+            <div className="h-10 w-10 flex items-center justify-center shrink-0">
               <img
-                src="/brand/isotype.jpeg"
+                src="/brand/isotype.png"
                 alt="KAOB"
-                className="h-full w-full object-cover"
+                className="h-full w-full object-contain"
               />
             </div>
             <div>

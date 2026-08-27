@@ -94,8 +94,8 @@ export default function NavbarTienda({
               }}
               className="flex items-center gap-3 group"
             >
-              <div className="h-10 w-10 rounded-full overflow-hidden flex items-center justify-center shadow-md transition-transform group-hover:scale-105 border border-zinc-800 bg-black shrink-0">
-                <img src="/brand/isotype.jpeg" alt="KAOB" className="h-full w-full object-cover" />
+              <div className="h-10 w-10 flex items-center justify-center transition-transform group-hover:scale-105 shrink-0">
+                <img src="/brand/isotype.png" alt="KAOB" className="h-full w-full object-contain" />
               </div>
               <span className="font-extrabold text-xl sm:text-2xl tracking-[0.25em] text-white uppercase font-sans">
                 KΛOB

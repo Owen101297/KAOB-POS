@@ -88,9 +88,9 @@ export default function Topbar({ onMenuClick }: { onMenuClick?: () => void }) {
           href="/"
           title="KAOB"
           aria-label="Ir al Inicio"
-          className="hidden h-10 w-10 items-center justify-center rounded-full overflow-hidden transition-transform hover:scale-105 active:scale-95 focus:outline-none focus:ring-2 focus:ring-slate-400 lg:flex border border-slate-200"
+          className="hidden h-10 w-10 items-center justify-center rounded-full transition-transform hover:scale-105 active:scale-95 focus:outline-none focus:ring-2 focus:ring-slate-400 lg:flex"
         >
-          <img src="/brand/isotype.jpeg" alt="KAOB" className="h-full w-full object-cover rounded-full" />
+          <img src="/brand/isotype-dark.png" alt="KAOB" className="h-8 w-8 object-contain" />
         </Link>
       </div>
 
@@ -100,9 +100,9 @@ export default function Topbar({ onMenuClick }: { onMenuClick?: () => void }) {
           href="/"
           title="KAOB"
           aria-label="Ir al Inicio"
-          className="absolute left-1/2 top-1/2 flex h-10 w-10 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full overflow-hidden transition-transform hover:scale-105 active:scale-95 focus:outline-none focus:ring-2 focus:ring-slate-400 lg:hidden border border-slate-200"
+          className="absolute left-1/2 top-1/2 flex h-10 w-10 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full transition-transform hover:scale-105 active:scale-95 focus:outline-none focus:ring-2 focus:ring-slate-400 lg:hidden"
         >
-          <img src="/brand/isotype.jpeg" alt="KAOB" className="h-full w-full object-cover rounded-full" />
+          <img src="/brand/isotype-dark.png" alt="KAOB" className="h-8 w-8 object-contain" />
         </Link>
 
         <div className="hidden items-center gap-2 lg:flex">

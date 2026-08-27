@@ -121,8 +121,8 @@ export default function VentasOnlineClient({ pedidosIniciales, leadsIniciales }:
       {/* Banner de Estado de la Tienda */}
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 p-5 rounded-2xl bg-gradient-to-r from-zinc-950 via-black to-zinc-900 text-white border border-zinc-800 shadow-sm">
         <div className="flex items-center gap-4">
-          <div className="h-12 w-12 rounded-2xl overflow-hidden flex items-center justify-center shrink-0 border border-zinc-800 bg-black">
-            <img src="/brand/isotype.jpeg" alt="KAOB" className="h-full w-full object-cover rounded-full" />
+          <div className="h-12 w-12 flex items-center justify-center shrink-0">
+            <img src="/brand/isotype.png" alt="KAOB" className="h-full w-full object-contain" />
           </div>
           <div>
             <div className="flex items-center gap-2">
