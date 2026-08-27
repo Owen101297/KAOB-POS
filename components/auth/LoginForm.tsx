@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { loginWithCredentials, loginWithGoogle } from '@/lib/actions/auth';
+import { signIn } from 'next-auth/react';
 import {
   Eye,
   EyeOff,
@@ -13,9 +13,7 @@ import {
   Layers,
   ArrowRight,
   Sparkles,
-  ShoppingBag,
 } from 'lucide-react';
-import type { ActionResult } from '@/lib/validations';
 import { cn } from '@/lib/utils';
 
 const DEMO_PRESETS = [
@@ -86,16 +84,22 @@ export default function LoginForm() {
     setLoading(true);
     setError(null);
 
-    const formData = new FormData();
-    formData.append('email', email);
-    formData.append('password', password);
+    try {
+      const res = await signIn('credentials', {
+        email: email.trim().toLowerCase(),
+        password,
+        redirect: false,
+      });
 
-    const result: ActionResult = await loginWithCredentials(
-      { ok: false, error: '' },
-      formData
-    );
-    if (!result.ok) {
-      setError(result.error);
+      if (res?.error) {
+        setError('Credenciales inválidas o usuario inactivo');
+        setLoading(false);
+      } else {
+        // Redirección con recarga limpia para asegurar que SessionProvider lea la cookie de inmediato
+        window.location.href = '/';
+      }
+    } catch {
+      setError('Ocurrió un error al iniciar sesión. Inténtalo de nuevo.');
       setLoading(false);
     }
   }

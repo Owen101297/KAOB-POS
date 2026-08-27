@@ -34,12 +34,18 @@ async function obtenerBodegas(): Promise<Bodega[]> {
   }
 }
 
+import { auth } from '@/auth';
+
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
-  const bodegas = await obtenerBodegas();
+  const [bodegas, session] = await Promise.all([
+    obtenerBodegas(),
+    auth(),
+  ]);
+
   return (
     <html lang="es" className={inter.variable}>
       <body className="font-sans">
-        <Providers bodegas={bodegas}>
+        <Providers session={session} bodegas={bodegas}>
           <Shell>{children}</Shell>
         </Providers>
       </body>
