@@ -199,6 +199,16 @@
   - **Semáforo Diagnóstico de Rentabilidad**: Alertas visuales en vivo (Rojo `<45%` margen riesgoso, Amarillo `45-52%` margen moderado, Verde `53-64%` margen retail saludable, Púrpura `≥65%` margen accesorio de alta rentabilidad).
   - **Desglose Opcional de Costo Total (Absorción)**: Campos desplegables para incluir empaque/bolsa KAOB y flete prorrateado en el costo base antes de aplicar margen.
 
+### ✅ Fase 26 - Rediseño Fast Luxury E-Commerce: Navegación por 4 Macro-Géneros & Catálogo Compacto de Alta Conversión
+- **HeroBanner Compacto & Estilizado (`HeroBanner.tsx`)**: Reducción de altura a 380px en desktop y 220px en móvil; acciones directas al catálogo y selección de género en 1 toque.
+- **Navegación Jerárquica en 2 Niveles (`CategoryGrid.tsx`)**:
+  - **Nivel 1 (Macro Géneros)**: 4 colecciones fotográficas compactas (`CABALLERO`, `DAMA`, `UNISEX & OVERSIZE`, `ACCESORIOS`).
+  - **Nivel 2 (Despliegue Dinámico)**: Al seleccionar un macro-género, se despliega una barra interactiva con las subcategorías reales de ropa de ese departamento con conteo de prendas.
+- **Catálogo Inmediato de Alta Densidad (`TiendaClient.tsx`)**:
+  - Eliminación de bloques decorativos pesados (`SplitBanner`, `JournalSection`) para evitar scroll masivo.
+  - Cuadrícula de 2 columnas en móvil y 4-6 columnas en desktop con filtros rápidos de ordenamiento y limpieza en 1 clic.
+- **Acciones y Redirecciones con Precisión**: Sincronización exacta entre Navbar, Hero, Categorías y Catálogo con smooth scroll al ID `#catalogo-productos`.
+
 ---
 
 ## ⏭️ Próximos Pasos y Roadmap

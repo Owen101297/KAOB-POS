@@ -33,22 +33,22 @@ export default function ProductSection({
   if (!productos || productos.length === 0) return null;
 
   return (
-    <section className="w-full py-14 sm:py-20 bg-white border-b border-zinc-200/80">
+    <section className="w-full py-8 sm:py-10 bg-white border-b border-zinc-200/80">
       <div className="max-w-[1520px] mx-auto px-4 sm:px-8">
         
-        {/* Encabezado: Título a la Izquierda y Enlace VIEW ALL a la Derecha */}
-        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8 sm:mb-12 pb-4 border-b border-zinc-200/80">
+        {/* Encabezado Compacto con Acción Precisa */}
+        <div className="flex items-end justify-between gap-4 mb-5 pb-2.5 border-b border-zinc-200/80">
           <div>
             {eyebrow && (
-              <span className="text-[10px] font-bold tracking-[0.25em] text-zinc-400 uppercase block mb-1">
+              <span className="text-[9.5px] font-bold tracking-[0.25em] text-zinc-400 uppercase block">
                 {eyebrow}
               </span>
             )}
-            <h2 className="font-serif text-2xl sm:text-3xl lg:text-4xl font-light tracking-tight text-zinc-950 uppercase">
+            <h2 className="font-serif text-lg sm:text-2xl font-light tracking-tight text-zinc-950 uppercase">
               {title}
             </h2>
             {subtitle && (
-              <p className="text-xs sm:text-sm text-zinc-500 font-light mt-1">
+              <p className="text-[11px] text-zinc-500 font-light mt-0.5 hidden sm:block">
                 {subtitle}
               </p>
             )}
@@ -58,16 +58,16 @@ export default function ProductSection({
             <button
               type="button"
               onClick={onVerTodos}
-              className="inline-flex items-center gap-1.5 text-xs font-bold tracking-[0.2em] uppercase text-zinc-900 hover:text-black transition-all group pb-1 self-start sm:self-auto"
+              className="inline-flex items-center gap-1 text-[11px] font-bold tracking-[0.18em] uppercase text-zinc-900 hover:text-black transition-all group pb-0.5 shrink-0"
             >
-              <span>VIEW ALL</span>
-              <ArrowRight className="w-3.5 h-3.5 transition-transform duration-300 group-hover:translate-x-1" />
+              <span>VER TODO</span>
+              <ArrowRight className="w-3 h-3 transition-transform duration-300 group-hover:translate-x-1" />
             </button>
           )}
         </div>
 
-        {/* Grid de 6 Columnas (Responsive 2 cols en mobile, 3 en tablet, 6 en desktop) */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 sm:gap-4 lg:gap-5">
+        {/* Grid de Alta Densidad: 2 columnas en móvil, 3 en tablet, 5 o 6 en desktop */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2.5 sm:gap-3.5 lg:gap-4">
           {productos.slice(0, 6).map((producto) => (
             <ProductCardTienda
               key={producto.id}

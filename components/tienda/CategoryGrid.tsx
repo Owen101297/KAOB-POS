@@ -1,165 +1,243 @@
 'use client';
 
-import React, { useMemo } from 'react';
-import { ArrowUpRight } from 'lucide-react';
+import React from 'react';
+import { ArrowUpRight, Sparkles, Layers, Check } from 'lucide-react';
 import type { ProductoLista } from '@/lib/actions/productos';
 
-interface Props {
-  categorias?: { id: number; nombre: string }[];
-  productos?: ProductoLista[];
-  onSelectCategory?: (categoria: string | null, genero: string | null) => void;
+interface SubcategoriaInfo {
+  nombre: string;
+  conteo: number;
 }
 
-interface CategoryShowcaseItem {
+interface Props {
+  generoActivo: string | null;
+  categoriaActiva: string | null;
+  onSelectCategory: (categoria: string | null, genero: string | null) => void;
+  subcategoriasDinamicas: SubcategoriaInfo[];
+  totalProductosGenero: number;
+  productos?: ProductoLista[];
+}
+
+interface MacroColeccion {
   id: string;
-  nombre: string;
+  genero: string;
+  titulo: string;
   subtitulo: string;
   imagen: string;
-  categoriaDb?: string;
-  genero?: string;
 }
 
-// Imágenes de fallback editorial por palabra clave si la categoría aún no tiene fotos cargadas
-const IMAGENES_FALLBACK: Record<string, string> = {
-  camisetas: 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?auto=format&fit=crop&q=80&w=800',
-  hoodies: 'https://images.unsplash.com/photo-1556905055-8f358a7a47b2?auto=format&fit=crop&q=80&w=800',
-  chaquetas: 'https://images.unsplash.com/photo-1544441893-675973e31985?auto=format&fit=crop&q=80&w=800',
-  pantalones: 'https://images.unsplash.com/photo-1552374196-1ab2a1c593e8?auto=format&fit=crop&q=80&w=800',
-  bermudas: 'https://images.unsplash.com/photo-1591195853828-11db59a44f6b?auto=format&fit=crop&q=80&w=800',
-  vestidos: 'https://images.unsplash.com/photo-1509631179647-0177331693ae?auto=format&fit=crop&q=80&w=800',
-  tops: 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&q=80&w=800',
-  accesorios: 'https://images.unsplash.com/photo-1588850561407-ed78c282e89b?auto=format&fit=crop&q=80&w=800',
-  gorras: 'https://images.unsplash.com/photo-1588850561407-ed78c282e89b?auto=format&fit=crop&q=80&w=800',
-  default: 'https://images.unsplash.com/photo-1489987707025-afc232f7ea0f?auto=format&fit=crop&q=80&w=800',
-};
-
-function obtenerImagenFallback(nombreCat: string): string {
-  const norm = nombreCat.toLowerCase();
-  for (const [key, url] of Object.entries(IMAGENES_FALLBACK)) {
-    if (norm.includes(key)) return url;
-  }
-  return IMAGENES_FALLBACK.default;
-}
+const MACRO_COLECCIONES: MacroColeccion[] = [
+  {
+    id: 'caballero',
+    genero: 'CABALLERO',
+    titulo: 'CABALLERO',
+    subtitulo: 'Streetwear & Boxy Silhouettes',
+    imagen: 'https://images.unsplash.com/photo-1617137984095-74e4e5e3613f?auto=format&fit=crop&q=80&w=700',
+  },
+  {
+    id: 'dama',
+    genero: 'DAMA',
+    titulo: 'DAMA',
+    subtitulo: 'Tops, Hoodies & Elevated Fits',
+    imagen: 'https://images.unsplash.com/photo-1509631179647-0177331693ae?auto=format&fit=crop&q=80&w=700',
+  },
+  {
+    id: 'unisex',
+    genero: 'UNISEX',
+    titulo: 'UNISEX & OVERSIZE',
+    subtitulo: 'Heavyweight Essentials 240g',
+    imagen: 'https://images.unsplash.com/photo-1556905055-8f358a7a47b2?auto=format&fit=crop&q=80&w=700',
+  },
+  {
+    id: 'accesorios',
+    genero: 'ACCESORIOS',
+    titulo: 'ACCESORIOS',
+    subtitulo: 'Caps, Medias & Headwear',
+    imagen: 'https://images.unsplash.com/photo-1588850561407-ed78c282e89b?auto=format&fit=crop&q=80&w=700',
+  },
+];
 
 export default function CategoryGrid({
-  categorias = [],
-  productos = [],
+  generoActivo,
+  categoriaActiva,
   onSelectCategory,
+  subcategoriasDinamicas,
+  totalProductosGenero,
 }: Props) {
-  // Construir tarjetas dinámicas basadas 100% en las categorías reales del inventario
-  const categoriasShowcase: CategoryShowcaseItem[] = useMemo(() => {
-    // Si tenemos categorías en la base de datos con productos
-    if (categorias.length > 0) {
-      return categorias.slice(0, 8).map((cat) => {
-        const productosEnCat = productos.filter((p) => p.categoriaId === cat.id && p.activo);
-        const conFoto = productosEnCat.find((p) => p.imagenes && p.imagenes.length > 0);
-        const fotoKey = conFoto?.imagenes?.find((im) => im.esPrincipal)?.key || conFoto?.imagenes?.[0]?.key;
-        
-        const imagen = fotoKey ? `/api/media/${fotoKey}` : obtenerImagenFallback(cat.nombre);
-
-        return {
-          id: String(cat.id),
-          nombre: cat.nombre,
-          categoriaDb: cat.nombre,
-          subtitulo: `${productosEnCat.length} ${productosEnCat.length === 1 ? 'prenda' : 'prendas'} disponibles`,
-          imagen,
-        };
-      });
+  const handleSeleccionarMacro = (genero: string) => {
+    if (generoActivo === genero) {
+      // Si ya está activo, deseleccionar para volver a todo
+      onSelectCategory(null, null);
+    } else {
+      onSelectCategory(null, genero);
     }
 
-    // Fallback si no hay categorías creadas aún
-    return [
-      {
-        id: 'men',
-        nombre: 'CABALLERO',
-        genero: 'CABALLERO',
-        subtitulo: 'Colección Streetwear & Oversize',
-        imagen: 'https://images.unsplash.com/photo-1552374196-1ab2a1c593e8?auto=format&fit=crop&q=80&w=800',
-      },
-      {
-        id: 'women',
-        nombre: 'DAMA',
-        genero: 'DAMA',
-        subtitulo: 'Tops & Siluetas Contemporáneas',
-        imagen: 'https://images.unsplash.com/photo-1509631179647-0177331693ae?auto=format&fit=crop&q=80&w=800',
-      },
-      {
-        id: 'unisex',
-        nombre: 'OVERSIZE & UNISEX',
-        genero: 'UNISEX',
-        subtitulo: 'Prendas Boxy Fit 240+ GSM',
-        imagen: 'https://images.unsplash.com/photo-1556905055-8f358a7a47b2?auto=format&fit=crop&q=80&w=800',
-      },
-      {
-        id: 'accessories',
-        nombre: 'ACCESORIOS',
-        genero: 'ACCESORIOS',
-        subtitulo: 'Headwear & Essentials',
-        imagen: 'https://images.unsplash.com/photo-1588850561407-ed78c282e89b?auto=format&fit=crop&q=80&w=800',
-      },
-    ];
-  }, [categorias, productos]);
+    // Scroll suave y preciso al área de productos
+    setTimeout(() => {
+      const el = document.getElementById('catalogo-productos');
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    }, 100);
+  };
 
-  if (categoriasShowcase.length === 0) return null;
+  const handleSeleccionarSubcategoria = (catNombre: string | null) => {
+    onSelectCategory(catNombre, generoActivo);
+    setTimeout(() => {
+      const el = document.getElementById('catalogo-productos');
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    }, 100);
+  };
 
   return (
-    <section className="w-full py-16 sm:py-24 bg-[#FAFAFA] border-b border-zinc-200/80">
+    <section className="w-full py-8 sm:py-10 bg-[#FAFAFA] border-b border-zinc-200/80">
       <div className="max-w-[1520px] mx-auto px-4 sm:px-8">
         
-        {/* Encabezado Centrado */}
-        <div className="text-center max-w-xl mx-auto mb-12 sm:mb-16">
-          <span className="text-[10px] font-bold tracking-[0.25em] text-zinc-500 uppercase block mb-2">
-            ELEVATED ESSENTIALS
-          </span>
-          <h2 className="font-serif text-3xl sm:text-4xl font-light tracking-tight text-zinc-950 uppercase">
-            Explora por Colección
-          </h2>
-          <p className="text-xs text-zinc-500 font-light mt-1">
-            Categorías activas sincronizadas en tiempo real con nuestro atelier e inventario.
+        {/* Encabezado Compacto */}
+        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-2 mb-6 pb-2 border-b border-zinc-200/80">
+          <div>
+            <span className="text-[9.5px] font-bold tracking-[0.25em] text-zinc-400 uppercase block">
+              COLECCIONES PRINCIPALES
+            </span>
+            <h2 className="font-serif text-xl sm:text-2xl font-light tracking-tight text-zinc-950 uppercase">
+              Explora por Género
+            </h2>
+          </div>
+          <p className="text-[11px] text-zinc-500 font-light hidden sm:block">
+            Selecciona un departamento para desplegar sus categorías en vivo
           </p>
         </div>
 
-        {/* Grid Dinámico de 2 a 4 Columnas con Aspect Ratio Vertical 3:4 */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-          {categoriasShowcase.map((cat) => (
-            <div
-              key={cat.id}
-              onClick={() => onSelectCategory?.(cat.categoriaDb || null, cat.genero || null)}
-              className="group relative aspect-[3/4] overflow-hidden bg-zinc-900 cursor-pointer shadow-xs hover:shadow-2xl transition-all duration-500"
-            >
-              {/* Imagen de Portada */}
-              <img
-                src={cat.imagen}
-                alt={cat.nombre}
-                className="w-full h-full object-cover object-center transition-transform duration-700 ease-out group-hover:scale-105 opacity-85 group-hover:opacity-95"
-              />
+        {/* Grid de 4 Macro-Colecciones (2 columnas en móvil, 4 en desktop con altura compacta) */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
+          {MACRO_COLECCIONES.map((col) => {
+            const estaActivo = generoActivo === col.genero;
+            return (
+              <div
+                key={col.id}
+                onClick={() => handleSeleccionarMacro(col.genero)}
+                className={`group relative aspect-[16/10] sm:aspect-[4/3] overflow-hidden bg-zinc-900 cursor-pointer transition-all duration-300 ${
+                  estaActivo
+                    ? 'ring-2 ring-black shadow-lg scale-[1.01]'
+                    : 'hover:shadow-md opacity-95 hover:opacity-100'
+                }`}
+              >
+                {/* Imagen de fondo */}
+                <img
+                  src={col.imagen}
+                  alt={col.titulo}
+                  className="w-full h-full object-cover object-center transition-transform duration-700 ease-out group-hover:scale-105"
+                />
 
-              {/* Overlay de gradiente */}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/25 to-transparent transition-opacity duration-300 group-hover:from-black/90" />
+                {/* Overlay de gradiente */}
+                <div
+                  className={`absolute inset-0 transition-opacity duration-300 ${
+                    estaActivo
+                      ? 'bg-gradient-to-t from-black/90 via-black/40 to-transparent'
+                      : 'bg-gradient-to-t from-black/80 via-black/25 to-transparent group-hover:from-black/85'
+                  }`}
+                />
 
-              {/* Contenido */}
-              <div className="absolute inset-0 p-6 sm:p-8 flex flex-col justify-end text-white z-10">
-                <span className="text-[10px] font-mono tracking-widest text-zinc-300 uppercase block mb-1">
-                  {cat.subtitulo}
-                </span>
-                
-                <div className="flex items-center justify-between">
-                  <h3 className="font-serif text-xl sm:text-2xl font-normal tracking-wider uppercase">
-                    {cat.nombre}
-                  </h3>
-                  <div className="w-9 h-9 rounded-full bg-white/10 backdrop-blur-md flex items-center justify-center border border-white/20 transition-transform duration-300 group-hover:translate-x-1 group-hover:-translate-y-1 group-hover:bg-white group-hover:text-black">
-                    <ArrowUpRight className="w-4 h-4 text-white group-hover:text-black transition-colors" />
+                {/* Tag de estado Activo */}
+                {estaActivo && (
+                  <div className="absolute top-2.5 right-2.5 bg-white text-black text-[9px] font-black tracking-widest px-2 py-0.5 uppercase shadow-md flex items-center gap-1 z-20">
+                    <Check className="w-2.5 h-2.5 stroke-[3]" /> ACTIVO
+                  </div>
+                )}
+
+                {/* Contenido en la tarjeta */}
+                <div className="absolute inset-0 p-3.5 sm:p-5 flex flex-col justify-end text-white z-10">
+                  <span className="text-[9px] font-mono tracking-wider text-zinc-300 uppercase block line-clamp-1">
+                    {col.subtitulo}
+                  </span>
+                  
+                  <div className="flex items-center justify-between mt-0.5">
+                    <h3 className="font-serif text-sm sm:text-lg font-medium tracking-wider uppercase">
+                      {col.titulo}
+                    </h3>
+                    <div
+                      className={`w-6 h-6 sm:w-7 sm:h-7 rounded-full flex items-center justify-center transition-transform duration-300 ${
+                        estaActivo
+                          ? 'bg-white text-black'
+                          : 'bg-white/20 backdrop-blur-md text-white group-hover:bg-white group-hover:text-black group-hover:translate-x-0.5'
+                      }`}
+                    >
+                      <ArrowUpRight className="w-3 h-3" />
+                    </div>
                   </div>
                 </div>
-
-                <div className="mt-4 pt-3 border-t border-white/20 flex items-center gap-1 text-[11px] font-bold tracking-[0.2em] uppercase text-zinc-200 group-hover:text-white">
-                  <span>VER CATEGORÍA</span>
-                  <span className="transition-transform duration-300 group-hover:translate-x-1">→</span>
-                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
+
+        {/* ────────────────────────────────────────────────────────────────────────── */}
+        {/* DESPLIEGUE DINÁMICO DE SUBCATEGORÍAS SEGÚN EL MACRO-GÉNERO SELECCIONADO     */}
+        {/* ────────────────────────────────────────────────────────────────────────── */}
+        {generoActivo && subcategoriasDinamicas.length > 0 && (
+          <div className="mt-4 p-3.5 sm:p-4 rounded-xl bg-white border border-zinc-200/80 shadow-xs animate-in fade-in slide-in-from-top-2 duration-200">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pb-2.5 border-b border-zinc-100">
+              <div className="flex items-center gap-2">
+                <Layers className="w-3.5 h-3.5 text-zinc-700" />
+                <span className="text-xs font-bold uppercase tracking-wider text-zinc-900">
+                  Categorías en {generoActivo}:
+                </span>
+                <span className="text-[11px] text-zinc-400 font-mono">
+                  ({totalProductosGenero} {totalProductosGenero === 1 ? 'prenda' : 'prendas'})
+                </span>
+              </div>
+
+              {categoriaActiva && (
+                <button
+                  type="button"
+                  onClick={() => handleSeleccionarSubcategoria(null)}
+                  className="text-[10px] font-bold tracking-wider text-zinc-500 hover:text-black uppercase underline self-start sm:self-auto"
+                >
+                  Ver todo {generoActivo}
+                </button>
+              )}
+            </div>
+
+            {/* Chips de subcategorías interactivas */}
+            <div className="flex flex-wrap items-center gap-1.5 pt-2.5">
+              <button
+                type="button"
+                onClick={() => handleSeleccionarSubcategoria(null)}
+                className={`px-3 py-1.5 text-xs font-bold tracking-wider uppercase rounded-lg transition-all ${
+                  categoriaActiva === null
+                    ? 'bg-black text-white shadow-xs'
+                    : 'bg-zinc-100 hover:bg-zinc-200 text-zinc-700'
+                }`}
+              >
+                TODO ({totalProductosGenero})
+              </button>
+
+              {subcategoriasDinamicas.map((sub) => (
+                <button
+                  key={sub.nombre}
+                  type="button"
+                  onClick={() => handleSeleccionarSubcategoria(sub.nombre)}
+                  className={`px-3 py-1.5 text-xs font-bold tracking-wider uppercase rounded-lg transition-all flex items-center gap-1.5 ${
+                    categoriaActiva === sub.nombre
+                      ? 'bg-black text-white shadow-xs scale-102'
+                      : 'bg-zinc-100 hover:bg-zinc-200 text-zinc-700'
+                  }`}
+                >
+                  <span>{sub.nombre}</span>
+                  <span
+                    className={`text-[10px] px-1 py-0.2 rounded-full ${
+                      categoriaActiva === sub.nombre ? 'bg-zinc-700 text-white' : 'bg-zinc-200 text-zinc-600'
+                    }`}
+                  >
+                    {sub.conteo}
+                  </span>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
 
       </div>
     </section>

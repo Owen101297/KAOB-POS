@@ -8,14 +8,10 @@ import HeroBanner from '@/components/tienda/HeroBanner';
 import TrustBadges from '@/components/tienda/TrustBadges';
 import CategoryGrid from '@/components/tienda/CategoryGrid';
 import ProductSection from '@/components/tienda/ProductSection';
-import SplitBanner from '@/components/tienda/SplitBanner';
-import JournalSection from '@/components/tienda/JournalSection';
-import NewsletterForm from '@/components/tienda/NewsletterForm';
 import FooterTienda from '@/components/tienda/FooterTienda';
 import ProductCardTienda, { type ItemBolsa } from '@/components/tienda/ProductCardTienda';
 import ProductDetailModal from '@/components/tienda/ProductDetailModal';
 import CartDrawerTienda from '@/components/tienda/CartDrawerTienda';
-import RecentlyViewedTienda from '@/components/tienda/RecentlyViewedTienda';
 import RecentPurchaseToast from '@/components/tienda/RecentPurchaseToast';
 import ExitIntentModal from '@/components/tienda/ExitIntentModal';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/Select';
@@ -137,6 +133,15 @@ export default function TiendaClient({
     });
   };
 
+  const scrollAlCatalogo = () => {
+    setTimeout(() => {
+      const el = document.getElementById('catalogo-productos');
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    }, 80);
+  };
+
   // Sugerencias predictivas
   const sugerenciasBusqueda = useMemo(() => {
     if (!busqueda.trim()) return [];
@@ -149,25 +154,22 @@ export default function TiendaClient({
         id: p.id,
         nombre: p.nombre,
         referencia: p.referencia,
-        precio: p.variantes[0]?.precioOverride ?? p.precioBase,
+        precio: p.precioBase,
       }));
   }, [productos, busqueda]);
 
-  const handleSeleccionarSugerencia = (id: number) => {
-    const producto = productos.find((p) => p.id === id);
-    if (producto) abrirDetalleProducto(producto);
+  const handleSeleccionarSugerencia = (productoId: number) => {
+    const prod = productos.find((p) => p.id === productoId);
+    if (prod) {
+      abrirDetalleProducto(prod);
+    }
   };
-
-  const resumenCarrito = useMemo(() => {
-    if (itemsBolsa.length === 0) return undefined;
-    return itemsBolsa.map((it) => `${it.cantidad}x ${it.nombre} (${it.tallaValor}/${it.colorNombre})`).join('; ');
-  }, [itemsBolsa]);
 
   // ───────────────────────────────────────────────────────────────────────────
   // MATRIZ BIDIMENSIONAL DINÁMICA: GÉNERO × CATEGORÍA DE INVENTARIO
   // ───────────────────────────────────────────────────────────────────────────
 
-  // 1. Productos filtrados por Género (para calcular qué subcategorías reales existen)
+  // 1. Productos filtrados por Género Macro
   const productosPorGenero = useMemo(() => {
     if (!generoActivo) return productos.filter((p) => p.activo);
     if (generoActivo === 'DAMA') {
@@ -246,7 +248,8 @@ export default function TiendaClient({
         (p) =>
           p.nombre.toLowerCase().includes(q) ||
           p.referencia.toLowerCase().includes(q) ||
-          (p.categoria?.nombre && p.categoria.nombre.toLowerCase().includes(q))
+          (p.categoria?.nombre && p.categoria.nombre.toLowerCase().includes(q)) ||
+          p.variantes.some((v) => v.color.nombre.toLowerCase().includes(q))
       );
     }
 
@@ -262,12 +265,12 @@ export default function TiendaClient({
     return list;
   }, [productosPorGenero, categoriaActiva, busqueda, orden]);
 
-  // New Arrivals (productos más recientes)
+  // New Arrivals
   const newArrivals = useMemo(() => {
     return [...productos.filter((p) => p.activo)].slice(0, 6);
   }, [productos]);
 
-  // Best Sellers (ordenados por mayor venta)
+  // Best Sellers
   const bestSellers = useMemo(() => {
     return [...productos.filter((p) => p.activo)]
       .sort((a, b) => (ventasPorProducto[b.id] ?? 0) - (ventasPorProducto[a.id] ?? 0))
@@ -314,18 +317,19 @@ export default function TiendaClient({
 
   const totalItemsEnBolsa = itemsBolsa.reduce((acc, it) => acc + it.cantidad, 0);
 
-  const handleExplorarCatalogo = () => {
-    const el = document.getElementById('catalogo-prendas');
-    el?.scrollIntoView({ behavior: 'smooth' });
+  const GENERO_LABEL: Record<string, string> = {
+    CABALLERO: 'MEN / CABALLERO',
+    DAMA: 'WOMEN / DAMA',
+    UNISEX: 'OVERSIZE & UNISEX',
+    ACCESORIOS: 'ACCESSORIES',
   };
 
   const hayFiltroActivo = Boolean(busqueda || categoriaActiva || generoActivo);
 
-  const GENERO_LABEL: Record<string, string> = {
-    CABALLERO: 'MEN',
-    DAMA: 'WOMEN',
-    UNISEX: 'OVERSIZE & UNISEX',
-    ACCESORIOS: 'ACCESSORIES',
+  const limpiarFiltros = () => {
+    setGeneroActivo(null);
+    setCategoriaActiva(null);
+    setBusqueda('');
   };
 
   return (
@@ -338,16 +342,20 @@ export default function TiendaClient({
         totalWishlist={wishlistIds.length}
         onAbrirWishlist={() => setWishlistAbierto(true)}
         busqueda={busqueda}
-        onCambiarBusqueda={setBusqueda}
+        onCambiarBusqueda={(val) => {
+          setBusqueda(val);
+          if (val) scrollAlCatalogo();
+        }}
         categoriaActiva={categoriaActiva}
         onSeleccionarCategoria={(cat) => {
           setCategoriaActiva(cat);
-          handleExplorarCatalogo();
+          scrollAlCatalogo();
         }}
         generoActivo={generoActivo}
         onSeleccionarGenero={(gen) => {
           setGeneroActivo(gen);
-          handleExplorarCatalogo();
+          setCategoriaActiva(null);
+          scrollAlCatalogo();
         }}
         categorias={categorias}
         sugerencias={sugerenciasBusqueda}
@@ -355,305 +363,167 @@ export default function TiendaClient({
         promocionDestacada={promocionDestacada ? { ...promocionDestacada, fechaFin: promocionDestacada.fechaFin ?? '' } : null}
       />
 
-      {/* ────────────────── JERARQUÍA EDITORIAL DE 9 SECCIONES ────────────────── */}
-      {!hayFiltroActivo ? (
-        <>
-          {/* SECCIÓN 1: HERO BANNER (50/50 Grid Editorial) */}
-          <HeroBanner
-            onExplorarClick={handleExplorarCatalogo}
-            onCategoriaClick={(cat) => {
-              setCategoriaActiva(cat);
-              handleExplorarCatalogo();
-            }}
-          />
+      {/* ────────────────── SECCIÓN 1: HERO BANNER COMPACTO ────────────────── */}
+      <HeroBanner
+        onExplorarClick={scrollAlCatalogo}
+        onCategoriaClick={(gen) => {
+          setGeneroActivo(gen);
+          setCategoriaActiva(null);
+          scrollAlCatalogo();
+        }}
+      />
 
-          {/* SECCIÓN 2: VALUE PROPOSITION BAR (Trust Badges 3 Columnas) */}
-          <TrustBadges />
+      {/* ────────────────── SECCIÓN 2: 4 COLECCIONES MACRO & SUBCATEGORÍAS ────────────────── */}
+      <CategoryGrid
+        generoActivo={generoActivo}
+        categoriaActiva={categoriaActiva}
+        onSelectCategory={(cat, gen) => {
+          setGeneroActivo(gen);
+          setCategoriaActiva(cat);
+        }}
+        subcategoriasDinamicas={subcategoriasDinamicas}
+        totalProductosGenero={productosPorGenero.length}
+        productos={productos}
+      />
 
-          {/* SECCIÓN 3: CATEGORY SHOWCASE DINÁMICO 100% SINCRONIZADO CON INVENTARIO */}
-          <CategoryGrid
-            categorias={categorias}
-            productos={productos}
-            onSelectCategory={(cat, gen) => {
-              if (cat) setCategoriaActiva(cat);
-              if (gen) setGeneroActivo(gen);
-              handleExplorarCatalogo();
-            }}
-          />
+      {/* ────────────────── SECCIÓN 3: CATÁLOGO PRINCIPAL COMPACTO ────────────────── */}
+      <main id="catalogo-productos" className="max-w-[1520px] mx-auto px-4 sm:px-8 py-8 flex-1 w-full scroll-mt-24">
+        
+        {/* Barra Superior del Catálogo: Título, Filtros Activos y Orden */}
+        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 pb-4 mb-6 border-b border-zinc-200">
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="text-[9.5px] font-bold tracking-[0.25em] text-zinc-400 uppercase">
+                {generoActivo ? GENERO_LABEL[generoActivo] || generoActivo : 'COLECCIÓN COMPLETA'}
+              </span>
+              {categoriaActiva && (
+                <>
+                  <span className="text-zinc-300">/</span>
+                  <span className="text-[9.5px] font-bold tracking-[0.2em] text-zinc-900 uppercase">
+                    {categoriaActiva}
+                  </span>
+                </>
+              )}
+            </div>
+            
+            <h2 className="font-serif text-xl sm:text-3xl font-light text-zinc-950 uppercase mt-0.5">
+              {busqueda
+                ? `Resultados: "${busqueda}"`
+                : categoriaActiva
+                ? categoriaActiva
+                : generoActivo
+                ? `Prendas de ${GENERO_LABEL[generoActivo] || generoActivo}`
+                : 'Todo el Drop'}
+            </h2>
+            
+            <p className="text-[11px] text-zinc-500 font-light mt-0.5">
+              {productosFiltrados.length === 1
+                ? '1 prenda disponible en atelier'
+                : `${productosFiltrados.length} prendas disponibles en atelier`}
+            </p>
+          </div>
 
-          {/* SECCIÓN 4: NEW ARRIVALS (Grid 6 Columnas) */}
-          <ProductSection
-            title="NEW ARRIVALS"
-            eyebrow="LATEST DROPS // 2026"
-            subtitle="Las siluetas más recientes incorporadas a nuestra vitrina oficial."
-            productos={newArrivals}
-            ventasPorProducto={ventasPorProducto}
-            onAgregarABolsa={agregarABolsa}
-            onVerDetalle={abrirDetalleProducto}
-            onVerTodos={handleExplorarCatalogo}
-            wishlistIds={wishlistIds}
-            onToggleWishlist={toggleWishlist}
-          />
+          {/* Acciones Rápidas: Limpiar Filtros y Ordenar */}
+          <div className="flex items-center gap-2.5 flex-wrap self-start sm:self-auto">
+            {hayFiltroActivo && (
+              <button
+                type="button"
+                onClick={limpiarFiltros}
+                className="inline-flex items-center gap-1 px-3 py-1.5 bg-zinc-100 hover:bg-black hover:text-white text-[11px] font-bold uppercase tracking-wider text-zinc-800 transition-colors rounded-sm"
+              >
+                <span>Limpiar</span>
+                <X className="h-3 w-3" />
+              </button>
+            )}
 
-          {/* SECCIÓN 5: EDITORIAL FEATURE BANNER (Campaña Asimétrica) */}
-          <SplitBanner onExplorarClick={handleExplorarCatalogo} />
+            <div className="flex items-center gap-1.5">
+              <span className="text-[11px] font-bold text-zinc-400 uppercase tracking-wider hidden sm:inline">ORDEN:</span>
+              <Select value={orden} onValueChange={(v: any) => setOrden(v)}>
+                <SelectTrigger className="w-[145px] sm:w-[160px] text-xs h-8 bg-white border-zinc-300 rounded-none font-medium">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="recientes">Más recientes</SelectItem>
+                  <SelectItem value="precio-asc">Menor precio</SelectItem>
+                  <SelectItem value="precio-desc">Mayor precio</SelectItem>
+                  <SelectItem value="nombre">Nombre A - Z</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        </div>
 
-          {/* SECCIÓN 6: BEST SELLERS (Grid 6 Columnas) */}
-          <ProductSection
-            title="BEST SELLERS"
-            eyebrow="COMMUNITY ESSENTIALS"
-            subtitle="Las prendas con mayor demanda y rotación de nuestro atelier."
-            productos={bestSellers}
-            ventasPorProducto={ventasPorProducto}
-            onAgregarABolsa={agregarABolsa}
-            onVerDetalle={abrirDetalleProducto}
-            onVerTodos={handleExplorarCatalogo}
-            wishlistIds={wishlistIds}
-            onToggleWishlist={toggleWishlist}
-          />
-
-          {/* SECCIÓN 7: JOURNAL / BLOG EDITORIAL (3 Columnas) */}
-          <JournalSection />
-
-          {/* SECCIÓN 8: NEWSLETTER / LEAD CAPTURE BAR */}
-          <NewsletterForm />
-        </>
-      ) : (
-        /* ────────────────── VISTA DEL CATÁLOGO CON MATRIZ DINÁMICA DE DOBLE NIVEL ────────────────── */
-        <main id="catalogo-prendas" className="max-w-[1520px] mx-auto px-4 sm:px-8 py-10 flex-1 w-full animate-in fade-in duration-300">
-          
-          {/* Breadcrumb Visual */}
-          <div className="flex items-center gap-2 text-xs font-mono text-zinc-400 uppercase mb-4 tracking-wider">
-            <button
-              type="button"
-              onClick={() => {
-                setGeneroActivo(null);
-                setCategoriaActiva(null);
-                setBusqueda('');
-              }}
-              className="hover:text-black transition-colors"
+        {/* Cuadrícula de Productos de Alta Densidad */}
+        {productosFiltrados.length === 0 ? (
+          <div className="py-16 text-center border border-dashed border-zinc-200 rounded-2xl bg-zinc-50/50">
+            <Package className="w-10 h-10 text-zinc-300 mx-auto mb-3" />
+            <p className="font-serif text-lg font-light text-zinc-800 uppercase">
+              No encontramos prendas con los filtros seleccionados
+            </p>
+            <p className="text-xs text-zinc-500 mt-1 max-w-sm mx-auto">
+              Intenta seleccionando otra categoría o limpiando la búsqueda.
+            </p>
+            <Button
+              onClick={limpiarFiltros}
+              className="mt-4 bg-black text-white text-xs font-bold tracking-widest uppercase rounded-none px-6 py-2"
             >
-              INICIO
-            </button>
-
-            {generoActivo && (
-              <>
-                <ChevronRight className="w-3.5 h-3.5" />
-                <span className="text-zinc-950 font-bold">{GENERO_LABEL[generoActivo] || generoActivo}</span>
-              </>
-            )}
-
-            {categoriaActiva && (
-              <>
-                <ChevronRight className="w-3.5 h-3.5" />
-                <span className="text-zinc-950 font-bold">{categoriaActiva}</span>
-              </>
-            )}
-
-            {busqueda && (
-              <>
-                <ChevronRight className="w-3.5 h-3.5" />
-                <span className="text-zinc-950 font-bold">"{busqueda}"</span>
-              </>
-            )}
+              VER TODAS LAS PRENDAS
+            </Button>
           </div>
-
-          {/* Encabezado del Explorador */}
-          <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 pb-6 border-b border-zinc-200">
-            <div>
-              <span className="text-[10px] font-bold tracking-[0.25em] text-zinc-400 uppercase block mb-1">
-                EXPLORADOR DE COLECCIÓN
-              </span>
-              <h1 className="font-serif text-2xl sm:text-4xl font-light text-zinc-950 uppercase">
-                {busqueda
-                  ? `RESULTADOS PARA "${busqueda}"`
-                  : generoActivo && categoriaActiva
-                  ? `${GENERO_LABEL[generoActivo] || generoActivo} // ${categoriaActiva}`
-                  : generoActivo
-                  ? `COLECCIÓN ${GENERO_LABEL[generoActivo] || generoActivo}`
-                  : categoriaActiva
-                  ? `CATEGORÍA: ${categoriaActiva}`
-                  : 'CATÁLOGO COMPLETO'}
-              </h1>
-              <p className="text-xs text-zinc-500 font-light mt-1">
-                {productosFiltrados.length === 1
-                  ? '1 prenda encontrada en inventario'
-                  : `${productosFiltrados.length} prendas disponibles en inventario`}
-              </p>
-            </div>
-
-            {/* Acciones y Orden */}
-            <div className="flex items-center gap-3 flex-wrap">
-              <button
-                type="button"
-                onClick={() => {
-                  setGeneroActivo(null);
-                  setCategoriaActiva(null);
-                  setBusqueda('');
-                }}
-                className="inline-flex items-center gap-1.5 px-4 py-2 bg-zinc-100 hover:bg-black hover:text-white text-xs font-bold uppercase tracking-wider text-zinc-950 transition-colors"
-              >
-                <span>LIMPIAR FILTROS</span>
-                <X className="h-3.5 w-3.5" />
-              </button>
-
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-semibold text-zinc-500 whitespace-nowrap">ORDEN:</span>
-                <Select value={orden} onValueChange={(v: any) => setOrden(v)}>
-                  <SelectTrigger className="w-[170px] text-xs h-9 bg-white border-zinc-300 rounded-none">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="recientes">Más recientes</SelectItem>
-                    <SelectItem value="precio-asc">Menor precio</SelectItem>
-                    <SelectItem value="precio-desc">Mayor precio</SelectItem>
-                    <SelectItem value="nombre">Nombre A - Z</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
+        ) : (
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2.5 sm:gap-3.5 lg:gap-4">
+            {productosFiltrados.map((producto) => (
+              <ProductCardTienda
+                key={producto.id}
+                producto={producto}
+                onAgregarABolsa={agregarABolsa}
+                onVerDetalle={abrirDetalleProducto}
+                vendidosRecientes={ventasPorProducto[producto.id] ?? 0}
+                isWishlisted={wishlistIds.includes(producto.id)}
+                onToggleWishlist={toggleWishlist}
+              />
+            ))}
           </div>
+        )}
+      </main>
 
-          {/* ────────────────── DOBLE NIVEL DE FILTRADO DINÁMICO ────────────────── */}
-          <div className="py-6 border-b border-zinc-200 space-y-4">
-            {/* NIVEL 1: Selector de Departamento / Género Macro */}
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-400 mr-1">
-                DEPARTAMENTO:
-              </span>
-              <button
-                type="button"
-                onClick={() => setGeneroActivo(null)}
-                className={`px-4 py-1.5 text-xs font-bold uppercase tracking-wider transition-all ${
-                  generoActivo === null
-                    ? 'bg-black text-white shadow-xs'
-                    : 'bg-zinc-100 hover:bg-zinc-200 text-zinc-700'
-                }`}
-              >
-                TODO
-              </button>
-              {(['CABALLERO', 'DAMA', 'UNISEX', 'ACCESORIOS'] as const).map((gen) => (
-                <button
-                  key={gen}
-                  type="button"
-                  onClick={() => setGeneroActivo(gen)}
-                  className={`px-4 py-1.5 text-xs font-bold uppercase tracking-wider transition-all ${
-                    generoActivo === gen
-                      ? 'bg-black text-white shadow-xs'
-                      : 'bg-zinc-100 hover:bg-zinc-200 text-zinc-700'
-                  }`}
-                >
-                  {GENERO_LABEL[gen] || gen}
-                </button>
-              ))}
-            </div>
-
-            {/* NIVEL 2: Subcategorías Reales de Inventario correspondientes al Género */}
-            {subcategoriasDinamicas.length > 0 && (
-              <div className="flex items-center gap-2 flex-wrap pt-2">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-400 mr-1">
-                  SUBCATEGORÍAS ({subcategoriasDinamicas.length}):
-                </span>
-                <button
-                  type="button"
-                  onClick={() => setCategoriaActiva(null)}
-                  className={`px-3.5 py-1 text-xs font-bold uppercase tracking-wider transition-all ${
-                    categoriaActiva === null
-                      ? 'bg-zinc-950 text-white'
-                      : 'bg-zinc-100 hover:bg-zinc-200 text-zinc-600'
-                  }`}
-                >
-                  Todas ({productosPorGenero.length})
-                </button>
-
-                {subcategoriasDinamicas.map((subcat) => {
-                  const activa = categoriaActiva === subcat.nombre;
-                  return (
-                    <button
-                      key={subcat.nombre}
-                      type="button"
-                      onClick={() => setCategoriaActiva(activa ? null : subcat.nombre)}
-                      className={`px-3.5 py-1 text-xs font-bold uppercase tracking-wider transition-all ${
-                        activa
-                          ? 'bg-black text-white'
-                          : 'bg-zinc-100 hover:bg-zinc-200 text-zinc-700'
-                      }`}
-                    >
-                      <span>{subcat.nombre}</span>
-                      <span className="ml-1.5 opacity-60 font-mono text-[10px]">({subcat.conteo})</span>
-                    </button>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-
-          {/* Grid de Productos Filtrados */}
-          {productosFiltrados.length === 0 ? (
-            <div className="my-20 text-center p-12 bg-zinc-50 border border-zinc-200 max-w-lg mx-auto">
-              <Package className="h-10 w-10 text-zinc-400 mx-auto mb-3" />
-              <h3 className="text-base font-bold text-zinc-950 uppercase tracking-wider">No se encontraron prendas</h3>
-              <p className="text-xs text-zinc-500 mt-1 max-w-xs mx-auto font-light">
-                {busqueda
-                  ? `No hay resultados para "${busqueda}". Intenta con otra palabra clave.`
-                  : 'No hay prendas disponibles en esta combinación de departamento y categoría.'}
-              </p>
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setBusqueda('');
-                  setCategoriaActiva(null);
-                  setGeneroActivo(null);
-                }}
-                className="mt-5 text-xs font-bold uppercase tracking-[0.2em] rounded-none px-6 py-4"
-              >
-                VER TODO EL CATÁLOGO
-              </Button>
-            </div>
-          ) : (
-            <div className="mt-8 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 sm:gap-4 lg:gap-5">
-              {productosFiltrados.map((prod) => (
-                <ProductCardTienda
-                  key={prod.id}
-                  producto={prod}
-                  onAgregarABolsa={agregarABolsa}
-                  onVerDetalle={abrirDetalleProducto}
-                  vendidosRecientes={ventasPorProducto[prod.id] ?? 0}
-                  isWishlisted={wishlistIds.includes(prod.id)}
-                  onToggleWishlist={toggleWishlist}
-                />
-              ))}
-            </div>
-          )}
-        </main>
+      {/* ────────────────── SECCIÓN 4: BEST SELLERS (Solo si no hay filtro específico) ────────────────── */}
+      {!hayFiltroActivo && bestSellers.length > 0 && (
+        <ProductSection
+          title="BEST SELLERS"
+          eyebrow="COMMUNITY FAVORITES"
+          subtitle="Las piezas más solicitadas por la comunidad KΛOB en toda Colombia."
+          productos={bestSellers}
+          ventasPorProducto={ventasPorProducto}
+          onAgregarABolsa={agregarABolsa}
+          onVerDetalle={abrirDetalleProducto}
+          onVerTodos={scrollAlCatalogo}
+          wishlistIds={wishlistIds}
+          onToggleWishlist={toggleWishlist}
+        />
       )}
 
-      {/* VISTOS RECIENTEMENTE */}
-      <RecentlyViewedTienda productos={productos} idsVistos={vistosIds} onVerDetalle={abrirDetalleProducto} />
+      {/* ────────────────── SECCIÓN 5: VALUE PROPOSITION & TRUST BADGES ────────────────── */}
+      <TrustBadges />
 
-      {/* SECCIÓN 9: FOOTER ARQUITECTÓNICO (Centrado, Enlaces & SVGs de Pago) */}
+      {/* ────────────────── FOOTER OFICIAL ────────────────── */}
       <FooterTienda
         categorias={categorias}
         onSeleccionarCategoria={(cat) => {
           setCategoriaActiva(cat);
-          handleExplorarCatalogo();
+          scrollAlCatalogo();
         }}
         onSeleccionarGenero={(gen) => {
           setGeneroActivo(gen);
-          handleExplorarCatalogo();
+          setCategoriaActiva(null);
+          scrollAlCatalogo();
         }}
-        telefonoWhatsApp={configuracion?.telefono || '3136332887'}
+        telefonoWhatsApp={configuracion?.telefono}
       />
 
-      {/* MODAL DE VISTA RÁPIDA / DETALLE DE PRODUCTO */}
-      <ProductDetailModal
-        producto={productoSeleccionado}
-        abierto={Boolean(productoSeleccionado)}
-        onCerrar={() => setProductoSeleccionado(null)}
-        onAgregarABolsa={agregarABolsa}
-      />
-
-      {/* DRAWER DE LA BOLSA DE COMPRAS */}
+      {/* ────────────────── MODALES Y DRAWERS ────────────────── */}
+      
+      {/* Drawer de Bolsa de Compras */}
       <CartDrawerTienda
         abierto={bolsaAbierta}
         onCerrar={() => setBolsaAbierta(false)}
@@ -661,67 +531,66 @@ export default function TiendaClient({
         onActualizarCantidad={actualizarCantidadItem}
         onEliminarItem={eliminarItem}
         onVaciarBolsa={() => setItemsBolsa([])}
-        telefonoWhatsAppTienda={configuracion?.telefono || '3136332887'}
+        telefonoWhatsAppTienda={configuracion?.telefono}
         cuentasBancarias={cuentasBancarias}
       />
 
-      {/* MODAL DE LISTA DE DESEOS (WISHLIST) */}
-      {wishlistAbierto && (
-        <Dialog open={wishlistAbierto} onOpenChange={setWishlistAbierto}>
-          <DialogContent className="max-w-xl bg-white border border-zinc-200 text-zinc-950 p-6">
-            <DialogHeader>
-              <DialogTitle className="font-serif text-xl font-light uppercase tracking-wider flex items-center gap-2">
-                <Heart className="w-5 h-5 text-red-500 fill-red-500" />
-                <span>TUS FAVORITOS ({productosWishlist.length})</span>
-              </DialogTitle>
-            </DialogHeader>
+      {/* Modal de Detalle de Producto */}
+      <ProductDetailModal
+        producto={productoSeleccionado}
+        abierto={Boolean(productoSeleccionado)}
+        onCerrar={() => setProductoSeleccionado(null)}
+        onAgregarABolsa={agregarABolsa}
+      />
 
-            {productosWishlist.length === 0 ? (
-              <div className="py-12 text-center text-zinc-500">
-                <p className="text-xs font-light">Aún no has guardado ninguna prenda en tus favoritos.</p>
-                <p className="text-[11px] text-zinc-400 mt-1">Haz clic en el corazón en cualquier tarjeta para guardarla.</p>
-              </div>
-            ) : (
-              <div className="max-h-[60vh] overflow-y-auto divide-y divide-zinc-100 space-y-2">
-                {productosWishlist.map((p) => (
-                  <div key={p.id} className="pt-3 flex items-center justify-between gap-3">
-                    <div
-                      onClick={() => {
-                        abrirDetalleProducto(p);
-                        setWishlistAbierto(false);
-                      }}
-                      className="flex items-center gap-3 cursor-pointer flex-1"
-                    >
-                      <div className="w-12 h-12 bg-zinc-100 flex items-center justify-center font-serif font-bold text-xs">
-                        {p.nombre.slice(0, 2).toUpperCase()}
-                      </div>
-                      <div>
-                        <p className="text-xs font-bold uppercase tracking-wider">{p.nombre}</p>
-                        <p className="text-xs font-black text-zinc-950">{formatoCOP(p.precioBase)}</p>
-                      </div>
-                    </div>
+      {/* Modal de Lista de Deseos (Wishlist) */}
+      <Dialog open={wishlistAbierto} onOpenChange={setWishlistAbierto}>
+        <DialogContent className="max-w-2xl bg-white text-zinc-950 rounded-none border border-zinc-200 p-6">
+          <DialogHeader className="border-b border-zinc-100 pb-4">
+            <DialogTitle className="font-serif text-2xl font-light uppercase tracking-wider flex items-center gap-2">
+              <Heart className="w-5 h-5 text-red-500 fill-red-500" />
+              <span>Lista de Deseos ({productosWishlist.length})</span>
+            </DialogTitle>
+          </DialogHeader>
 
-                    <button
-                      type="button"
-                      onClick={() => toggleWishlist(p.id)}
-                      className="text-zinc-400 hover:text-red-600 text-xs p-1"
-                      title="Eliminar de favoritos"
-                    >
-                      <X className="w-4 h-4" />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
-          </DialogContent>
-        </Dialog>
-      )}
+          {productosWishlist.length === 0 ? (
+            <div className="py-12 text-center text-zinc-500">
+              <p className="text-sm">No tienes prendas guardadas en tu wishlist.</p>
+              <Button
+                onClick={() => setWishlistAbierto(false)}
+                className="mt-4 bg-black text-white text-xs font-bold tracking-widest uppercase rounded-none"
+              >
+                EXPLORAR CATÁLOGO
+              </Button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 max-h-[60vh] overflow-y-auto py-3">
+              {productosWishlist.map((p) => (
+                <ProductCardTienda
+                  key={p.id}
+                  producto={p}
+                  onAgregarABolsa={agregarABolsa}
+                  onVerDetalle={(prod) => {
+                    setWishlistAbierto(false);
+                    abrirDetalleProducto(prod);
+                  }}
+                  isWishlisted={true}
+                  onToggleWishlist={toggleWishlist}
+                />
+              ))}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
 
-      {/* PRUEBA SOCIAL REAL EN TIEMPO REAL */}
+      {/* Notificaciones de Compra Reciente */}
       <RecentPurchaseToast actividad={actividadReciente} />
 
-      {/* MODAL EXIT-INTENT PARA CUPÓN DE BIENVENIDA */}
-      <ExitIntentModal totalItemsEnBolsa={totalItemsEnBolsa} resumenCarrito={resumenCarrito} />
+      {/* Modal de Intención de Salida */}
+      <ExitIntentModal
+        totalItemsEnBolsa={totalItemsEnBolsa}
+        resumenCarrito={itemsBolsa.map((i) => `${i.cantidad}x ${i.nombre} (${i.tallaValor})`).join(', ')}
+      />
     </div>
   );
 }
