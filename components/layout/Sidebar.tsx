@@ -18,90 +18,100 @@ import {
 import type { LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
+import { useSession } from 'next-auth/react';
+
 interface SubItem {
   label: string;
   href: string;
+  roles?: string[];
 }
 interface MenuItem {
   label: string;
   icon: LucideIcon;
   href?: string;
   sub?: SubItem[];
+  roles?: string[];
 }
 
 const MENU: MenuItem[] = [
-  { label: 'Vender', icon: ShoppingCart, href: '/ventas/nueva' },
-  { label: 'Nómina Electr.', icon: ReceiptText },
+  { label: 'Vender', icon: ShoppingCart, href: '/ventas/nueva', roles: ['ADMIN', 'GERENTE', 'CAJERO', 'VENDEDOR'] },
+  { label: 'Nómina Electr.', icon: ReceiptText, roles: ['ADMIN', 'GERENTE'] },
   {
     label: 'Ventas',
     icon: Receipt,
+    roles: ['ADMIN', 'GERENTE', 'CAJERO', 'VENDEDOR'],
     sub: [
-      { label: 'Remisiones', href: '/remisiones' },
-      { label: 'Histórico de Ventas', href: '/ventas' },
-      { label: 'Histórico de Remisiones', href: '/remisiones/historico' },
-      { label: 'Ingresar Efectivo', href: '/caja/ingreso' },
-      { label: 'Cerrar Caja (Cajero)', href: '/caja/cerrar' },
-      { label: 'Cierres de Caja', href: '/caja/cierres' },
-      { label: 'Plan Separe', href: '/plan-separe' },
-      { label: 'Ventas Online', href: '/ventas-online' },
-      { label: 'Cotizaciones', href: '/cotizaciones' },
-      { label: 'Créditos', href: '/creditos' },
+      { label: 'Remisiones', href: '/remisiones', roles: ['ADMIN', 'GERENTE', 'CAJERO', 'VENDEDOR'] },
+      { label: 'Histórico de Ventas', href: '/ventas', roles: ['ADMIN', 'GERENTE', 'CAJERO', 'VENDEDOR'] },
+      { label: 'Histórico de Remisiones', href: '/remisiones/historico', roles: ['ADMIN', 'GERENTE', 'CAJERO', 'VENDEDOR'] },
+      { label: 'Ingresar Efectivo', href: '/caja/ingreso', roles: ['ADMIN', 'GERENTE', 'CAJERO'] },
+      { label: 'Cerrar Caja (Cajero)', href: '/caja/cerrar', roles: ['ADMIN', 'GERENTE', 'CAJERO'] },
+      { label: 'Cierres de Caja', href: '/caja/cierres', roles: ['ADMIN', 'GERENTE'] },
+      { label: 'Plan Separe', href: '/plan-separe', roles: ['ADMIN', 'GERENTE', 'CAJERO'] },
+      { label: 'Ventas Online', href: '/ventas-online', roles: ['ADMIN', 'GERENTE', 'CAJERO', 'VENDEDOR'] },
+      { label: 'Cotizaciones', href: '/cotizaciones', roles: ['ADMIN', 'GERENTE', 'CAJERO', 'VENDEDOR'] },
+      { label: 'Créditos', href: '/creditos', roles: ['ADMIN', 'GERENTE', 'CAJERO'] },
     ],
   },
   {
     label: 'Inventario',
     icon: Package,
+    roles: ['ADMIN', 'GERENTE', 'CAJERO', 'VENDEDOR', 'BODEGUERO'],
     sub: [
-      { label: 'Productos', href: '/productos' },
-      { label: 'Stock por Bodega', href: '/inventario' },
-      { label: 'Traslados', href: '/traslados' },
-      { label: 'Movimientos', href: '/movimientos' },
-      { label: 'Libro de Precios', href: '/lista-precios' },
-      { label: 'Producción', href: '/produccion' },
-      { label: 'Auditoría Inventario', href: '/auditoria' },
+      { label: 'Productos', href: '/productos', roles: ['ADMIN', 'GERENTE', 'CAJERO', 'VENDEDOR', 'BODEGUERO'] },
+      { label: 'Stock por Bodega', href: '/inventario', roles: ['ADMIN', 'GERENTE', 'CAJERO', 'VENDEDOR', 'BODEGUERO'] },
+      { label: 'Traslados', href: '/traslados', roles: ['ADMIN', 'GERENTE', 'BODEGUERO'] },
+      { label: 'Movimientos', href: '/movimientos', roles: ['ADMIN', 'GERENTE', 'BODEGUERO'] },
+      { label: 'Libro de Precios', href: '/lista-precios', roles: ['ADMIN', 'GERENTE', 'CAJERO', 'VENDEDOR'] },
+      { label: 'Producción', href: '/produccion', roles: ['ADMIN', 'GERENTE', 'BODEGUERO'] },
+      { label: 'Auditoría Inventario', href: '/auditoria', roles: ['ADMIN', 'GERENTE', 'BODEGUERO'] },
     ],
   },
   {
     label: 'Fidelización',
     icon: Gift,
+    roles: ['ADMIN', 'GERENTE', 'CAJERO', 'VENDEDOR'],
     sub: [
-      { label: 'Gift Cards', href: '/gift-cards' },
-      { label: 'Puntos', href: '/puntos' },
-      { label: 'Promociones', href: '/promociones' },
+      { label: 'Gift Cards', href: '/gift-cards', roles: ['ADMIN', 'GERENTE', 'CAJERO', 'VENDEDOR'] },
+      { label: 'Puntos', href: '/puntos', roles: ['ADMIN', 'GERENTE', 'CAJERO', 'VENDEDOR'] },
+      { label: 'Promociones', href: '/promociones', roles: ['ADMIN', 'GERENTE', 'CAJERO', 'VENDEDOR'] },
     ],
   },
   {
     label: 'Compras',
     icon: Truck,
+    roles: ['ADMIN', 'GERENTE'],
     sub: [
-      { label: 'Documento Soporte', href: '/compras/documento-soporte' },
-      { label: 'Histórico de Doc. Soporte', href: '/compras/historico-doc-soporte' },
-      { label: 'Gastos', href: '/gastos' },
-      { label: 'Órdenes de Compras', href: '/ordenes-compra' },
-      { label: 'Bancos', href: '/bancos' },
-      { label: 'Movimientos bancarios', href: '/bancos/movimientos' },
-      { label: 'Conciliaciones', href: '/bancos/conciliaciones' },
+      { label: 'Documento Soporte', href: '/compras/documento-soporte', roles: ['ADMIN', 'GERENTE'] },
+      { label: 'Histórico de Doc. Soporte', href: '/compras/historico-doc-soporte', roles: ['ADMIN', 'GERENTE'] },
+      { label: 'Gastos', href: '/gastos', roles: ['ADMIN', 'GERENTE'] },
+      { label: 'Órdenes de Compras', href: '/ordenes-compra', roles: ['ADMIN', 'GERENTE'] },
+      { label: 'Bancos', href: '/bancos', roles: ['ADMIN', 'GERENTE'] },
+      { label: 'Movimientos bancarios', href: '/bancos/movimientos', roles: ['ADMIN', 'GERENTE'] },
+      { label: 'Conciliaciones', href: '/bancos/conciliaciones', roles: ['ADMIN', 'GERENTE'] },
     ],
   },
   {
     label: 'Contactos',
     icon: Users,
+    roles: ['ADMIN', 'GERENTE', 'CAJERO', 'VENDEDOR', 'BODEGUERO'],
     sub: [
-      { label: 'Clientes', href: '/clientes' },
-      { label: 'Vendedores', href: '/vendedores' },
-      { label: 'Proveedores', href: '/proveedores' },
-      { label: 'Domiciliarios', href: '/domiciliarios' },
+      { label: 'Clientes', href: '/clientes', roles: ['ADMIN', 'GERENTE', 'CAJERO', 'VENDEDOR'] },
+      { label: 'Vendedores', href: '/vendedores', roles: ['ADMIN', 'GERENTE'] },
+      { label: 'Proveedores', href: '/proveedores', roles: ['ADMIN', 'GERENTE', 'BODEGUERO'] },
+      { label: 'Domiciliarios', href: '/domiciliarios', roles: ['ADMIN', 'GERENTE'] },
     ],
   },
-  { label: 'Informes', icon: BarChart3, href: '/informes' },
+  { label: 'Informes', icon: BarChart3, href: '/informes', roles: ['ADMIN', 'GERENTE'] },
   { label: 'Tienda', icon: Store, href: '/tienda' },
   {
     label: 'Configuración',
     icon: Settings,
+    roles: ['ADMIN'],
     sub: [
-      { label: 'General y Tickets', href: '/configuracion' },
-      { label: 'Catálogos', href: '/configuracion/catalogos' },
-      { label: 'Usuarios', href: '/usuarios' },
+      { label: 'General y Tickets', href: '/configuracion', roles: ['ADMIN'] },
+      { label: 'Catálogos', href: '/configuracion/catalogos', roles: ['ADMIN'] },
+      { label: 'Usuarios', href: '/usuarios', roles: ['ADMIN'] },
     ],
   },
 ];
@@ -112,13 +122,35 @@ function matchHref(pathname: string, href: string) {
 
 export default function Sidebar({ mobileOpen, onClose }: { mobileOpen: boolean; onClose: () => void }) {
   const pathname = usePathname();
+  const { data: session } = useSession();
+  const rol = (session?.user?.rol || 'CAJERO').toUpperCase();
+
   const [hovered, setHovered] = useState<{ item: MenuItem; top: number } | null>(null);
   const hideTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const itemRefs = useRef<Record<string, HTMLLIElement | null>>({});
 
+  // Filtrar menú y subítems según el rol del usuario
+  const filteredMenu: MenuItem[] = MENU.filter((item) => {
+    if (!item.roles) return true;
+    if (rol === 'ADMIN') return true;
+    return item.roles.includes(rol);
+  }).map((item) => {
+    if (!item.sub) return item;
+    const filteredSub = item.sub.filter((s) => {
+      if (!s.roles) return true;
+      if (rol === 'ADMIN') return true;
+      return s.roles.includes(rol);
+    });
+    return { ...item, sub: filteredSub };
+  }).filter((item) => {
+    // Si era un menú con subítems y todos fueron filtrados, no mostrar la categoría
+    if (item.sub && item.sub.length === 0 && !item.href) return false;
+    return true;
+  });
+
   // El href más largo y coincidente gana (evita que /ventas/nueva active también "Ventas")
   let bestMatch: string | null = null;
-  for (const item of MENU) {
+  for (const item of filteredMenu) {
     const candidates = [...(item.href ? [item.href] : []), ...(item.sub?.map((s) => s.href) ?? [])];
     for (const c of candidates) {
       if (matchHref(pathname, c) && (!bestMatch || c.length > bestMatch.length)) bestMatch = c;
@@ -132,7 +164,7 @@ export default function Sidebar({ mobileOpen, onClose }: { mobileOpen: boolean; 
 
   const openFlyout = (item: MenuItem, el: HTMLLIElement | null) => {
     if (hideTimer.current) clearTimeout(hideTimer.current);
-    if (!item.sub || !el) return setHovered(null);
+    if (!item.sub || !el || item.sub.length === 0) return setHovered(null);
     const rect = el.getBoundingClientRect();
     const estimated = 46 + item.sub.length * 38 + 12;
     const top = Math.max(72, Math.min(rect.top - 4, window.innerHeight - estimated - 12));
@@ -161,7 +193,7 @@ export default function Sidebar({ mobileOpen, onClose }: { mobileOpen: boolean; 
         )}
         style={{ scrollbarWidth: 'none' }}
       >
-        {MENU.map((item) => {
+        {filteredMenu.map((item) => {
           const Icon = item.icon;
           const isActive = ownsBest(item);
           const content = (

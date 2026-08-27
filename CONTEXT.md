@@ -179,22 +179,32 @@
 - **Atención en 1 Clic desde el POS (`/ventas-online`)**:
   - Botón *"Atender en WA"* con respuestas prediseñadas automáticas por método de pago para que el vendedor responda al cliente en segundos.
 
+### ✅ Fase 24 - Aislamiento de Login, Rediseño Luxury Split-Screen, Sistema RBAC de Roles y Módulo de Usuarios
+- **Aislamiento Total del Login (`Shell.tsx`)**: Exclusión de rutas de autenticación (`/login`, `/register`) para renderizar pantalla 100% limpia sin Topbar ni Sidebar del POS.
+- **Rediseño Editorial Luxury de Login (`LoginForm.tsx` & `(auth)/layout.tsx`)**:
+  - Split-screen: panel de marca KΛOB Modern Wear con isotipo circular, lemas y tarjetas de características; panel derecho con formulario estilizado, toggle de contraseña y **botones de acceso rápido demo (1-clic)** para probar roles al instante (`Admin`, `Gerente`, `Cajero`, `Vendedor`, `Bodeguero`).
+- **Sistema Centralizado de Permisos y Protección RBAC (`lib/permissions.ts` & `auth.ts`)**:
+  - Matriz de permisos por rol (`ADMIN`, `GERENTE`, `CAJERO`, `VENDEDOR`, `BODEGUERO`).
+  - Filtrado dinámico de módulos y submenús en `Sidebar.tsx` con `useSession()`.
+  - Protección de rutas en middleware NextAuth con redirección inteligente si el usuario intenta entrar a una sección no autorizada.
+- **Panel de Gestión de Usuarios en el POS (`/usuarios`)**:
+  - `app/usuarios/page.tsx` protegido para rol `ADMIN`.
+  - `components/usuarios/GestionUsuariosClient.tsx`: métricas de usuarios activos, tabla interactiva, modales para crear usuario, editar rol, restablecer contraseña y alternar estado activo/inactivo.
+
 ---
 
 ## ⏭️ Próximos Pasos y Roadmap
 
-1. **Gestión de Usuarios y Permisos en el POS (`/usuarios`)**:
-   - Panel de administración de usuarios para crear cajeros, vendedores y gerentes, asignar roles y restablecer contraseñas.
-2. **Configuración de Google OAuth (Opcional)**:
+1. **Configuración de Google OAuth (Opcional)**:
    - Configurar `AUTH_GOOGLE_ID` y `AUTH_GOOGLE_SECRET` en las variables de Railway si se desea habilitar el botón de Google.
-3. **Pruebas Integrales E2E en Staging (`develop`)**:
+2. **Pruebas Integrales E2E en Staging (`develop`)**:
    - Flujo completo de mostrador: Login como Admin/Cajero → Apertura de caja → Venta Cockpit POS → Métodos de pago (Efectivo, Tarjeta, Addi/Sistecrédito, Fiado) → Ticket térmico → Descuento de stock por variantes → Cierre y arqueo ciego de caja.
    - Flujo de tienda online: Pedidos desde el catálogo e-commerce (`/tienda`) → Conversión a WhatsApp → Despacho en `/ventas-online`.
-4. **Facturación Electrónica (DIAN / POS Electrónico)**:
+3. **Facturación Electrónica (DIAN / POS Electrónico)**:
    - Evaluación y conexión con API de proveedor tecnológico para emisión de documentos electrónicos válidos en Colombia.
-5. **Módulo de Producción / Taller de Confección (`/produccion`)**:
+4. **Módulo de Producción / Taller de Confección (`/produccion`)**:
    - Registro de órdenes de confección, corte, consumo de insumos (telas, avíos) y liquidación de costos de producción.
-6. **Puesta a Cero de Base de Datos para Lanzamiento**:
+5. **Puesta a Cero de Base de Datos para Lanzamiento**:
    - Script de purga de datos demo/pruebas para arrancar operaciones oficiales con inventario inicial real.
 
 ---
