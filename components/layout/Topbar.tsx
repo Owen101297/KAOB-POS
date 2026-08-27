@@ -27,13 +27,18 @@ const ROL_LABELS: Record<string, string> = {
   BODEGUERO: 'Bodeguero',
 };
 
-function getInitials(name: string): string {
-  return name
-    .split(' ')
-    .map((w) => w[0])
-    .slice(0, 2)
-    .join('')
-    .toUpperCase();
+function getInitials(name?: string | null, email?: string | null): string {
+  if (name && name.trim()) {
+    const parts = name.trim().split(/\s+/).filter(Boolean);
+    if (parts.length >= 2) {
+      return (parts[0][0] + parts[1][0]).toUpperCase();
+    }
+    return parts[0].slice(0, 2).toUpperCase();
+  }
+  if (email && email.trim()) {
+    return email.trim().slice(0, 2).toUpperCase();
+  }
+  return 'KB';
 }
 
 function BodegaSelector() {
@@ -61,9 +66,9 @@ function BodegaSelector() {
 export default function Topbar({ onMenuClick }: { onMenuClick?: () => void }) {
   const { data: session, status } = useSession();
   const user = session?.user;
-  const userName = user?.name || 'Usuario';
+  const userName = user?.name || user?.email?.split('@')[0] || 'Usuario';
   const userRol = user?.rol || 'CAJERO';
-  const initials = getInitials(userName);
+  const initials = getInitials(user?.name, user?.email);
   const isLoading = status === 'loading';
 
   return (

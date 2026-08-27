@@ -90,6 +90,7 @@ export const {
           email: user.email,
           name: user.nombre,
           image: user.imagen,
+          rol: user.rol,
         };
       },
     }),
@@ -97,19 +98,19 @@ export const {
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
-        const dbUser = await db.usuario.findUnique({
-          where: { id: user.id! },
-          select: { rol: true, activo: true },
-        });
-        token.rol = dbUser?.rol ?? "CAJERO";
+        token.rol = user.rol || "CAJERO";
         token.userId = user.id;
+        token.name = user.name;
+        token.email = user.email;
       }
       return token;
     },
     async session({ session, token }) {
       if (session.user) {
         session.user.rol = (token.rol as string) ?? "CAJERO";
-        session.user.id = token.userId as string;
+        session.user.id = (token.userId as string) ?? (token.sub as string);
+        if (token.name) session.user.name = token.name as string;
+        if (token.email) session.user.email = token.email as string;
       }
       return session;
     },
