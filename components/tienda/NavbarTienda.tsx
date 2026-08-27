@@ -84,7 +84,7 @@ export default function NavbarTienda({
             </button>
           </div>
 
-          {/* Logotipo KΛOB MODERN WEAR */}
+          {/* Logotipo KAOB */}
           <div className="flex items-center gap-3">
             <Link
               href="/tienda"
@@ -94,17 +94,12 @@ export default function NavbarTienda({
               }}
               className="flex items-center gap-3 group"
             >
-              <div className="h-10 w-10 rounded-full bg-white p-0.5 flex items-center justify-center shadow-md transition-transform group-hover:scale-105">
-                <img src="/brand/isotype.svg" alt="KAOB" className="h-8 w-8 object-contain" />
+              <div className="h-10 w-10 rounded-full overflow-hidden flex items-center justify-center shadow-md transition-transform group-hover:scale-105 border border-zinc-800 bg-black shrink-0">
+                <img src="/brand/isotype.jpeg" alt="KAOB" className="h-full w-full object-cover" />
               </div>
-              <div className="flex flex-col">
-                <span className="font-extrabold text-lg sm:text-xl tracking-[0.25em] text-white uppercase font-sans">
-                  KΛOB
-                </span>
-                <span className="text-[8.5px] font-semibold tracking-[0.35em] text-zinc-400 uppercase -mt-0.5">
-                  MODERN WEAR
-                </span>
-              </div>
+              <span className="font-extrabold text-xl sm:text-2xl tracking-[0.25em] text-white uppercase font-sans">
+                KΛOB
+              </span>
             </Link>
           </div>
 

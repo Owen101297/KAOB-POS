@@ -117,19 +117,16 @@ export default function LoginForm() {
 
         {/* Top brand header */}
         <div className="relative z-10 flex items-center gap-4">
-          <div className="h-12 w-12 rounded-2xl bg-white flex items-center justify-center p-2 shadow-2xl shadow-white/10 ring-1 ring-white/20">
+          <div className="h-12 w-12 rounded-2xl overflow-hidden flex items-center justify-center shadow-2xl shadow-white/10 ring-1 ring-white/20 bg-black shrink-0 border border-slate-800">
             <img
-              src="/brand/isotype.svg"
+              src="/brand/isotype.jpeg"
               alt="KAOB"
-              className="h-full w-full object-contain"
+              className="h-full w-full object-cover"
             />
           </div>
           <div>
-            <span className="text-xl font-black tracking-widest text-white">
+            <span className="text-2xl font-black tracking-widest text-white">
               KΛOB
-            </span>
-            <span className="block text-[10px] uppercase font-bold tracking-[0.25em] text-slate-400">
-              MODERN WEAR
             </span>
           </div>
         </div>
@@ -196,19 +193,16 @@ export default function LoginForm() {
         {/* Cabecera en móvil */}
         <div className="flex items-center justify-between lg:hidden mb-8">
           <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-xl bg-white flex items-center justify-center p-1.5 shadow-md">
+            <div className="h-10 w-10 rounded-xl overflow-hidden flex items-center justify-center shadow-md bg-black border border-slate-800 shrink-0">
               <img
-                src="/brand/isotype.svg"
+                src="/brand/isotype.jpeg"
                 alt="KAOB"
-                className="h-full w-full object-contain"
+                className="h-full w-full object-cover"
               />
             </div>
             <div>
-              <span className="text-base font-black tracking-widest text-white">
+              <span className="text-xl font-black tracking-widest text-white">
                 KΛOB
-              </span>
-              <span className="block text-[9px] uppercase font-bold tracking-widest text-slate-400">
-                MODERN WEAR
               </span>
             </div>
           </div>

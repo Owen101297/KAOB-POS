@@ -133,8 +133,8 @@ export default function ProductDetailModal({
               />
             ) : (
               <div className="relative w-full h-full flex flex-col items-center justify-center p-6">
-                <div className="absolute inset-0 flex items-center justify-center opacity-10">
-                  <img src="/brand/isotype.svg" alt="" className="w-3/4 h-3/4 object-contain" />
+                <div className="absolute inset-0 flex items-center justify-center opacity-20">
+                  <img src="/brand/isotype.jpeg" alt="" className="w-3/4 h-3/4 object-contain rounded-full" />
                 </div>
                 <div className="relative z-10 text-center">
                   <div className="w-20 h-20 rounded-full bg-white shadow-sm flex items-center justify-center mx-auto border border-zinc-200">

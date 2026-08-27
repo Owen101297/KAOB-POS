@@ -138,7 +138,7 @@ export default function ProductCardTienda({
           <div className="relative w-full h-full flex flex-col items-center justify-center bg-zinc-100/90 p-4">
             {/* Monograma oficial de fondo */}
             <div className="absolute inset-0 flex items-center justify-center opacity-10 group-hover:scale-110 transition-transform duration-700">
-              <img src="/brand/isotype.svg" alt="" className="w-2/3 h-2/3 object-contain" />
+              <img src="/brand/isotype.jpeg" alt="" className="w-2/3 h-2/3 object-contain rounded-full opacity-20" />
             </div>
 
             <div className="relative z-10 text-center">

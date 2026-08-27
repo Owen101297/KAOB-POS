@@ -63,17 +63,12 @@ export default function FooterTienda({
           {/* Marca Centrada / Resumen (4 cols) */}
           <div className="md:col-span-4 space-y-5">
             <div className="flex items-center gap-3.5">
-              <div className="h-10 w-10 rounded-full bg-white p-1 flex items-center justify-center">
-                <img src="/brand/isotype.svg" alt="KAOB" className="h-8 w-8 object-contain" />
+              <div className="h-10 w-10 rounded-full overflow-hidden flex items-center justify-center bg-black border border-zinc-800 shrink-0">
+                <img src="/brand/isotype.jpeg" alt="KAOB" className="h-full w-full object-cover" />
               </div>
-              <div>
-                <span className="font-bold text-lg tracking-[0.25em] text-white uppercase block">
-                  KΛOB
-                </span>
-                <span className="text-[9px] font-semibold tracking-[0.35em] text-zinc-400 uppercase block -mt-0.5">
-                  MODERN WEAR
-                </span>
-              </div>
+              <span className="font-bold text-xl tracking-[0.25em] text-white uppercase block">
+                KΛOB
+              </span>
             </div>
 
             <p className="text-xs text-zinc-400 max-w-sm leading-relaxed font-light">
