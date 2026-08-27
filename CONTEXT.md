@@ -209,6 +209,14 @@
   - Cuadrícula de 2 columnas en móvil y 4-6 columnas en desktop con filtros rápidos de ordenamiento y limpieza en 1 clic.
 - **Acciones y Redirecciones con Precisión**: Sincronización exacta entre Navbar, Hero, Categorías y Catálogo con smooth scroll al ID `#catalogo-productos`.
 
+### ✅ Fase 27 - Identidad Visual Oficial KAOB: Isotipo y Logotipo con Transparencia Pura
+- **Integración de Assets Oficiales (`public/brand/`)**:
+  - Procesamiento con Sharp para remover fondos negros y generar transparencia PNG limpia y nítida.
+  - `isotype.png` (Monograma circular blanco sobre transparente para modo oscuro).
+  - `isotype-dark.png` (Monograma circular grafito sobre transparente para modo claro / Topbar blanco).
+  - `logo.png` y `logo-dark.png` (Logotipo tipográfico `KΛOB` con transparencia).
+- **Consolidación del Nombre de Marca**: Establecido **`KAOB`** de forma unificada en la base de datos (`lib/actions/configuracion.ts`), tickets térmicos, tienda web (`/tienda`), login (`/login`) y panel de control.
+
 ---
 
 ## ⏭️ Próximos Pasos y Roadmap
