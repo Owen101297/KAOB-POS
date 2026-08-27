@@ -15,14 +15,14 @@ export async function obtenerConfiguracion() {
       config = await db.configuracion.create({
         data: {
           id: 1,
-          nombreTienda: "KΛOB MODERN WEAR",
+          nombreTienda: "KAOB",
           nit: "900.123.456-7",
           direccion: "Villagarzón, Putumayo",
           telefono: "3136332887",
           ciudad: "Villagarzón",
           email: "contacto@kaob.com",
           regimen: "Responsable de IVA",
-          mensajeTicket: "¡Gracias por su compra en KΛOB MODERN WEAR!",
+          mensajeTicket: "¡Gracias por su compra en KAOB!",
           pieTicket: "Conserve esta factura para cambios o garantías (plazo máx. 30 días con etiquetas).",
           metaDiaria: 1500000,
           puntosPorMonto: 10000,
@@ -35,14 +35,14 @@ export async function obtenerConfiguracion() {
     console.error("Error al obtener configuración:", error);
     return {
       id: 1,
-      nombreTienda: "KΛOB MODERN WEAR",
+      nombreTienda: "KAOB",
       nit: "900.123.456-7",
       direccion: "Villagarzón, Putumayo",
       telefono: "3136332887",
       ciudad: "Villagarzón",
       email: "contacto@kaob.com",
       regimen: "Responsable de IVA",
-      mensajeTicket: "¡Gracias por su compra en KΛOB MODERN WEAR!",
+      mensajeTicket: "¡Gracias por su compra en KAOB!",
       pieTicket: "Conserve este ticket para cambios.",
       logoUrl: null,
       metaDiaria: 1000000,

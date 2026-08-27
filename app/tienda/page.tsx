@@ -22,7 +22,7 @@ export default async function TiendaVirtualPage() {
   let productos: ProductoLista[] = [];
   let categorias: { id: number; nombre: string }[] = [];
   let configuracion = {
-    nombreTienda: 'KΛOB MODERN WEAR',
+    nombreTienda: 'KAOB',
     telefono: '3136332887',
     direccion: 'Villagarzón, Putumayo',
     ciudad: 'Villagarzón',
