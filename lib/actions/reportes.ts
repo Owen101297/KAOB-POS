@@ -1,4 +1,5 @@
 "use server";
+import { requireAuth } from "@/lib/auth";
 
 import { db } from "@/lib/db";
 
@@ -62,6 +63,7 @@ export async function obtenerReporteVentas(
   dias: number = 30,
   bodegaId?: number
 ): Promise<ReporteVentasData> {
+  await requireAuth();
   const desde = new Date();
   desde.setDate(desde.getDate() - dias);
 
@@ -174,6 +176,7 @@ export async function obtenerReporteVentas(
 export async function obtenerReporteRentabilidad(
   dias: number = 30
 ): Promise<ReporteRentabilidadData> {
+  await requireAuth();
   const desde = new Date();
   desde.setDate(desde.getDate() - dias);
 
@@ -259,6 +262,7 @@ export async function obtenerReporteRentabilidad(
 export async function obtenerReporteInventarioRotacion(
   bodegaId?: number
 ): Promise<ReporteInventarioData> {
+  await requireAuth();
   const stocks = await db.stockBodega.findMany({
     where: bodegaId ? { bodegaId } : undefined,
     include: {

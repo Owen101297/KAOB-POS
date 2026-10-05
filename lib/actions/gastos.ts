@@ -1,4 +1,5 @@
 "use server";
+import { requireAuth } from "@/lib/auth";
 
 import { db } from "@/lib/db";
 import { revalidatePath } from "next/cache";
@@ -22,6 +23,7 @@ export interface FiltrosGastos {
 }
 
 export async function listarGastos(filtros?: FiltrosGastos) {
+  await requireAuth();
   try {
     const where: Record<string, unknown> = {};
 
@@ -65,6 +67,7 @@ export async function listarGastos(filtros?: FiltrosGastos) {
 export type GastoItem = Awaited<ReturnType<typeof listarGastos>>[number];
 
 export async function registrarGasto(formData: unknown): Promise<ActionResult<{ id: number }>> {
+  await requireAuth();
   try {
     const parsed = gastoSchema.safeParse(formData);
     if (!parsed.success) {
@@ -173,6 +176,7 @@ export async function registrarGasto(formData: unknown): Promise<ActionResult<{ 
 }
 
 export async function anularGasto(gastoId: number): Promise<ActionResult> {
+  await requireAuth();
   try {
     const gasto = await db.gasto.findUnique({
       where: { id: gastoId },

@@ -1,4 +1,5 @@
 "use server";
+import { requireAuth } from "@/lib/auth";
 
 import { db } from "@/lib/db";
 import { revalidatePath } from "next/cache";
@@ -31,6 +32,7 @@ export type ProductoLista = Prisma.ProductoGetPayload<{
 }>;
 
 export async function listarProductos(soloActivos = false): Promise<ProductoLista[]> {
+  await requireAuth();
   return db.producto.findMany({
     where: soloActivos ? { activo: true } : undefined,
     orderBy: { createdAt: "desc" },
@@ -54,6 +56,7 @@ export type ProductoDetalle = NonNullable<
 >;
 
 export async function obtenerProducto(id: number) {
+  await requireAuth();
   return db.producto.findUnique({
     where: { id },
     include: {
@@ -72,6 +75,7 @@ export async function obtenerProducto(id: number) {
 }
 
 export async function referenciaExiste(referencia: string, excluirId?: number) {
+  await requireAuth();
   const found = await db.producto.findUnique({ where: { referencia } });
   return !!found && found.id !== excluirId;
 }
@@ -85,6 +89,7 @@ interface VarianteInput {
 }
 
 export async function crearProducto(input: unknown): Promise<ActionResult<{ id: number }>> {
+  await requireAuth();
   try {
     const data = crearProductoSchema.parse(input);
 
@@ -196,6 +201,7 @@ export async function actualizarProducto(
   id: number,
   input: unknown
 ): Promise<ActionResult> {
+  await requireAuth();
   try {
     const data = productoBaseSchema.parse(input);
     if (await referenciaExiste(data.referencia, id)) {
@@ -226,6 +232,7 @@ export async function actualizarProducto(
 
 /** Actualiza costo y/o precio de venta desde la lista de precios */
 export async function actualizarPrecios(input: unknown): Promise<ActionResult> {
+  await requireAuth();
   try {
     const data = preciosSchema.parse(input);
     await db.producto.update({
@@ -241,6 +248,7 @@ export async function actualizarPrecios(input: unknown): Promise<ActionResult> {
 }
 
 export async function toggleProductoActivo(id: number): Promise<ActionResult> {
+  await requireAuth();
   try {
     const p = await db.producto.findUniqueOrThrow({ where: { id } });
     await db.producto.update({ where: { id }, data: { activo: !p.activo } });
@@ -252,6 +260,7 @@ export async function toggleProductoActivo(id: number): Promise<ActionResult> {
 }
 
 export async function eliminarProducto(id: number): Promise<ActionResult> {
+  await requireAuth();
   try {
     const producto = await db.producto.findUnique({
       where: { id },
@@ -365,6 +374,7 @@ export async function eliminarMultiplesProductos(
     omitidos: { id: number; nombre: string; referencia: string; motivo: string }[];
   }>
 > {
+  await requireAuth();
   try {
     if (!ids || ids.length === 0) {
       return { ok: false, error: "No se seleccionó ningún producto para eliminar." };
@@ -484,6 +494,7 @@ export async function eliminarMultiplesProductos(
 export async function agregarVariantes(
   input: unknown
 ): Promise<ActionResult<{ creadas: number }>> {
+  await requireAuth();
   try {
     const data = agregarVariantesSchema.parse(input);
     const producto = await db.producto.findUnique({ where: { id: data.productoId } });

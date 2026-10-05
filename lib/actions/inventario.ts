@@ -1,4 +1,5 @@
 "use server";
+import { requireAuth } from "@/lib/auth";
 
 import { db } from "@/lib/db";
 import { revalidatePath } from "next/cache";
@@ -32,6 +33,7 @@ export async function listarStock(opciones?: {
   bodegaId?: number;
   soloAlertas?: boolean;
 }): Promise<StockFila[]> {
+  await requireAuth();
   const where: Prisma.StockBodegaWhereInput = {};
   if (opciones?.bodegaId) where.bodegaId = opciones.bodegaId;
 
@@ -74,6 +76,7 @@ export type MovimientoLista = Prisma.MovimientoInventarioGetPayload<{
 }>;
 
 export async function listarMovimientos(limite = 500): Promise<MovimientoLista[]> {
+  await requireAuth();
   return db.movimientoInventario.findMany({
     take: limite,
     orderBy: { createdAt: "desc" },
@@ -101,6 +104,7 @@ export type TrasladoDetalle = Prisma.TrasladoGetPayload<{
 }>;
 
 export async function listarTraslados(): Promise<TrasladoDetalle[]> {
+  await requireAuth();
   return db.traslado.findMany({
     orderBy: { createdAt: "desc" },
     take: 200,
@@ -117,6 +121,7 @@ export async function listarTraslados(): Promise<TrasladoDetalle[]> {
 // ─────────────────────────── AJUSTES ─────────────────────────
 
 export async function ajustarStock(input: unknown): Promise<ActionResult> {
+  await requireAuth();
   try {
     const data = ajusteStockSchema.parse(input);
     await db.$transaction(async (tx) => {
@@ -161,6 +166,7 @@ export async function ajustarStock(input: unknown): Promise<ActionResult> {
 }
 
 export async function actualizarMinimo(input: unknown): Promise<ActionResult> {
+  await requireAuth();
   try {
     const data = minimoStockSchema.parse(input);
     await db.stockBodega.upsert({
@@ -178,6 +184,7 @@ export async function actualizarMinimo(input: unknown): Promise<ActionResult> {
 // ─────────────────────────── TRASLADOS ───────────────────────
 
 export async function crearTraslado(input: unknown): Promise<ActionResult<{ id: number }>> {
+  await requireAuth();
   try {
     const data = trasladoSchema.parse(input);
 

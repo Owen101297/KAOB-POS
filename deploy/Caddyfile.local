@@ -1,0 +1,9 @@
+{
+  auto_https disable_redirects
+}
+https://localhost, https://127.0.0.1 {
+  tls internal
+  reverse_proxy app:3000 {
+    header_up X-Forwarded-Proto https
+  }
+}

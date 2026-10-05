@@ -1,0 +1,36 @@
+services:
+  app:
+    image: kaob-pos-local:staging
+    build:
+      context: /home/owen/Projects/KAOB-POS
+      dockerfile: Dockerfile
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+      KAOB_POS_AUTH_USER: ${KAOB_POS_AUTH_USER}
+      KAOB_POS_AUTH_PASSWORD: ${KAOB_POS_AUTH_PASSWORD}
+    restart: unless-stopped
+    healthcheck:
+      test: [CMD, node, -e, "fetch('http://127.0.0.1:3000/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+    networks:
+      - default
+      - coolify
+  local-tls:
+    image: caddy:2-alpine
+    command: caddy run --config /etc/caddy/Caddyfile.local --adapter caddyfile
+    ports:
+      - '127.0.0.1:3100:443'
+    volumes:
+      - /home/owen/Projects/KAOB-POS/deploy:/etc/caddy:ro
+      - local-tls-data:/data
+    depends_on:
+      app:
+        condition: service_healthy
+    restart: unless-stopped
+volumes:
+  local-tls-data: {}
+networks:
+  coolify:
+    external: true

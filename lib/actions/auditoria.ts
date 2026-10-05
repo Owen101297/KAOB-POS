@@ -1,4 +1,5 @@
 "use server";
+import { requireAuth } from "@/lib/auth";
 
 import { db } from "@/lib/db";
 import { revalidatePath } from "next/cache";
@@ -16,6 +17,7 @@ export interface AuditoriaData {
 }
 
 export async function registrarAuditoria(data: AuditoriaData): Promise<ActionResult<{ id: number }>> {
+  await requireAuth();
   try {
     const detallesStr =
       typeof data.detalles === "object" && data.detalles !== null
@@ -56,6 +58,7 @@ export interface FiltrosAuditoria {
 }
 
 export async function listarAuditoria(filtros?: FiltrosAuditoria) {
+  await requireAuth();
   try {
     const where: Record<string, unknown> = {};
 
@@ -106,6 +109,7 @@ export async function listarAuditoria(filtros?: FiltrosAuditoria) {
 export type AuditoriaItem = Awaited<ReturnType<typeof listarAuditoria>>["registros"][number];
 
 export async function obtenerEstadisticasAuditoria() {
+  await requireAuth();
   try {
     const hoyInicio = new Date();
     hoyInicio.setHours(0, 0, 0, 0);

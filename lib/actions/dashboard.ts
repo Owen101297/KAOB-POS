@@ -1,4 +1,5 @@
 "use server";
+import { requireAuth } from "@/lib/auth";
 
 import { db } from "@/lib/db";
 
@@ -71,6 +72,7 @@ const DEFAULT_DASHBOARD_DATA: DashboardData = {
 };
 
 export async function obtenerDatosDashboard(bodegaId?: number): Promise<DashboardData> {
+  await requireAuth();
   try {
     const ahora = new Date();
 
@@ -131,12 +133,11 @@ export async function obtenerDatosDashboard(bodegaId?: number): Promise<Dashboar
     const ventasAyer = ventasAyerDb.reduce((a, v) => a + v.total, 0);
     const transaccionesAyer = ventasAyerDb.length;
 
-    // 3. Gastos de Hoy y Ayer
+    // 3. Gastos globales de hoy y ayer: Gasto no está asociado a una bodega.
     const gastosHoyDb = await db.gasto.findMany({
       where: {
         estado: "REGISTRADO",
         fecha: { gte: startToday, lte: endToday },
-        ...(bodegaId ? { bodegaId } : {}),
       },
       select: { monto: true },
     });
@@ -146,7 +147,6 @@ export async function obtenerDatosDashboard(bodegaId?: number): Promise<Dashboar
       where: {
         estado: "REGISTRADO",
         fecha: { gte: startYesterday, lte: endYesterday },
-        ...(bodegaId ? { bodegaId } : {}),
       },
       select: { monto: true },
     });

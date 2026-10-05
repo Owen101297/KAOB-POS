@@ -1,11 +1,11 @@
 import { db } from '@/lib/db';
-import { listarProductos, type ProductoLista } from '@/lib/actions/productos';
+import { listarProductosPublicos, type ProductoTienda } from '@/lib/tienda/public-productos';
 import TiendaClient from './TiendaClient';
 
 export const dynamic = 'force-dynamic';
 
 export default async function TiendaVirtualPage() {
-  let productos: ProductoLista[] = [];
+  let productos: ProductoTienda[] = [];
   let categorias: { id: number; nombre: string }[] = [];
   let configuracion = {
     nombreTienda: 'KAOB MODERN WEAR',
@@ -16,7 +16,7 @@ export default async function TiendaVirtualPage() {
 
   try {
     const [prods, cats, conf] = await Promise.all([
-      listarProductos(true),
+      listarProductosPublicos(),
       db.categoria.findMany({
         where: { productos: { some: { activo: true } } },
         orderBy: { nombre: 'asc' },

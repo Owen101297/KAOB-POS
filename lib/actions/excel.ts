@@ -1,4 +1,5 @@
 "use server";
+import { requireAuth } from "@/lib/auth";
 
 import { db } from "@/lib/db";
 import { revalidatePath } from "next/cache";
@@ -35,6 +36,7 @@ export async function importarExcel(input: {
 }): Promise<
   ActionResult<ResumenImportacion & { vistaPrevia?: VistaPreviaImportacion }>
 > {
+  await requireAuth();
   try {
     const datos = Buffer.from(input.base64, "base64");
     const { filas, errores } = await parsearExcel(datos);

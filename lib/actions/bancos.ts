@@ -1,4 +1,5 @@
 "use server";
+import { requireAuth } from "@/lib/auth";
 
 import { db } from "@/lib/db";
 import { revalidatePath } from "next/cache";
@@ -21,6 +22,7 @@ function revalidarBancos() {
 // ───────────────────────── CUENTAS BANCARIAS ─────────────────────────
 
 export async function listarCuentasBancarias(opts?: { soloActivas?: boolean }) {
+  await requireAuth();
   try {
     return await db.cuentaBancaria.findMany({
       where: {
@@ -45,6 +47,7 @@ export async function listarCuentasBancarias(opts?: { soloActivas?: boolean }) {
 export type CuentaBancariaItem = Awaited<ReturnType<typeof listarCuentasBancarias>>[number];
 
 export async function guardarCuentaBancaria(formData: unknown): Promise<ActionResult<{ id: number }>> {
+  await requireAuth();
   try {
     const parsed = cuentaBancariaSchema.safeParse(formData);
     if (!parsed.success) {
@@ -124,6 +127,7 @@ export async function guardarCuentaBancaria(formData: unknown): Promise<ActionRe
 // ───────────────────────── MOVIMIENTOS BANCARIOS ─────────────────────────
 
 export async function registrarMovimientoBancario(formData: unknown): Promise<ActionResult<{ id: number }>> {
+  await requireAuth();
   try {
     const parsed = movimientoBancarioSchema.safeParse(formData);
     if (!parsed.success) {
@@ -183,6 +187,7 @@ export async function registrarMovimientoBancario(formData: unknown): Promise<Ac
 }
 
 export async function transferirEntreCuentas(formData: unknown): Promise<ActionResult> {
+  await requireAuth();
   try {
     const parsed = transferenciaBancariaSchema.safeParse(formData);
     if (!parsed.success) {
@@ -276,6 +281,7 @@ export interface FiltrosMovimientosBancarios {
 }
 
 export async function listarMovimientosBancarios(filtros?: FiltrosMovimientosBancarios) {
+  await requireAuth();
   try {
     const where: Record<string, unknown> = {};
 
@@ -321,6 +327,7 @@ export type MovimientoBancarioItem = Awaited<ReturnType<typeof listarMovimientos
 // ───────────────────────── CONCILIACIONES BANCARIAS ─────────────────────────
 
 export async function listarConciliaciones(cuentaBancariaId?: number) {
+  await requireAuth();
   try {
     return await db.conciliacionBancaria.findMany({
       where: {
@@ -341,6 +348,7 @@ export async function listarConciliaciones(cuentaBancariaId?: number) {
 export type ConciliacionItem = Awaited<ReturnType<typeof listarConciliaciones>>[number];
 
 export async function crearConciliacion(formData: unknown): Promise<ActionResult<{ id: number }>> {
+  await requireAuth();
   try {
     const parsed = conciliacionBancariaSchema.safeParse(formData);
     if (!parsed.success) {

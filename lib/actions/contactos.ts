@@ -1,4 +1,5 @@
 "use server";
+import { requireAuth } from "@/lib/auth";
 
 import { db } from "@/lib/db";
 import { revalidatePath } from "next/cache";
@@ -27,6 +28,7 @@ function revalidarContactos() {
 // ─────────────────────────── CLIENTES ──────────────────────────
 
 export async function listarClientes(soloActivos = false, q?: string) {
+  await requireAuth();
   return db.cliente.findMany({
     where: {
       ...(soloActivos ? { activo: true } : {}),
@@ -45,10 +47,12 @@ export async function listarClientes(soloActivos = false, q?: string) {
 }
 
 export async function obtenerCliente(id: number) {
+  await requireAuth();
   return db.cliente.findUnique({ where: { id } });
 }
 
 export async function guardarCliente(input: unknown): Promise<ActionResult<{ id: number }>> {
+  await requireAuth();
   try {
     const data = clienteSchema.parse(input);
     if (data.documento && data.tipoDoc !== "OTRO") {
@@ -99,6 +103,7 @@ export async function guardarCliente(input: unknown): Promise<ActionResult<{ id:
 }
 
 export async function toggleCliente(id: number): Promise<ActionResult> {
+  await requireAuth();
   try {
     const c = await db.cliente.findUniqueOrThrow({ where: { id } });
     await db.cliente.update({ where: { id }, data: { activo: !c.activo } });
@@ -112,6 +117,7 @@ export async function toggleCliente(id: number): Promise<ActionResult> {
 // ────────────────────────── PROVEEDORES ─────────────────────────
 
 export async function listarProveedores(soloActivos = false) {
+  await requireAuth();
   return db.proveedor.findMany({
     where: soloActivos ? { activo: true } : undefined,
     orderBy: { nombre: "asc" },
@@ -119,6 +125,7 @@ export async function listarProveedores(soloActivos = false) {
 }
 
 export async function guardarProveedor(input: unknown): Promise<ActionResult<{ id: number }>> {
+  await requireAuth();
   try {
     const data = proveedorSchema.parse(input);
     let prov;
@@ -157,6 +164,7 @@ export async function guardarProveedor(input: unknown): Promise<ActionResult<{ i
 }
 
 export async function toggleProveedor(id: number): Promise<ActionResult> {
+  await requireAuth();
   try {
     const p = await db.proveedor.findUniqueOrThrow({ where: { id } });
     await db.proveedor.update({ where: { id }, data: { activo: !p.activo } });
@@ -170,6 +178,7 @@ export async function toggleProveedor(id: number): Promise<ActionResult> {
 // ─────────────────────────── VENDEDORES ─────────────────────────
 
 export async function listarVendedores(soloActivos = false) {
+  await requireAuth();
   return db.vendedor.findMany({
     where: soloActivos ? { activo: true } : undefined,
     orderBy: { nombre: "asc" },
@@ -177,6 +186,7 @@ export async function listarVendedores(soloActivos = false) {
 }
 
 export async function guardarVendedor(input: unknown): Promise<ActionResult<{ id: number }>> {
+  await requireAuth();
   try {
     const data = vendedorSchema.parse(input);
     let v;
@@ -203,6 +213,7 @@ export async function guardarVendedor(input: unknown): Promise<ActionResult<{ id
 }
 
 export async function toggleVendedor(id: number): Promise<ActionResult> {
+  await requireAuth();
   try {
     const v = await db.vendedor.findUniqueOrThrow({ where: { id } });
     await db.vendedor.update({ where: { id }, data: { activo: !v.activo } });
@@ -216,6 +227,7 @@ export async function toggleVendedor(id: number): Promise<ActionResult> {
 // ──────────────────────── DOMICILIARIOS ─────────────────────────
 
 export async function listarDomiciliarios(soloActivos = false) {
+  await requireAuth();
   return db.domiciliario.findMany({
     where: soloActivos ? { activo: true } : undefined,
     orderBy: { nombre: "asc" },
@@ -223,6 +235,7 @@ export async function listarDomiciliarios(soloActivos = false) {
 }
 
 export async function guardarDomiciliario(input: unknown): Promise<ActionResult<{ id: number }>> {
+  await requireAuth();
   try {
     const data = domiciliarioSchema.parse(input);
     let d;
@@ -244,6 +257,7 @@ export async function guardarDomiciliario(input: unknown): Promise<ActionResult<
 }
 
 export async function toggleDomiciliario(id: number): Promise<ActionResult> {
+  await requireAuth();
   try {
     const d = await db.domiciliario.findUniqueOrThrow({ where: { id } });
     await db.domiciliario.update({ where: { id }, data: { activo: !d.activo } });
@@ -257,6 +271,7 @@ export async function toggleDomiciliario(id: number): Promise<ActionResult> {
 // ────────────────────────── BÚSQUEDA RÁPIDA ──────────────────────
 
 export async function buscarClientesRapido(q: string) {
+  await requireAuth();
   if (!q || q.length < 2) return [];
   return db.cliente.findMany({
     where: {

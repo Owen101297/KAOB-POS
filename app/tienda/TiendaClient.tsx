@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect } from 'react';
 import { Sparkles, SlidersHorizontal, Package, RefreshCw, Phone, MapPin, X } from 'lucide-react';
-import type { ProductoLista } from '@/lib/actions/productos';
+import type { ProductoTienda } from '@/lib/tienda/public-productos';
 import NavbarTienda from '@/components/tienda/NavbarTienda';
 import HeroTienda from '@/components/tienda/HeroTienda';
 import CategoryGridBento from '@/components/tienda/CategoryGridBento';
@@ -15,7 +15,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Button } from '@/components/ui/Button';
 
 interface Props {
-  productos: ProductoLista[];
+  productos: ProductoTienda[];
   categorias: { id: number; nombre: string }[];
   configuracion?: {
     nombreTienda?: string;
@@ -36,7 +36,7 @@ export default function TiendaClient({ productos, categorias, configuracion }: P
   const [itemsBolsa, setItemsBolsa] = useState<ItemBolsa[]>([]);
 
   // Modal de Detalle
-  const [productoSeleccionado, setProductoSeleccionado] = useState<ProductoLista | null>(null);
+  const [productoSeleccionado, setProductoSeleccionado] = useState<ProductoTienda | null>(null);
 
   // Cargar carrito guardado en localStorage
   useEffect(() => {

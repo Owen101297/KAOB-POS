@@ -1,4 +1,5 @@
 "use server";
+import { requireAuth } from "@/lib/auth";
 
 import { db } from "@/lib/db";
 import { revalidatePath } from "next/cache";
@@ -41,6 +42,7 @@ export async function listarCompras(opts?: {
   hasta?: Date;
   take?: number;
 }) {
+  await requireAuth();
   return db.compra.findMany({
     where: {
       ...(opts?.proveedorId ? { proveedorId: opts.proveedorId } : {}),
@@ -68,6 +70,7 @@ export async function listarCompras(opts?: {
 export type CompraLista = Awaited<ReturnType<typeof listarCompras>>[number];
 
 export async function obtenerCompra(id: number) {
+  await requireAuth();
   return db.compra.findUnique({
     where: { id },
     include: {
@@ -80,6 +83,7 @@ export async function obtenerCompra(id: number) {
 }
 
 export async function obtenerConsecutivoCompra(): Promise<number> {
+  await requireAuth();
   const ultima = await db.compra.findFirst({
     orderBy: { consecutivo: "desc" },
     select: { consecutivo: true },
@@ -92,6 +96,7 @@ export async function obtenerConsecutivoCompra(): Promise<number> {
 export async function registrarCompra(
   input: unknown
 ): Promise<ActionResult<{ id: number; consecutivo: number; codigo: string }>> {
+  await requireAuth();
   try {
     const data = registrarCompraSchema.parse(input);
 
@@ -216,6 +221,7 @@ export async function registrarCompra(
 // ─────────────────────────── ANULAR COMPRA ──────────────────────────
 
 export async function anularCompra(input: unknown): Promise<ActionResult> {
+  await requireAuth();
   try {
     const data = anularCompraSchema.parse(input);
 
@@ -307,6 +313,7 @@ export async function anularCompra(input: unknown): Promise<ActionResult> {
 // ─────────────────────────── ÓRDENES DE COMPRA ──────────────────────────
 
 export async function listarOrdenesCompra(opts?: { take?: number }) {
+  await requireAuth();
   return db.ordenCompra.findMany({
     orderBy: { createdAt: "desc" },
     take: opts?.take ?? 100,
@@ -323,6 +330,7 @@ export type OrdenCompraLista = Awaited<ReturnType<typeof listarOrdenesCompra>>[n
 export async function crearOrdenCompra(
   input: unknown
 ): Promise<ActionResult<{ id: number; consecutivo: number; codigo: string }>> {
+  await requireAuth();
   try {
     const data = crearOrdenCompraSchema.parse(input);
 
