@@ -1,4 +1,5 @@
 "use server";
+import { requireAuth } from "@/lib/auth";
 
 import { db } from "@/lib/db";
 import { revalidatePath } from "next/cache";
@@ -6,6 +7,7 @@ import { configuracionSchema, errorDesconocido, type ActionResult } from "@/lib/
 import { registrarAuditoria } from "@/lib/actions/auditoria";
 
 export async function obtenerConfiguracion() {
+  await requireAuth();
   try {
     let config = await db.configuracion.findFirst({
       where: { id: 1 },
@@ -53,6 +55,7 @@ export async function obtenerConfiguracion() {
 }
 
 export async function guardarConfiguracion(formData: unknown): Promise<ActionResult> {
+  await requireAuth();
   try {
     const parsed = configuracionSchema.safeParse(formData);
     if (!parsed.success) {

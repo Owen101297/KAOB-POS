@@ -1,4 +1,5 @@
 "use server";
+import { requireAuth } from "@/lib/auth";
 
 import { db } from "@/lib/db";
 import { revalidatePath } from "next/cache";
@@ -22,6 +23,7 @@ export async function listarCreditos(opts?: {
   soloVencidos?: boolean;
   take?: number;
 }) {
+  await requireAuth();
   const now = new Date();
   return db.creditoCliente.findMany({
     where: {
@@ -46,6 +48,7 @@ export async function listarCreditos(opts?: {
 export type CreditoLista = Awaited<ReturnType<typeof listarCreditos>>[number];
 
 export async function obtenerResumenCartera() {
+  await requireAuth();
   const now = new Date();
   const creditosPendientes = await db.creditoCliente.findMany({
     where: { estado: "PENDIENTE" },
@@ -73,6 +76,7 @@ export async function obtenerResumenCartera() {
 }
 
 export async function obtenerEstadoCuentaCliente(clienteId: number) {
+  await requireAuth();
   const cliente = await db.cliente.findUnique({
     where: { id: clienteId },
   });
@@ -102,6 +106,7 @@ export async function obtenerEstadoCuentaCliente(clienteId: number) {
 }
 
 export async function obtenerConsecutivoCredito(): Promise<number> {
+  await requireAuth();
   const ultimo = await db.creditoCliente.findFirst({
     orderBy: { consecutivo: "desc" },
     select: { consecutivo: true },
@@ -114,6 +119,7 @@ export async function obtenerConsecutivoCredito(): Promise<number> {
 export async function registrarAbono(
   input: unknown
 ): Promise<ActionResult<{ id: number; nuevoSaldo: number }>> {
+  await requireAuth();
   try {
     const data = registrarAbonoCreditoSchema.parse(input);
 

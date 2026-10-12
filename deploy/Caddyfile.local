@@ -1,0 +1,18 @@
+{
+  auto_https disable_redirects
+}
+https://localhost, https://127.0.0.1 {
+  tls internal
+  reverse_proxy app:3000 {
+    header_up X-Forwarded-Proto https
+  }
+}
+
+https://kaob-production.localhost, https://kaob.owenai.uk {
+  tls internal
+  reverse_proxy kaob-production:3000 {
+    header_up Host kaob.owenai.uk
+    header_up X-Forwarded-Host kaob.owenai.uk
+    header_up X-Forwarded-Proto https
+  }
+}

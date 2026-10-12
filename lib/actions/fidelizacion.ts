@@ -1,4 +1,5 @@
 "use server";
+import { requireAuth } from "@/lib/auth";
 
 import { db } from "@/lib/db";
 import { revalidatePath } from "next/cache";
@@ -41,6 +42,7 @@ export async function listarPlanesSepare(opts?: {
   estado?: string;
   take?: number;
 }) {
+  await requireAuth();
   return db.planSepare.findMany({
     where: {
       ...(opts?.clienteId ? { clienteId: opts.clienteId } : {}),
@@ -60,6 +62,7 @@ export async function listarPlanesSepare(opts?: {
 export type PlanSepareLista = Awaited<ReturnType<typeof listarPlanesSepare>>[number];
 
 export async function obtenerConsecutivoSepare(): Promise<number> {
+  await requireAuth();
   const ultimo = await db.planSepare.findFirst({
     orderBy: { consecutivo: "desc" },
     select: { consecutivo: true },
@@ -70,6 +73,7 @@ export async function obtenerConsecutivoSepare(): Promise<number> {
 export async function crearPlanSepare(
   input: unknown
 ): Promise<ActionResult<{ id: number; consecutivo: number; codigo: string }>> {
+  await requireAuth();
   try {
     const data = crearPlanSepareSchema.parse(input);
 
@@ -198,6 +202,7 @@ export async function crearPlanSepare(
 export async function registrarAbonoSepare(
   input: unknown
 ): Promise<ActionResult<{ nuevoSaldo: number }>> {
+  await requireAuth();
   try {
     const data = registrarAbonoSepareSchema.parse(input);
 
@@ -268,6 +273,7 @@ export async function cancelarPlanSepare(
   id: number,
   motivo: string
 ): Promise<ActionResult> {
+  await requireAuth();
   try {
     const plan = await db.planSepare.findUnique({
       where: { id },
@@ -321,6 +327,7 @@ export async function cancelarPlanSepare(
 // ───────────────────────── PUNTOS Y FIDELIZACIÓN ─────────────────────────
 
 export async function listarMovimientosPuntos(clienteId?: number) {
+  await requireAuth();
   return db.movimientoPuntos.findMany({
     where: clienteId ? { clienteId } : undefined,
     orderBy: { createdAt: "desc" },
@@ -332,6 +339,7 @@ export async function listarMovimientosPuntos(clienteId?: number) {
 export type MovimientoPuntosLista = Awaited<ReturnType<typeof listarMovimientosPuntos>>[number];
 
 export async function obtenerPuntosCliente(clienteId: number): Promise<number> {
+  await requireAuth();
   const ultimo = await db.movimientoPuntos.findFirst({
     where: { clienteId },
     orderBy: { createdAt: "desc" },
@@ -341,6 +349,7 @@ export async function obtenerPuntosCliente(clienteId: number): Promise<number> {
 }
 
 export async function ajustarPuntos(input: unknown): Promise<ActionResult> {
+  await requireAuth();
   try {
     const data = ajustarPuntosSchema.parse(input);
 
@@ -370,6 +379,7 @@ export async function ajustarPuntos(input: unknown): Promise<ActionResult> {
 // ───────────────────────── PROMOCIONES Y DESCUENTOS ─────────────────────────
 
 export async function listarPromociones() {
+  await requireAuth();
   return db.promocion.findMany({
     orderBy: { createdAt: "desc" },
   });
@@ -378,6 +388,7 @@ export async function listarPromociones() {
 export type PromocionLista = Awaited<ReturnType<typeof listarPromociones>>[number];
 
 export async function guardarPromocion(input: unknown): Promise<ActionResult> {
+  await requireAuth();
   try {
     const data = promocionSchema.parse(input);
 
@@ -419,6 +430,7 @@ export async function guardarPromocion(input: unknown): Promise<ActionResult> {
 }
 
 export async function togglePromocion(id: number): Promise<ActionResult> {
+  await requireAuth();
   try {
     const promo = await db.promocion.findUniqueOrThrow({ where: { id } });
     await db.promocion.update({
@@ -435,6 +447,7 @@ export async function togglePromocion(id: number): Promise<ActionResult> {
 // ───────────────────────── TARJETAS DE REGALO ─────────────────────────
 
 export async function listarGiftCards() {
+  await requireAuth();
   return db.giftCard.findMany({
     orderBy: { createdAt: "desc" },
     include: { cliente: true },
@@ -444,6 +457,7 @@ export async function listarGiftCards() {
 export type GiftCardLista = Awaited<ReturnType<typeof listarGiftCards>>[number];
 
 export async function emitirGiftCard(input: unknown): Promise<ActionResult> {
+  await requireAuth();
   try {
     const data = emitirGiftCardSchema.parse(input);
     const fechaVencimiento = data.fechaVencimiento

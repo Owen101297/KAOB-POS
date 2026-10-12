@@ -1,4 +1,5 @@
 "use server";
+import { requireAuth } from "@/lib/auth";
 
 import { db } from "@/lib/db";
 import { revalidatePath } from "next/cache";
@@ -17,6 +18,7 @@ import type { Prisma } from "@prisma/client";
 // ─────────────────────────── BODEGAS ─────────────────────────
 
 export async function listarBodegas(soloActivas = false) {
+  await requireAuth();
   return db.bodega.findMany({
     where: soloActivas ? { activa: true } : undefined,
     orderBy: [{ esPrincipal: "desc" }, { nombre: "asc" }],
@@ -25,6 +27,7 @@ export async function listarBodegas(soloActivas = false) {
 
 /** Garantiza que exista una bodega principal (infraestructura mínima del sistema) */
 export async function asegurarBodegaPrincipal() {
+  await requireAuth();
   const existente = await db.bodega.findFirst({ where: { esPrincipal: true } });
   if (existente) return existente;
   const cualquierActiva = await db.bodega.findFirst({ where: { activa: true } });
@@ -33,6 +36,7 @@ export async function asegurarBodegaPrincipal() {
 }
 
 export async function guardarBodega(input: unknown): Promise<ActionResult> {
+  await requireAuth();
   try {
     const data = bodegaSchema.parse(input);
     if (data.id) {
@@ -74,6 +78,7 @@ export async function guardarBodega(input: unknown): Promise<ActionResult> {
 }
 
 export async function toggleBodega(id: number): Promise<ActionResult> {
+  await requireAuth();
   try {
     const bodega = await db.bodega.findUniqueOrThrow({ where: { id } });
     if (bodega.esPrincipal && bodega.activa) {
@@ -90,10 +95,12 @@ export async function toggleBodega(id: number): Promise<ActionResult> {
 // ─────────────────────────── MARCAS ──────────────────────────
 
 export async function listarMarcas() {
+  await requireAuth();
   return db.marca.findMany({ orderBy: { nombre: "asc" } });
 }
 
 export async function guardarMarca(nombreInput: string): Promise<ActionResult> {
+  await requireAuth();
   try {
     const { nombre } = marcaSchema.parse({ nombre: nombreInput });
     await db.marca.create({ data: { nombre } });
@@ -105,6 +112,7 @@ export async function guardarMarca(nombreInput: string): Promise<ActionResult> {
 }
 
 export async function actualizarMarca(id: number, nombreInput: string): Promise<ActionResult> {
+  await requireAuth();
   try {
     const { nombre } = marcaSchema.parse({ nombre: nombreInput });
     await db.marca.update({ where: { id }, data: { nombre } });
@@ -116,6 +124,7 @@ export async function actualizarMarca(id: number, nombreInput: string): Promise<
 }
 
 export async function toggleMarca(id: number): Promise<ActionResult> {
+  await requireAuth();
   try {
     const marca = await db.marca.findUniqueOrThrow({ where: { id } });
     await db.marca.update({ where: { id }, data: { activa: !marca.activa } });
@@ -127,6 +136,7 @@ export async function toggleMarca(id: number): Promise<ActionResult> {
 }
 
 export async function eliminarMarca(id: number): Promise<ActionResult> {
+  await requireAuth();
   try {
     const prodsCount = await db.producto.count({ where: { marcaId: id } });
     if (prodsCount > 0) {
@@ -143,6 +153,7 @@ export async function eliminarMarca(id: number): Promise<ActionResult> {
 // ───────────────────────── CATEGORÍAS ────────────────────────
 
 export async function listarCategorias(soloConProductos = false) {
+  await requireAuth();
   return db.categoria.findMany({
     where: soloConProductos
       ? {
@@ -158,6 +169,7 @@ export async function listarCategorias(soloConProductos = false) {
 
 /** Limpia y elimina automáticamente categorías huérfanas/vacías que no tienen productos asignados */
 export async function limpiarCategoriasVacias(): Promise<ActionResult<{ eliminadas: number }>> {
+  await requireAuth();
   try {
     const categoriasSinUso = await db.categoria.findMany({
       where: {
@@ -185,6 +197,7 @@ export async function limpiarCategoriasVacias(): Promise<ActionResult<{ eliminad
 }
 
 export async function guardarCategoria(input: unknown): Promise<ActionResult> {
+  await requireAuth();
   try {
     const data = categoriaSchema.parse(input);
     if (data.padreId != null) {
@@ -205,6 +218,7 @@ export async function actualizarCategoria(
   id: number,
   input: unknown
 ): Promise<ActionResult> {
+  await requireAuth();
   try {
     const data = categoriaSchema.parse(input);
     if (data.padreId === id) {
@@ -222,6 +236,7 @@ export async function actualizarCategoria(
 }
 
 export async function eliminarCategoria(id: number): Promise<ActionResult> {
+  await requireAuth();
   try {
     const subcats = await db.categoria.count({ where: { padreId: id } });
     if (subcats > 0) {
@@ -242,10 +257,12 @@ export async function eliminarCategoria(id: number): Promise<ActionResult> {
 // ─────────────────────────── COLORES ─────────────────────────
 
 export async function listarColores() {
+  await requireAuth();
   return db.color.findMany({ orderBy: { nombre: "asc" } });
 }
 
 export async function guardarColor(input: unknown): Promise<ActionResult> {
+  await requireAuth();
   try {
     const data = colorSchema.parse(input);
     await db.color.create({
@@ -259,6 +276,7 @@ export async function guardarColor(input: unknown): Promise<ActionResult> {
 }
 
 export async function actualizarColor(id: number, input: unknown): Promise<ActionResult> {
+  await requireAuth();
   try {
     const data = colorSchema.parse(input);
     await db.color.update({
@@ -273,6 +291,7 @@ export async function actualizarColor(id: number, input: unknown): Promise<Actio
 }
 
 export async function eliminarColor(id: number): Promise<ActionResult> {
+  await requireAuth();
   try {
     const variantesCount = await db.variante.count({ where: { colorId: id } });
     if (variantesCount > 0) {
@@ -289,6 +308,7 @@ export async function eliminarColor(id: number): Promise<ActionResult> {
 // ─────────────────────── GRUPOS DE TALLA ─────────────────────
 
 export async function listarGruposTalla() {
+  await requireAuth();
   return db.grupoTalla.findMany({
     orderBy: { nombre: "asc" },
     include: { tallas: { orderBy: { orden: "asc" } } },
@@ -296,6 +316,7 @@ export async function listarGruposTalla() {
 }
 
 export async function guardarGrupoTalla(input: unknown): Promise<ActionResult> {
+  await requireAuth();
   try {
     const data = grupoTallaSchema.parse(input);
     await db.grupoTalla.create({
@@ -312,6 +333,7 @@ export async function guardarGrupoTalla(input: unknown): Promise<ActionResult> {
 }
 
 export async function actualizarGrupoTalla(id: number, nombreInput: string): Promise<ActionResult> {
+  await requireAuth();
   try {
     const nombre = nombreSchema.parse(nombreInput);
     await db.grupoTalla.update({ where: { id }, data: { nombre } });
@@ -323,6 +345,7 @@ export async function actualizarGrupoTalla(id: number, nombreInput: string): Pro
 }
 
 export async function eliminarGrupoTalla(id: number): Promise<ActionResult> {
+  await requireAuth();
   try {
     // Verificar si hay variantes que usen las tallas de este grupo
     const tallasGrupo = await db.talla.findMany({ where: { grupoId: id }, select: { id: true } });
@@ -346,6 +369,7 @@ export async function eliminarGrupoTalla(id: number): Promise<ActionResult> {
 }
 
 export async function agregarTallaAGrupo(grupoId: number, valor: string): Promise<ActionResult> {
+  await requireAuth();
   try {
     const { valor: v } = tallaUnicaSafe(valor);
     const grupo = await db.grupoTalla.findUniqueOrThrow({
@@ -362,6 +386,7 @@ export async function agregarTallaAGrupo(grupoId: number, valor: string): Promis
 }
 
 export async function eliminarTalla(tallaId: number): Promise<ActionResult> {
+  await requireAuth();
   try {
     const variantesCount = await db.variante.count({ where: { tallaId } });
     if (variantesCount > 0) {
@@ -384,6 +409,7 @@ function tallaUnicaSafe(valor: string) {
 export type CatalogosCompletos = Prisma.PromiseReturnType<typeof obtenerCatalogos>;
 
 export async function obtenerCatalogos() {
+  await requireAuth();
   const [bodegas, marcas, categorias, colores, grupos] = await Promise.all([
     db.bodega.findMany({ where: { activa: true }, orderBy: [{ esPrincipal: "desc" }, { nombre: "asc" }] }),
     db.marca.findMany({ where: { activa: true }, orderBy: { nombre: "asc" } }),

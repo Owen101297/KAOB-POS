@@ -1,4 +1,5 @@
 "use server";
+import { requireAuth } from "@/lib/auth";
 
 import { db } from "@/lib/db";
 import { revalidatePath } from "next/cache";
@@ -95,6 +96,7 @@ export async function listarVentas(opts?: {
   vendedorId?: number;
   take?: number;
 }) {
+  await requireAuth();
   try {
     return await db.venta.findMany({
       where: {
@@ -128,6 +130,7 @@ export async function listarVentas(opts?: {
 }
 
 export async function obtenerVenta(id: number) {
+  await requireAuth();
   return db.venta.findUnique({
     where: { id },
     include: {
@@ -141,6 +144,7 @@ export async function obtenerVenta(id: number) {
 }
 
 export async function buscarVariantePorSku(sku: string, bodegaId?: number) {
+  await requireAuth();
   if (!sku || sku.trim().length === 0) return null;
   const cleanSku = sku.trim();
   return db.variante.findFirst({
@@ -166,6 +170,7 @@ export async function buscarProductosPOS(
   categoriaId?: number,
   soloActivos = true
 ) {
+  await requireAuth();
   const query = q?.trim();
   const where: any = {
     activo: soloActivos,
@@ -231,6 +236,7 @@ export async function buscarProductosPOS(
 }
 
 export async function obtenerConsecutivoVenta(tipo: "VENTA" | "REMISION" | "COTIZACION"): Promise<number> {
+  await requireAuth();
   const ultima = await db.venta.findFirst({
     where: { tipo },
     orderBy: { consecutivo: "desc" },
@@ -242,6 +248,7 @@ export async function obtenerConsecutivoVenta(tipo: "VENTA" | "REMISION" | "COTI
 // ─────────────────────────── REGISTRAR VENTA ──────────────────────────
 
 export async function registrarVenta(input: unknown): Promise<ActionResult<{ id: number; consecutivo: number; codigo: string }>> {
+  await requireAuth();
   try {
     const data = registrarVentaSchema.parse(input);
 
@@ -416,6 +423,7 @@ export async function registrarVenta(input: unknown): Promise<ActionResult<{ id:
 // ─────────────────────────── ANULAR VENTA ──────────────────────────
 
 export async function anularVenta(input: unknown): Promise<ActionResult> {
+  await requireAuth();
   try {
     const data = anularVentaSchema.parse(input);
 
@@ -506,6 +514,7 @@ export async function convertirDocumento(
   nuevoTipo: "VENTA" | "REMISION",
   pagos?: { metodo: string; monto: number; referencia?: string }[]
 ): Promise<ActionResult<{ id: number }>> {
+  await requireAuth();
   try {
     const venta = await db.venta.findUniqueOrThrow({
       where: { id: ventaId },
@@ -582,6 +591,7 @@ export async function convertirDocumento(
 // ─────────────────────────── ESTADÍSTICAS DEL DÍA ──────────────────────────
 
 export async function estadisticasDia(fecha?: Date) {
+  await requireAuth();
   try {
     const dia = fecha ?? new Date();
     const inicio = new Date(dia);

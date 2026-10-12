@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Bell, ChevronDown, LayoutGrid, LogOut, Menu, Package, Settings, Store, User } from 'lucide-react';
+import { Bell, ChevronDown, LayoutGrid, Menu, Package, Settings, Store, User } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -167,10 +167,6 @@ export default function Topbar({ onMenuClick }: { onMenuClick?: () => void }) {
             </DropdownMenuItem>
             <DropdownMenuItem>
               <Settings /> Configuración
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem destructive>
-              <LogOut /> Cerrar sesión
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

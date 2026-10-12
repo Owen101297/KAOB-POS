@@ -1,4 +1,5 @@
 "use server";
+import { requireAuth } from "@/lib/auth";
 
 import { db } from "@/lib/db";
 import { revalidatePath } from "next/cache";
@@ -21,6 +22,7 @@ function revalidarCaja() {
 export type SesionCajaAbierta = Awaited<ReturnType<typeof obtenerSesionAbierta>>;
 
 export async function obtenerSesionAbierta(bodegaId?: number) {
+  await requireAuth();
   return db.sesionCaja.findFirst({
     where: {
       estado: "ABIERTA",
@@ -32,6 +34,7 @@ export async function obtenerSesionAbierta(bodegaId?: number) {
 }
 
 export async function listarSesionesCaja(opts?: { estado?: string; take?: number }) {
+  await requireAuth();
   return db.sesionCaja.findMany({
     where: opts?.estado ? { estado: opts.estado } : undefined,
     orderBy: { openedAt: "desc" },
@@ -41,6 +44,7 @@ export async function listarSesionesCaja(opts?: { estado?: string; take?: number
 }
 
 export async function obtenerSesionCaja(id: number) {
+  await requireAuth();
   return db.sesionCaja.findUnique({
     where: { id },
     include: { bodega: true, movimientos: { orderBy: { createdAt: "asc" } } },
@@ -48,6 +52,7 @@ export async function obtenerSesionCaja(id: number) {
 }
 
 export async function abrirCaja(input: unknown): Promise<ActionResult<{ id: number }>> {
+  await requireAuth();
   try {
     const data = abrirCajaSchema.parse(input);
 
@@ -95,6 +100,7 @@ export async function cerrarCaja(
   sesionId: number,
   totalesContados: Record<string, number>
 ): Promise<ActionResult<{ id: number }>> {
+  await requireAuth();
   try {
     const sesion = await db.sesionCaja.findUnique({
       where: { id: sesionId },
@@ -147,6 +153,7 @@ export async function cerrarCaja(
 }
 
 export async function agregarMovimientoCaja(input: unknown): Promise<ActionResult<{ id: number }>> {
+  await requireAuth();
   try {
     const data = movimientoCajaSchema.parse(input);
 
@@ -173,6 +180,7 @@ export async function agregarMovimientoCaja(input: unknown): Promise<ActionResul
 // ─────────────────────────── RESUMEN CAJA ──────────────────────────
 
 export async function resumenCajaActual(bodegaId?: number) {
+  await requireAuth();
   const sesion = await obtenerSesionAbierta(bodegaId);
   if (!sesion) return null;
 

@@ -1,4 +1,5 @@
 "use server";
+import { requireAuth } from "@/lib/auth";
 
 import { db } from "@/lib/db";
 import { revalidatePath } from "next/cache";
@@ -26,6 +27,7 @@ function revalidarPlataformas() {
 // ───────────────────────── CONSULTAS DE PLATAFORMAS ─────────────────────────
 
 export async function obtenerResumenPlataformas() {
+  await requireAuth();
   try {
     // 1. Pagos pendientes de desembolso por plataforma
     const pagosPendientes = await db.pagoVenta.findMany({
@@ -123,6 +125,7 @@ export type ResumenPlataformas = Awaited<ReturnType<typeof obtenerResumenPlatafo
 // ───────────────────────── REGISTRAR DESEMBOLSO ─────────────────────────
 
 export async function registrarDesembolsoPlataforma(input: unknown): Promise<ActionResult<{ id: number; consecutivo: number }>> {
+  await requireAuth();
   try {
     const data = desembolsoPlataformaSchema.parse(input);
 
@@ -239,6 +242,7 @@ export async function registrarDesembolsoPlataforma(input: unknown): Promise<Act
 // ───────────────────────── ANULAR DESEMBOLSO ─────────────────────────
 
 export async function anularDesembolsoPlataforma(id: number, motivo: string): Promise<ActionResult<{ id: number }>> {
+  await requireAuth();
   try {
     const desembolso = await db.desembolsoPlataforma.findUnique({
       where: { id },

@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from 'react';
 import { X, ShoppingBag, Check, ShieldCheck, Truck, Sparkles } from 'lucide-react';
-import type { ProductoLista } from '@/lib/actions/productos';
+import type { ProductoTienda } from '@/lib/tienda/public-productos';
 import { formatoCOP } from '@/lib/format';
 import { CALIDAD_LABEL } from '@/lib/constants';
 import { Button } from '@/components/ui/Button';
@@ -21,7 +21,7 @@ interface ItemBolsa {
 }
 
 interface Props {
-  producto: ProductoLista | null;
+  producto: ProductoTienda | null;
   abierto: boolean;
   onCerrar: () => void;
   onAgregarABolsa: (item: ItemBolsa) => void;

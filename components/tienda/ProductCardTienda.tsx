@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from 'react';
 import { ShoppingBag, Eye, Check, AlertCircle } from 'lucide-react';
-import type { ProductoLista } from '@/lib/actions/productos';
+import type { ProductoTienda } from '@/lib/tienda/public-productos';
 import { formatoCOP } from '@/lib/format';
 import { CALIDAD_LABEL } from '@/lib/constants';
 
@@ -20,9 +20,9 @@ interface ItemBolsa {
 }
 
 interface Props {
-  producto: ProductoLista;
+  producto: ProductoTienda;
   onAgregarABolsa: (item: ItemBolsa) => void;
-  onVerDetalle: (producto: ProductoLista) => void;
+  onVerDetalle: (producto: ProductoTienda) => void;
 }
 
 export default function ProductCardTienda({
