@@ -450,15 +450,16 @@ export default function VentaClient() {
     startTransition(async () => {
       const res = await registrarVenta({
         clienteId: cliente?.id,
-        tipoVenta,
+        tipo: tipoVenta,
         vendedorId: vendedorId ?? undefined,
         bodegaId: bodegaActualId,
-        descuentoGlobal,
+        descuento: descuentoGlobal,
         nota,
         items: carrito.map((i) => ({
           varianteId: i.varianteId,
           cantidad: i.cantidad,
           precioUnitario: i.precio,
+          costoUnitario: i.costo ?? 0,
           descuento: i.descuento,
         })),
         pagos,
