@@ -19,4 +19,13 @@ npx --no-install tsc --noEmit
 npm run build
 ```
 
+## Pruebas E2E (Playwright contra staging)
+
+- Requisitos: la imagen `kaob-pos-local:staging` ejecutándose por Coolify (servicio `KAOB-POS - Staging`), Caddy local con TLS en `127.0.0.1:3100` y credenciales `KAOB_E2E_AUTH_USER` / `KAOB_E2E_AUTH_PASSWORD` en `.env.e2e` (gitignoreado; se toman del env del contenedor staging `app-…` / `fnzik…-app-1`).
+- Credenciales: extraer sin imprimir secretos con un env-temporal desde `docker inspect` del contenedor; `.env.e2e` es local.
+- Ejecutar la suite completa: `npx playwright test tests/e2e` (POS 9 pruebas + tienda 4; estado 13/13 el 18-10-2026).
+- Antes de una corrida completa, limpiar el estado transaccional en staging (devuelve stock, borra ventas/caja): usar el psql del contenedor `opwojqwmmat6uwrsppa5serl` con la secuencia documentada en los scripts de la sesión; no tocar producción.
+- Datos generados quedan como residuo E2E (categorías `E2ECAT-*`, grupos `E2EGT-*`, colores `INK-*`, productos `E2EE*`); una purga de transaccionales futura los limpia.
+- Defectos conocidos aún abiertos: badge "CAJA ACTIVA" oculto por breakpoint `xs` inexistente en `tailwind.config.js` (E2E-01, cosmético) y `/ventas-online` es demo estática con estados en memoria (no conecta con la BD).
+
 Usar entorno aislado para pruebas. No ejecutar seed, migraciones ni escrituras sobre datos de producción. Los enlaces del proyecto y el procedimiento general están en `/home/owen/Projects/README.md`.

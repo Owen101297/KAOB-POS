@@ -119,19 +119,26 @@
 - **Ramas Sincronizadas**: Rama `develop` (Staging) fusionada y al 100% con `main` (Producción).
 - **Librerías de Skills**: Integración de guías de diseño, UI/UX y tokens en `.opencode/skills/`.
 
+### ✅ Fase 18 - Suite E2E Playwright en Staging y Correcciones de Venta (18-10-2026)
+- **Suite Verde 13/13**: Pruebas E2E Playwright contra staging (servicio Coolify KAOB-POS - Staging vía `https://localhost:3100`, Basic Auth con `.env.e2e`): POS (bootstrap catálogos+producto, apertura de caja, venta efectivo con ticket, histórico con detalle, descuento de inventario, anulación que repone stock, retiro de caja, arqueo exacto, cierre con faltante) y tienda (catálogo público, detalle sin romper hooks, carrito→checkout→WhatsApp con teléfono de `configuracion`, demo `/ventas-online`).
+- **Corrección crítica POS**: el cockpit enviaba `tipoVenta`/`descuentoGlobal` y el schema (`registrarVentaSchema` en `lib/validations.ts`) exige `tipo`; además faltaba `costoUnitario` en los items (`ventaItemSchema`). Sin esas claves ninguna venta POS llegó a registrar (defectos reproducidos primero con captura de red, luego corregidos en `app/ventas/nueva/VentaClient.tsx` y validados en staging 13/13).
+- **Corrección crítica Tienda**: `ProductDetailModal` hacía `return null` antes de `useMemo`/`useState` (violación de reglas de hooks, modal no abría en producción). Hooks reordenados con estado estable y `useEffect` de reinicio de selección por producto.
+- **Defecto cosmético abierto (E2E-01)**: badge "CAJA ACTIVA" (`hidden xs:inline` en `VentaClient.tsx`) nunca visible por breakpoint `xs` inexistente en `tailwind.config.js`; la suite lo compensa con `toBeAttached`.
+- **Gap funcional**: `/ventas-online` es demo estática (pedidos `PED-1001..1003` en memoria); conectarla con la BD queda en el roadmap junto al módulo de producción.
+- **Operación**: suite ejecutable con `npx playwright test tests/e2e`; antes de cada corrida completa se limpia el estado transaccional de staging (stock/ventas/caja) con psql sobre `opwojqwmmat6uwrsppa5serl`; los residuos de catálogo E2E quedan marcados (`E2ECAT-*`, `E2EGT-*`, `INK-*`, `E2EE*`) para la futura purga. Ver `README.local.md`.
+
 ---
 
 ## ⏭️ Próximos Pasos y Roadmap
 
-1. **Pruebas Integrales E2E en Staging (`develop`)**:
-   - Flujo completo de mostrador: Apertura de caja → Venta Cockpit POS → Métodos de pago (Efectivo, Tarjeta, Addi/Sistecrédito, Fiado) → Ticket térmico → Descuento de stock por variantes → Cierre y arqueo ciego de caja.
-   - Flujo de tienda online: Pedidos desde el catálogo e-commerce (`/tienda`) → Conversión a WhatsApp → Despacho en `/ventas-online`.
+1. **Módulo de Producción / Taller de Confección (`/produccion`)**:
+   - Registro de órdenes de confección, corte, consumo de insumos (telas, avíos) y liquidación de costos de producción.
 2. **Facturación Electrónica (DIAN / POS Electrónico)**:
    - Evaluación y conexión con API de proveedor tecnológico para emisión de documentos electrónicos válidos en Colombia.
-3. **Módulo de Producción / Taller de Confección (`/produccion`)**:
-   - Registro de órdenes de confección, corte, consumo de insumos (telas, avíos) y liquidación de costos de producción.
-4. **Puesta a Cero de Base de Datos para Lanzamiento**:
+3. **Puesta a Cero de Base de Datos para Lanzamiento**:
    - Script de purga de datos demo/pruebas para arrancar operaciones oficiales con inventario inicial real.
+4. **Despliegue a producción de las correcciones E2E**: integrar `fix/pos-payload-registrar-venta` a `main` y redeploy del servicio Production en Coolify (requiere autorización explícita de Owen).
+5. **Conectar `/ventas-online` real con la BD** (Pedido de tienda → producto en BD → integración POS/taller).
 
 ---
 
