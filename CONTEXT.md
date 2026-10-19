@@ -137,8 +137,8 @@
    - Evaluación y conexión con API de proveedor tecnológico para emisión de documentos electrónicos válidos en Colombia.
 3. **Puesta a Cero de Base de Datos para Lanzamiento**:
    - Script de purga de datos demo/pruebas para arrancar operaciones oficiales con inventario inicial real.
-4. **Despliegue a producción de las correcciones E2E**: integrar `fix/pos-payload-registrar-venta` a `main` y redeploy del servicio Production en Coolify (requiere autorización explícita de Owen).
-5. **Conectar `/ventas-online` real con la BD** (Pedido de tienda → producto en BD → integración POS/taller).
+4. **Conectar `/ventas-online` real con la BD** (Pedido de tienda → producto en BD → integración POS/taller).
+   - ✅ Completado (18-10-2026): fixes POS/tienda integrados a `main` (507c19f), enviados a GitHub y desplegados a producción (deployment `k99wpia8unotjwva9dfdc7ht` finished, `kaob.owenai.uk` con la misma build validada 13/13 en staging).
 
 ---
 
