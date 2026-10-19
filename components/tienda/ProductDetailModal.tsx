@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { X, ShoppingBag, Check, ShieldCheck, Truck, Sparkles } from 'lucide-react';
 import type { ProductoTienda } from '@/lib/tienda/public-productos';
 import { formatoCOP } from '@/lib/format';
@@ -33,52 +33,62 @@ export default function ProductDetailModal({
   onCerrar,
   onAgregarABolsa,
 }: Props) {
-  if (!abierto || !producto) return null;
+  const productoActivo = abierto ? producto : null;
 
-  // Colores únicos
+  // Hooks SIEMPRE en el mismo orden (los hooks condicionales rompen React).
   const colores = useMemo(() => {
     const map = new Map<number, { id: number; nombre: string; hex: string | null }>();
-    producto.variantes.forEach((v) => {
+    (productoActivo?.variantes ?? []).forEach((v) => {
       if (!map.has(v.color.id)) map.set(v.color.id, v.color);
     });
     return Array.from(map.values());
-  }, [producto]);
+  }, [productoActivo]);
 
-  const [colorSelId, setColorSelId] = useState<number>(colores[0]?.id ?? 0);
+  const [colorSelId, setColorSelId] = useState<number>(0);
+  const [varianteSelId, setVarianteSelId] = useState<number>(0);
+  const [cantidad, setCantidad] = useState(1);
+  const [agregadoAnim, setAgregadoAnim] = useState(false);
+
+  // Reinicia la selección al abrir otro producto.
+  useEffect(() => {
+    if (!productoActivo) return;
+    const primerVariante = productoActivo.variantes[0];
+    setColorSelId(primerVariante?.color.id ?? 0);
+    setVarianteSelId(primerVariante?.id ?? 0);
+    setCantidad(1);
+    setAgregadoAnim(false);
+  }, [productoActivo]);
 
   const variantesColor = useMemo(() => {
-    return producto.variantes.filter((v) => v.color.id === colorSelId);
-  }, [producto, colorSelId]);
-
-  const [varianteSelId, setVarianteSelId] = useState<number>(
-    variantesColor[0]?.id ?? producto.variantes[0]?.id ?? 0
-  );
+    return (productoActivo?.variantes ?? []).filter((v) => v.color.id === colorSelId);
+  }, [productoActivo, colorSelId]);
 
   const varianteActiva = useMemo(() => {
     return (
-      producto.variantes.find((v) => v.id === varianteSelId) ??
+      (productoActivo?.variantes ?? []).find((v) => v.id === varianteSelId) ??
       variantesColor[0] ??
-      producto.variantes[0]
+      (productoActivo?.variantes ?? [])[0]
     );
-  }, [producto, varianteSelId, variantesColor]);
+  }, [productoActivo, varianteSelId, variantesColor]);
 
   const stockDisponible = useMemo(() => {
     if (!varianteActiva) return 0;
     return varianteActiva.stocks.reduce((acc, s) => acc + s.cantidad, 0);
   }, [varianteActiva]);
 
-  const [cantidad, setCantidad] = useState(1);
-  const [agregadoAnim, setAgregadoAnim] = useState(false);
+  if (!productoActivo) return null;
 
-  const precio = varianteActiva?.precioOverride ?? producto.precioBase;
+  const productoVisual = productoActivo;
+
+  const precio = varianteActiva?.precioOverride ?? productoVisual.precioBase;
 
   const handleAgregar = () => {
     if (!varianteActiva || stockDisponible <= 0) return;
     onAgregarABolsa({
       varianteId: varianteActiva.id,
-      productoId: producto.id,
-      nombre: producto.nombre,
-      referencia: producto.referencia,
+      productoId: productoVisual.id,
+      nombre: productoVisual.nombre,
+      referencia: productoVisual.referencia,
       colorNombre: varianteActiva.color.nombre,
       colorHex: varianteActiva.color.hex,
       tallaValor: varianteActiva.talla.valor,
@@ -117,11 +127,11 @@ export default function ProductDetailModal({
             <div className="relative z-10 text-center">
               <div className="w-28 h-28 rounded-full bg-white shadow-lg flex items-center justify-center mx-auto border border-zinc-200">
                 <span className="font-extrabold text-3xl font-serif text-zinc-900">
-                  {producto.nombre.slice(0, 2).toUpperCase()}
+                  {productoVisual.nombre.slice(0, 2).toUpperCase()}
                 </span>
               </div>
               <span className="mt-3 block font-mono text-xs font-bold tracking-widest text-zinc-600">
-                REF: {producto.referencia}
+                REF: {productoVisual.referencia}
               </span>
             </div>
           </div>
@@ -131,26 +141,26 @@ export default function ProductDetailModal({
             <div>
               <div className="flex items-center gap-2">
                 <span className="text-[11px] font-bold uppercase tracking-widest text-zinc-400">
-                  {producto.categoria?.nombre ?? 'Prenda'}
+                  {productoVisual.categoria?.nombre ?? 'Prenda'}
                 </span>
-                {producto.calidad && (
+                {productoVisual.calidad && (
                   <span className="px-2 py-0.5 rounded-full bg-zinc-900 text-white text-[9px] font-bold uppercase tracking-wider">
-                    {CALIDAD_LABEL[producto.calidad as keyof typeof CALIDAD_LABEL] ?? producto.calidad}
+                    {CALIDAD_LABEL[productoVisual.calidad as keyof typeof CALIDAD_LABEL] ?? productoVisual.calidad}
                   </span>
                 )}
               </div>
 
               <h2 className="text-xl sm:text-2xl font-black text-zinc-900 mt-1 uppercase tracking-tight">
-                {producto.nombre}
+                {productoVisual.nombre}
               </h2>
 
               <p className="text-2xl font-black text-zinc-900 mt-2">
                 {formatoCOP(precio)}
               </p>
 
-              {producto.descripcion && (
+              {productoVisual.descripcion && (
                 <p className="text-xs text-zinc-500 mt-2 leading-relaxed">
-                  {producto.descripcion}
+                  {productoVisual.descripcion}
                 </p>
               )}
 
@@ -168,7 +178,7 @@ export default function ProductDetailModal({
                         type="button"
                         onClick={() => {
                           setColorSelId(c.id);
-                          const vDelColor = producto.variantes.find((v) => v.color.id === c.id);
+                          const vDelColor = productoVisual.variantes.find((v) => v.color.id === c.id);
                           if (vDelColor) setVarianteSelId(vDelColor.id);
                         }}
                         className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-semibold transition-all ${
