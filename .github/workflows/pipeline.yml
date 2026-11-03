@@ -1,0 +1,80 @@
+# Pipeline estándar del homelab. Lo ejecuta el runner self-hosted del Mac mini,
+# que compila linux/amd64 y publica un tag inmutable en el Registry local.
+#
+# Fuente canónica: ~/homelab/templates/github/pipeline.yml
+# Instalación/actualización en una app: make ci-install ARGS="~/codigo/<app>"
+#
+# El nombre de imagen se toma del repositorio (en minúsculas), así que el archivo
+# no necesita edición por app. Se puede forzar con la variable de repositorio
+# `IMAGE_NAME` y el directorio del homelab con `HOMELAB_DIR`.
+name: pipeline
+
+on:
+  push:
+    branches: [staging, main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pipeline-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-push:
+    runs-on: [self-hosted, macmini]
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Determinar etapa, imagen y tag
+        id: vars
+        shell: bash
+        run: |
+          set -euo pipefail
+          case "$GITHUB_REF_NAME" in
+            main) stage=prod ;;
+            staging) stage=staging ;;
+            *) echo "Rama no soportada: $GITHUB_REF_NAME" >&2; exit 1 ;;
+          esac
+          raw="${IMAGE_NAME:-${GITHUB_REPOSITORY#*/}}"
+          image=$(printf '%s' "$raw" | tr '[:upper:]' '[:lower:]' | tr -c 'a-z0-9._-' '-')
+          sha=$(git rev-parse --short=12 HEAD)
+          {
+            echo "stage=$stage"
+            echo "image=$image"
+            echo "tag=$stage-$sha"
+          } >>"$GITHUB_OUTPUT"
+        env:
+          IMAGE_NAME: ${{ vars.IMAGE_NAME }}
+
+      - name: Build amd64 + push al Registry local
+        shell: bash
+        env:
+          IMAGE: ${{ steps.vars.outputs.image }}
+          TAG: ${{ steps.vars.outputs.tag }}
+          HOMELAB_DIR: ${{ vars.HOMELAB_DIR }}
+        run: |
+          set -euo pipefail
+          homelab_dir="${HOMELAB_DIR:-$HOME/homelab}"
+          script="$homelab_dir/scripts/macmini-build-push.sh"
+          if [ ! -x "$script" ]; then
+            echo "No encuentro $script. Define la variable de repositorio HOMELAB_DIR." >&2
+            exit 1
+          fi
+          "$script" "$IMAGE" "$GITHUB_WORKSPACE" "$TAG"
+
+      - name: Resumen del build
+        if: always()
+        shell: bash
+        env:
+          IMAGE: ${{ steps.vars.outputs.image }}
+          TAG: ${{ steps.vars.outputs.tag }}
+        run: |
+          {
+            echo "### ${{ steps.vars.outputs.stage }}"
+            echo "- imagen: \`${IMAGE}:${TAG}\`"
+            echo "- commit: \`${GITHUB_SHA}\`"
+            echo "- desplegar esa referencia exacta en Coolify; el tag anterior queda para rollback"
+          } >>"$GITHUB_STEP_SUMMARY"
