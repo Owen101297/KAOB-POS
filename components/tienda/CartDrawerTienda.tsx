@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { X, Trash2, ShoppingBag, ArrowRight, Phone, Send, CheckCircle2 } from 'lucide-react';
 import { formatoCOP } from '@/lib/format';
+import { registrarPedidoOnline } from '@/lib/actions/pedidos';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 
@@ -45,6 +46,7 @@ export default function CartDrawerTienda({
   const [ciudad, setCiudad] = useState('');
   const [notas, setNotas] = useState('');
   const [enviando, setEnviando] = useState(false);
+  const [errorCheckout, setErrorCheckout] = useState('');
 
   if (!abierto) return null;
 
@@ -75,17 +77,43 @@ export default function CartDrawerTienda({
     return encodeURIComponent(msg);
   };
 
-  const handleEnviarPedidoWhatsApp = (e: React.FormEvent) => {
+  const handleEnviarPedidoWhatsApp = async (e: React.FormEvent) => {
     e.preventDefault();
     if (items.length === 0 || !nombre || !celular) return;
 
     setEnviando(true);
-    const mensajeCodificado = generarMensajeWhatsApp();
-    const telLimpio = telefonoWhatsAppTienda.replace(/[^0-9]/g, '');
-    const url = `https://wa.me/${telLimpio}?text=${mensajeCodificado}`;
+    setErrorCheckout('');
 
-    window.open(url, '_blank');
+    // La ventana se abre de forma síncrona (dentro del gesto del usuario) y
+    // luego se redirige tras guardar; evita el bloqueo de popups de Safari.
+    const ventana = window.open('about:blank', '_blank');
+
+    // v1: el pedido queda registrado en BD (PED-<fecha>-<id>) y el mensaje de
+    // WhatsApp se abre después con la referencia incluida (spec 001, D7).
+    const res = await registrarPedidoOnline({
+      nombre,
+      celular,
+      ciudad,
+      direccion,
+      notas,
+      items: items.map((it) => ({ varianteId: it.varianteId, cantidad: it.cantidad })),
+    });
+
+    if (!res.ok || !ventana) {
+      setErrorCheckout(res.ok ? 'Tu navegador bloqueó la ventana de WhatsApp; el pedido sí quedó registrado.' : res.error);
+      ventana?.close();
+      setEnviando(false);
+      return;
+    }
+
+    let mensaje = generarMensajeWhatsApp();
+    mensaje += encodeURIComponent(`\n🧾 *Referencia:* ${res.data.referencia}`);
+    const telLimpio = telefonoWhatsAppTienda.replace(/[^0-9]/g, '');
+    ventana.location.href = `https://wa.me/${telLimpio}?text=${mensaje}`;
+
     setEnviando(false);
+    onVaciarBolsa();
+    setPaso('carrito');
   };
 
   const MONTO_ENVIO_GRATIS = 150000;
@@ -326,6 +354,11 @@ export default function CartDrawerTienda({
               </Button>
             ) : (
               <div className="space-y-2">
+                {errorCheckout && (
+                  <p className="text-xs font-semibold text-red-600 bg-red-50 border border-red-200 rounded-xl px-3 py-2">
+                    {errorCheckout}
+                  </p>
+                )}
                 <Button
                   type="submit"
                   form="form-checkout-wa"

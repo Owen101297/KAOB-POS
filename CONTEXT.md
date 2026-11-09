@@ -142,6 +142,18 @@
 
 ---
 
+## ✅ Fase 19 — Ventas-online real con BD + Puesta a cero (feature `feat/001-ventas-online-real`, 2026-11-08)
+
+- **Fuente**: spec-kit completo en `specs/001-ventas-online-real/` (spec aprobada, plan, research D1–D8, data-model, contracts, quickstart, tasks T001–T22).
+- **Checkout real en BD**: la tienda registra `Pedido` + `PedidoItem` (variante exacta, snapshot de referencia/nombre/talla/color/precio según override, total en COP Int) con contacto; referencia `PED-<YYYYMMDD>-<id>`; la ventana de WhatsApp se abre después de guardar y lleva la referencia en el mensaje (D7). Sin descuento de stock ni Venta en v1 (el cobro ocurre en POS al entregar).
+- **Panel `/ventas-online` real**: lista pedidos de BD (orden desc, tope 200), filtros por estado, ciclo válido Pendiente → Empacado → En camino → Entregado, cancelación con Dialog y trazas estadoPor/estadoEn = "Administrador" tras `requireAuth`. La demo PED-1001..1003 quedó eliminada.
+- **Puesta a cero**: `npm run purga -- --nivel=transaccional|cero [--simular] [--entorno=produccion]` (scripts/purga-datos.ts). Guardas: sin `DATABASE_URL` → exit 3; URL sin marcador de staging sin flag → exit 4; confirmación escrita PURGAR / PURGAR-PRODUCCION; conteos ANTES y reporte final exactos; nunca borra `Configuracion` ni `Bodega` (ni en cero total — desviación aprobada: la bodega es infraestructura con FK Restrict de inventario). Residuos E2E del catálogo (`E2EE*`, `INK-*`, `E2ECAT-*`, `E2EGT-*`) se depuran en ambos niveles.
+- **Fix E2E-01**: `screens: { xs: '400px' }` añadido a `tailwind.config.js` — badge "CAJA ACTIVA" e icono scanner del cockpit visibles de nuevo (solo estético).
+- **⚠️ Deriva de migraciones detectada**: `prisma/migrations/` en disco termina en la Fase 10; los cambios BNPL de la Fase 15 (enum `metodo_pago` ADDI/SISTECREDITO, `ventas_pagos.desembolsado/desembolsoId`, tabla `desembolsos_plataforma`) NO están en la carpeta de migraciones. La migración `20261108_pedidos_online` incluye SOLO los objetos nuevos del feature (pedidos + enum `estado_pedido`) para no chocar con BDs ya actualizadas vía db push. **Antes de cualquier deploy a producción: conciliar el historial de migraciones contra la BD real del servidor (docs/acceso-y-despliegue.md).**
+- **Validación**: unit tests 15/15 (checkout zod, cambios de estado, guardas de purga); E2E nuevas en `tests/e2e/ventas-online-pedido.spec.ts` + update de `tienda-flujo.spec.ts` (pedidos reales, no demo). **El run E2E y la aplicación de la migración a staging quedan pendientes hasta que el staging del servidor sea accesible desde esta máquina.**
+
+---
+
 ## Commands
 ```bash
 # Desarrollo

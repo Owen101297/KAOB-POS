@@ -1,8 +1,8 @@
 # Pipeline estándar del homelab. Lo ejecuta el runner self-hosted del Mac mini,
 # que compila linux/amd64 y publica un tag inmutable en el Registry local.
 #
-# Fuente canónica: ~/homelab/templates/github/pipeline.yml
-# Instalación/actualización en una app: make ci-install ARGS="~/codigo/<app>"
+# Fuente canónica: ~/0z1a/homelab/templates/github/pipeline.yml
+# Instalación/actualización en una app: make ci-install ARGS="~/0z1a/codigo/<app>"
 #
 # El nombre de imagen se toma del repositorio (en minúsculas), así que el archivo
 # no necesita edición por app. Se puede forzar con la variable de repositorio
@@ -57,7 +57,7 @@ jobs:
           HOMELAB_DIR: ${{ vars.HOMELAB_DIR }}
         run: |
           set -euo pipefail
-          homelab_dir="${HOMELAB_DIR:-$HOME/homelab}"
+          homelab_dir="${HOMELAB_DIR:-$HOME/0z1a/homelab}"
           script="$homelab_dir/scripts/macmini-build-push.sh"
           if [ ! -x "$script" ]; then
             echo "No encuentro $script. Define la variable de repositorio HOMELAB_DIR." >&2
