@@ -9,8 +9,8 @@ export default function Shell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
 
-  // Si está en el portal público de la tienda, renderizar pantalla completa limpia
-  if (pathname?.startsWith('/tienda')) {
+  // Si está en el portal público de la tienda o en el acceso, pantalla limpia
+  if (pathname?.startsWith('/tienda') || pathname?.startsWith('/login')) {
     return <>{children}</>;
   }
 

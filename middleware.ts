@@ -9,9 +9,20 @@ function matchesPath(pathname: string, basePath: string): boolean {
   return pathname === basePath || pathname.startsWith(`${basePath}/`);
 }
 
+import { verificarSesion, SESSION_COOKIE } from "@/lib/session";
+
+function tieneSesionValida(request: NextRequest): boolean {
+  return verificarSesion(request.cookies.get(SESSION_COOKIE)?.value);
+}
+
 function isPublicRequest(request: NextRequest): boolean {
   const { pathname } = request.nextUrl;
   const isServerAction = request.headers.has("next-action");
+
+  // La pantalla de acceso y su API son públicas por diseño.
+  if (matchesPath(pathname, "/login") || matchesPath(pathname, "/api/login") || matchesPath(pathname, "/api/logout")) {
+    return true;
+  }
 
   if (!isServerAction && (matchesPath(pathname, "/tienda") || pathname === "/api/health")) {
     return true;
@@ -69,9 +80,20 @@ export function middleware(request: NextRequest) {
 
   if (isDevelopmentAuthBypassAllowed()) return NextResponse.next();
   if (!isBasicAuthConfigured()) return unavailable();
-  if (!isBasicAuthAuthorized(request.headers.get("authorization"))) return unauthorized();
 
-  return NextResponse.next();
+  // Sesión de la pantalla /login (cookie firmada) o cabecera Basic (respaldo).
+  if (tieneSesionValida(request)) return NextResponse.next();
+  if (isBasicAuthAuthorized(request.headers.get("authorization"))) return NextResponse.next();
+
+  // Navegadores: pantalla de login con retorno a la ruta pedida.
+  if (!request.headers.get("authorization")) {
+    const destino = request.nextUrl.pathname + request.nextUrl.search;
+    const url = new URL("/login", request.url);
+    url.searchParams.set("retorno", destino);
+    return NextResponse.redirect(url);
+  }
+
+  return unauthorized();
 }
 
 export const config = {
