@@ -11,6 +11,7 @@ export type E2eState = {
   sku?: string;
   precio?: number;
   ventaCode?: string;
+  pedidoRef?: string;
 };
 
 const STATE_FILE = path.join(__dirname, '.e2e-state.json');

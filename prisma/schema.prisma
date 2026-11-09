@@ -226,6 +226,7 @@ model Variante {
   compraItems    CompraItem[]
   ordenCompraDetalles OrdenCompraDetalle[]
   planSepareItems PlanSepareItem[]
+  pedidoItems     PedidoItem[]
 
   @@unique([productoId, colorId, tallaId])
   @@map("variantes")
@@ -689,6 +690,57 @@ model GiftCard {
 
   @@index([codigo])
   @@map("gift_cards")
+}
+
+// ───────────────────────── PEDIDOS ONLINE (TIENDA WEB → POS) ─────────────────────────
+
+enum EstadoPedidoOnline {
+  PENDIENTE
+  EMPACADO
+  EN_CAMINO
+  ENTREGADO
+  CANCELADO
+
+  @@map("estado_pedido")
+}
+
+model Pedido {
+  id               Int                @id @default(autoincrement())
+  referencia       String             @unique // PED-<YYYYMMDD>-<id>
+  nombreContacto   String
+  telefonoContacto String
+  ciudad           String?
+  direccion        String?
+  notas            String?
+  total            Int                @default(0) // En COP, sin descuento de stock en v1
+  estado           EstadoPedidoOnline @default(PENDIENTE)
+  estadoPor        String?            // Actor del último cambio (Basic Auth único)
+  estadoEn         DateTime?          // Fecha/hora del último cambio de estado
+  createdAt        DateTime           @default(now())
+
+  items PedidoItem[]
+
+  @@index([estado])
+  @@index([createdAt])
+  @@index([telefonoContacto])
+  @@map("pedidos")
+}
+
+model PedidoItem {
+  id             Int      @id @default(autoincrement())
+  pedidoId       Int
+  pedido         Pedido   @relation(fields: [pedidoId], references: [id], onDelete: Cascade)
+  varianteId     Int
+  variante       Variante @relation(fields: [varianteId], references: [id], onDelete: Restrict)
+  referencia     String   // Snapshot de Producto.referencia
+  nombre         String   // Snapshot de Producto.nombre
+  tallaValor     String   // Snapshot de Talla.valor
+  colorNombre    String   // Snapshot de Color.nombre
+  cantidad       Int
+  precioUnitario Int
+  subtotal       Int
+
+  @@map("pedidos_items")
 }
 
 // ───────────────────────── AUDITORÍA DEL SISTEMA ─────────────────────────

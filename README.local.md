@@ -19,6 +19,14 @@ npx --no-install tsc --noEmit
 npm run build
 ```
 
+## Puesta a cero de datos (script de lanzamiento)
+
+- Comando: `npm run purga -- --nivel=transaccional|cero [--simular] [--entorno=produccion]` (`scripts/purga-datos.ts`, contrato en `specs/001-ventas-online-real/contracts/purga.md`).
+- Sin `--nivel` aborta (exit 2); sin `DATABASE_URL` aborta (exit 3); una URL sin marcador de staging exige `--entorno=produccion` (exit 4) y dobla la confirmación (`PURGAR-PRODUCCION`).
+- Muestra conteos por tabla ANTES de borrar; exige confirmación escrita `PURGAR`; reporta filas eliminadas exactas. `--simular` solo muestra conteos (0 filas).
+- Nivel transaccional conserva catálogo real + contactos; nivel cero los borra. `Configuracion` y `Bodega` nunca se tocan.
+- Ejecutar la purga contra producción necesita autorización explícita del propietario y se registra en `homelab-ops/REGISTRO.md`.
+
 ## Pruebas E2E (Playwright contra staging)
 
 - Requisitos: la imagen `kaob-pos-local:staging` ejecutándose por Coolify (servicio `KAOB-POS - Staging`), Caddy local con TLS en `127.0.0.1:3100` y credenciales `KAOB_E2E_AUTH_USER` / `KAOB_E2E_AUTH_PASSWORD` en `.env.e2e` (gitignoreado; se toman del env del contenedor staging `app-…` / `fnzik…-app-1`).
@@ -26,6 +34,6 @@ npm run build
 - Ejecutar la suite completa: `npx playwright test tests/e2e` (POS 9 pruebas + tienda 4; estado 13/13 el 18-10-2026).
 - Antes de una corrida completa, limpiar el estado transaccional en staging (devuelve stock, borra ventas/caja): usar el psql del contenedor `opwojqwmmat6uwrsppa5serl` con la secuencia documentada en los scripts de la sesión; no tocar producción.
 - Datos generados quedan como residuo E2E (categorías `E2ECAT-*`, grupos `E2EGT-*`, colores `INK-*`, productos `E2EE*`); una purga de transaccionales futura los limpia.
-- Defectos conocidos aún abiertos: badge "CAJA ACTIVA" oculto por breakpoint `xs` inexistente en `tailwind.config.js` (E2E-01, cosmético) y `/ventas-online` es demo estática con estados en memoria (no conecta con la BD).
+- Defectos conocidos aún abiertos: `/ventas-online` es demo estática con estados en memoria (no conecta con la BD) — **ACTUALIZADO 2026-11-08**: la demo fue reemplazada por pedidos reales en la Fase 19 (feature `feat/001-ventas-online-real`); queda pendiente validar en staging cuando el servidor sea accesible. El badge "CAJA ACTIVA" ya está corregido (breakpoint `xs` añadido).
 
 Usar entorno aislado para pruebas. No ejecutar seed, migraciones ni escrituras sobre datos de producción. Los enlaces del proyecto y el procedimiento general están en `/home/owen/Projects/README.md`.

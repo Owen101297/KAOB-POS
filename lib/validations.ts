@@ -464,6 +464,36 @@ export const gastoSchema = z.object({
 
 // ─────────────────────────── TIPOS ───────────────────────────
 
+// ────────────────────────── PEDIDOS ONLINE (TIENDA → POS) ──────────────────
+
+export const pedidoOnlineItemSchema = z.object({
+  varianteId: z.coerce.number().int().positive("Variante inválida"),
+  cantidad: z.coerce.number().int().min(1, "Cantidad mínima 1").max(99, "Máximo 99 por prenda"),
+});
+
+export const pedidoOnlineSchema = z.object({
+  nombre: z.string().trim().min(2, "Nombre obligatorio").max(120, "Máximo 120 caracteres"),
+  celular: z
+    .string()
+    .trim()
+    .min(7, "Teléfono demasiado corto")
+    .max(15, "Teléfono inválido")
+    .regex(/^[0-9+\-\s()]+$/, "Teléfono solo admite dígitos y +, -, espacios"),
+  ciudad: z.string().trim().max(80, "Máximo 80 caracteres").optional().or(z.literal("")),
+  direccion: z.string().trim().max(200, "Máximo 200 caracteres").optional().or(z.literal("")),
+  notas: z.string().trim().max(500, "Máximo 500 caracteres").optional().or(z.literal("")),
+  items: z.array(pedidoOnlineItemSchema).min(1, "Agrega al menos una prenda"),
+});
+
+export const cambioEstadoPedidoSchema = z.object({
+  id: z.coerce.number().int().positive("Pedido inválido"),
+  nuevoEstado: z.enum(["EMPACADO", "EN_CAMINO", "ENTREGADO"]),
+});
+
+export const cancelarPedidoSchema = z.object({
+  id: z.coerce.number().int().positive("Pedido inválido"),
+});
+
 export type ActionResult<T = undefined> =
   | ({ ok: true } & (T extends undefined ? { data?: undefined } : { data: T }))
   | { ok: false; error: string };

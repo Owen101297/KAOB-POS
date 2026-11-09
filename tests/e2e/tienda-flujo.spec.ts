@@ -63,6 +63,8 @@ test.describe.serial('Tienda online → WhatsApp → despacho', () => {
       page.waitForEvent('popup', { timeout: 20000 }),
       page.getByRole('button', { name: 'Finalizar Pedido por WhatsApp' }).click(),
     ]);
+    // El pedido se guarda primero en BD (PED-...) y luego se abre el chat.
+    await expect.poll(() => popup.url(), { timeout: 20000 }).toContain('whatsapp.com');
     const url = decodeURIComponent(popup.url().replace(/\+/g, ' '));
     expect(url, 'Debe abrir WhatsApp con el texto del pedido').toContain('whatsapp.com/send');
     expect(url).toMatch(/phone=\d{10,}/);
@@ -70,16 +72,24 @@ test.describe.serial('Tienda online → WhatsApp → despacho', () => {
     expect(url).toContain(st.nombreProducto ?? '');
     expect(url).toContain('TOTAL A PAGAR');
     expect(url).toMatch(/45\.000/);
+    // El pedido quedó registrado en BD con su referencia PED incluida en el mensaje.
+    expect(url).toMatch(/Referencia: PED-\d{8}-\d+/);
     await popup.close().catch(() => {});
   });
 
-  test('/ventas-online permite mover estados del pedido demo', async ({ page }) => {
+  test('/ventas-online lista el pedido real (BD) y lo pasa a Empacado', async ({ page }) => {
     await page.goto('/ventas-online');
     await expect(page.getByText('Ventas Online & Pedidos Web')).toBeVisible();
-    await expect(page.getByText(/PED-100\d/).first()).toBeVisible();
+    // La demo PED-1001..1003 fue reemplazada: solo pedidos reales de la BD.
+    await expect(page.getByText(/PED-100\d/)).toHaveCount(0);
+    await expect(page.getByText(/PED-\d{8}-\d+/).first()).toBeVisible({ timeout: 20000 });
 
-    const btnEmpacar = page.getByRole('button', { name: 'Empacar' }).first();
-    await btnEmpacar.click();
-    await expect(page.getByText(/Empacado|empacado/i).first()).toBeVisible({ timeout: 15000 });
+    const tarjeta = page.locator('.rounded-2xl', { hasText: 'Cliente Prueba E2E' }).first();
+    await expect(tarjeta).toBeVisible();
+    await expect(tarjeta.getByText('Pendiente', { exact: true })).toBeVisible();
+
+    await tarjeta.getByRole('button', { name: 'Empacar' }).click();
+    await expect(tarjeta.getByText('Empacado', { exact: true })).toBeVisible({ timeout: 20000 });
+    await expect(tarjeta.getByText(/Cambio por Administrador/)).toBeVisible();
   });
 });
