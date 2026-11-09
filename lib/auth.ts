@@ -1,9 +1,10 @@
-import { headers } from "next/headers";
+import { headers, cookies } from "next/headers";
 import {
   isBasicAuthAuthorized,
   isBasicAuthConfigured,
   isDevelopmentAuthBypassAllowed,
 } from "@/lib/auth-basic";
+import { verificarSesion, SESSION_COOKIE } from "@/lib/session";
 
 export class UnauthorizedError extends Error {
   constructor() {
@@ -22,5 +23,6 @@ export class AuthenticationConfigurationError extends Error {
 export async function requireAuth(): Promise<void> {
   if (isDevelopmentAuthBypassAllowed()) return;
   if (!isBasicAuthConfigured()) throw new AuthenticationConfigurationError();
+  if (verificarSesion(cookies().get(SESSION_COOKIE)?.value)) return;
   if (!isBasicAuthAuthorized(headers().get("authorization"))) throw new UnauthorizedError();
 }
