@@ -91,6 +91,8 @@ test.describe.serial('Ventas online: pedido real → ciclo de despacho completo'
     await page.getByRole('button', { name: 'Proceder al Checkout' }).click();
     await page.getByPlaceholder('Ej. Carlos Mendoza').fill(clienteCancel);
     await page.getByPlaceholder('Ej. 310 123 4567').fill('300 987 6543');
+    await page.getByPlaceholder('Ej. Medellín').fill('Medellín');
+    await page.getByPlaceholder('Ej. Calle 10 # 40-20').fill('Cra 55 # 10-20');
     const [popup] = await Promise.all([
       page.waitForEvent('popup', { timeout: 30000 }),
       page.getByRole('button', { name: 'Finalizar Pedido por WhatsApp' }).click(),
