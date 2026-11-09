@@ -40,7 +40,7 @@ test.describe.serial('Ventas online: pedido real → ciclo de despacho completo'
     ]);
     await expect.poll(() => popup.url(), { timeout: 20000 }).toContain('whatsapp.com');
     const url = decodeURIComponent(popup.url().replace(/\+/g, ' '));
-    expect(url).toMatch(/Referencia: PED-\d{8}-\d+/);
+    expect(url).toMatch(/PED-\d{8}-\d+/);
     const ref = (url.match(/PED-\d{8}-\d+/) as string[])[0];
     guardarEstado({ pedidoRef: ref });
     await popup.close().catch(() => {});

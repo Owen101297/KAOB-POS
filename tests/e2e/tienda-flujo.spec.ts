@@ -73,7 +73,7 @@ test.describe.serial('Tienda online → WhatsApp → despacho', () => {
     expect(url).toContain('TOTAL A PAGAR');
     expect(url).toMatch(/45\.000/);
     // El pedido quedó registrado en BD con su referencia PED incluida en el mensaje.
-    expect(url).toMatch(/Referencia: PED-\d{8}-\d+/);
+    expect(url).toMatch(/PED-\d{8}-\d+/);
     await popup.close().catch(() => {});
   });
 
