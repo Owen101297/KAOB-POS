@@ -23,6 +23,6 @@ export class AuthenticationConfigurationError extends Error {
 export async function requireAuth(): Promise<void> {
   if (isDevelopmentAuthBypassAllowed()) return;
   if (!isBasicAuthConfigured()) throw new AuthenticationConfigurationError();
-  if (verificarSesion(cookies().get(SESSION_COOKIE)?.value)) return;
+  if (await verificarSesion(cookies().get(SESSION_COOKIE)?.value)) return;
   if (!isBasicAuthAuthorized(headers().get("authorization"))) throw new UnauthorizedError();
 }

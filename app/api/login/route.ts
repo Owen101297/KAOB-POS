@@ -38,7 +38,7 @@ export async function POST(request: NextRequest) {
   const entornoProd = process.env.NODE_ENV === "production";
 
   const respuesta = NextResponse.json({ ok: true });
-  respuesta.cookies.set(SESSION_COOKIE, crearSesion(usuario), {
+  respuesta.cookies.set(SESSION_COOKIE, await crearSesion(usuario), {
     httpOnly: true,
     sameSite: "lax",
     // En producción siempre Secure; en dev HTTP queda en false (localhost).
