@@ -11,7 +11,7 @@ function matchesPath(pathname: string, basePath: string): boolean {
 
 import { verificarSesion, SESSION_COOKIE } from "@/lib/session";
 
-function tieneSesionValida(request: NextRequest): boolean {
+async function tieneSesionValida(request: NextRequest): Promise<boolean> {
   return verificarSesion(request.cookies.get(SESSION_COOKIE)?.value);
 }
 
@@ -71,7 +71,7 @@ function unauthorized(): NextResponse {
   });
 }
 
-export function middleware(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   if (isPublicRequest(request)) return NextResponse.next();
 
   if (process.env.NODE_ENV !== "development" && !isSecureRequest(request)) {
@@ -82,7 +82,7 @@ export function middleware(request: NextRequest) {
   if (!isBasicAuthConfigured()) return unavailable();
 
   // Sesión de la pantalla /login (cookie firmada) o cabecera Basic (respaldo).
-  if (tieneSesionValida(request)) return NextResponse.next();
+  if (await tieneSesionValida(request)) return NextResponse.next();
   if (isBasicAuthAuthorized(request.headers.get("authorization"))) return NextResponse.next();
 
   // Navegadores: pantalla de login con retorno a la ruta pedida.
