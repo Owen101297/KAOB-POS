@@ -99,3 +99,19 @@ description: "Task list for feature tienda que vende (pagos online + rediseño 2
 - T004–T008 [P]
 - T016–T017 [P]
 - T019–T025 [P]
+
+## 002b — Identidad editorial boutique (2026-11-10)
+
+Iteración visual de la misma feature, autorizada por el propietario: reconstrucción de la
+vitrina con identidad propia (premium · exclusivo · editorial claro) y llamados a la compra.
+
+- [x] T027 Tokens de diseño: paleta bone/ink/bronze + tipografía de exhibición (Playfair) en tailwind
+- [x] T028 Fuentes auto-alojadas en `app/fonts/` (Inter + Playfair Display, OFL) con `next/font/local` — el build no depende de fonts.gstatic.com (causa de 2 despliegues fallidos)
+- [x] T029 Hero editorial: titular serif con reveal palabra a palabra, parallax del isotipo, CTA "Descubrir la colección" + ediciones Dama/Caballero
+- [x] T030 Navbar isla: indicador activo con `layoutId`, elevación al scroll, logotipo `currentColor` sin perder transparencia
+- [x] T031 Marquee infinito de promesas (respeta `prefers-reduced-motion`)
+- [x] T032 Tarjeta de producto premium: nombre serif, tallas y color visibles sin abrir el detalle, escasez en bronce
+- [x] T033 Mosaico de colecciones con numeración serif, testimonios como cita, footer con cierre de compra y WhatsApp
+- [x] T034 Empty-state premium con CTA a WhatsApp (sustituye el mensaje técnico "No hay productos")
+- [x] T035 Skeletons en paleta hueso y metadata SEO/OG conservadas
+- [x] T036 Verificación: tsc, 25/25 unitarias, build (52 rutas) y E2E 21/21 contra staging con el diseño nuevo
