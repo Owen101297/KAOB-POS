@@ -34,9 +34,10 @@ test.describe.serial('Ventas online: pedido real → ciclo de despacho completo'
     await page.getByPlaceholder('Ej. Calle 10 # 40-20').fill('Cra 99 # 88-77');
     await page.getByPlaceholder(/Apto 301/).fill('Despacho ciclo E2E');
 
+    await page.getByRole('button', { name: 'Continuar al pago' }).click();
     const [popup] = await Promise.all([
       page.waitForEvent('popup', { timeout: 30000 }),
-      page.getByRole('button', { name: 'Finalizar Pedido por WhatsApp' }).click(),
+      page.getByRole('button', { name: 'Finalizar por WhatsApp' }).click(),
     ]);
     await expect.poll(() => popup.url(), { timeout: 20000 }).toContain('whatsapp.com');
     const url = decodeURIComponent(popup.url().replace(/\+/g, ' '));
@@ -93,9 +94,10 @@ test.describe.serial('Ventas online: pedido real → ciclo de despacho completo'
     await page.getByPlaceholder('Ej. 310 123 4567').fill('300 987 6543');
     await page.getByPlaceholder('Ej. Medellín').fill('Medellín');
     await page.getByPlaceholder('Ej. Calle 10 # 40-20').fill('Cra 55 # 10-20');
+    await page.getByRole('button', { name: 'Continuar al pago' }).click();
     const [popup] = await Promise.all([
       page.waitForEvent('popup', { timeout: 30000 }),
-      page.getByRole('button', { name: 'Finalizar Pedido por WhatsApp' }).click(),
+      page.getByRole('button', { name: 'Finalizar por WhatsApp' }).click(),
     ]);
     // Para este test el WhatsApp es intrascendente: se decide en el panel.
     await expect.poll(() => popup.url(), { timeout: 20000 }).toContain('whatsapp.com');

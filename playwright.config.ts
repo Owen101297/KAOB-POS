@@ -36,11 +36,25 @@ export default defineConfig({
   },
   projects: [
     {
+      name: 'setup',
+      testMatch: /auth\.setup\.ts/,
+      use: {
+        baseURL: BASE_URL,
+        ignoreHTTPSErrors: true,
+        httpCredentials: {
+          username: process.env.KAOB_E2E_AUTH_USER || '',
+          password: process.env.KAOB_E2E_AUTH_PASSWORD || '',
+        },
+      },
+    },
+    {
       name: 'chromium',
+      dependencies: ['setup'],
       use: {
         ...devices['Desktop Chrome'],
         ignoreHTTPSErrors: true,
         launchOptions: { args: ['--ignore-certificate-errors'] },
+        storageState: path.join(__dirname, 'tests', 'e2e', '.auth', 'staging.json'),
       },
     },
   ],
