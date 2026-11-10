@@ -10,6 +10,7 @@ import SocialProofSection from '@/components/tienda/SocialProofSection';
 import FooterTienda from '@/components/tienda/FooterTienda';
 import ProductCardTienda from '@/components/tienda/ProductCardTienda';
 import ProductDetailModal from '@/components/tienda/ProductDetailModal';
+import FeaturedShowcase from '@/components/tienda/FeaturedShowcase';
 import CartDrawerTienda, { type ItemBolsa } from '@/components/tienda/CartDrawerTienda';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/Select';
 import { Button } from '@/components/ui/Button';
@@ -307,6 +308,14 @@ export default function TiendaClient({ productos, categorias, configuracion, pas
           </div>
         )}
       </main>
+
+      {/* ESCAPARATE DEL PRODUCTO DESTACADO (solo si no hay filtros activos) */}
+      {!busqueda && !categoriaActiva && !generoActivo && (
+        <FeaturedShowcase
+          productos={productosFiltrados}
+          onVerDetalle={(p) => setProductoSeleccionado(p)}
+        />
+      )}
 
       {/* SECCIÓN SOCIAL PROOF Y GARANTÍAS */}
       <SocialProofSection />
