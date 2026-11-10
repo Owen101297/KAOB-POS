@@ -1,7 +1,19 @@
 'use client';
 
 import { useState } from 'react';
-import { X, Trash2, ShoppingBag, ArrowRight, Phone, Send, CheckCircle2 } from 'lucide-react';
+import {
+  X,
+  Trash2,
+  ShoppingBag,
+  ArrowRight,
+  Phone,
+  Send,
+  CreditCard,
+  Wallet,
+  Landmark,
+  Banknote,
+  CheckCircle2,
+} from 'lucide-react';
 import { formatoCOP } from '@/lib/format';
 import { registrarPedidoOnline } from '@/lib/actions/pedidos';
 import { Button } from '@/components/ui/Button';
@@ -20,6 +32,15 @@ export interface ItemBolsa {
   stockDisponible: number;
 }
 
+export type MetodoPagoTienda =
+  | 'WOMPI'
+  | 'BOLD'
+  | 'ADDI'
+  | 'SISTECREDITO'
+  | 'FIADO'
+  | 'CONTRAENTREGA'
+  | 'WHATSAPP';
+
 interface Props {
   abierto: boolean;
   onCerrar: () => void;
@@ -28,7 +49,66 @@ interface Props {
   onEliminarItem: (varianteId: number) => void;
   onVaciarBolsa: () => void;
   telefonoWhatsAppTienda?: string;
+  /** Pasarelas activas según env del servidor; sin llaves el método se oculta. */
+  pasarelas?: { wompi: boolean; bold: boolean };
+  /** Fiado requiere clientes con cupo cargado en el POS. */
+  fiadoActivo?: boolean;
 }
+
+const METODO_META: Record<
+  MetodoPagoTienda,
+  { titulo: string; detalle: string; icono: React.ReactNode; cta: string; acento: string }
+> = {
+  WOMPI: {
+    titulo: 'Tarjeta / PSE / Nequi',
+    detalle: 'Pasarela segura de Wompi',
+    icono: <CreditCard className="h-4 w-4" />,
+    cta: 'Pagar con Wompi',
+    acento: 'bg-sky-600 hover:bg-sky-700 text-white',
+  },
+  BOLD: {
+    titulo: 'Pagar con Bold',
+    detalle: 'Link de pago Bold (tarjeta, PSE)',
+    icono: <Wallet className="h-4 w-4" />,
+    cta: 'Ir a pagar con Bold',
+    acento: 'bg-amber-500 hover:bg-amber-600 text-white',
+  },
+  ADDI: {
+    titulo: 'Addi',
+    detalle: 'Paga a cuotas con tu documento',
+    icono: <Landmark className="h-4 w-4" />,
+    cta: 'Confirmar pedido con Addi',
+    acento: 'bg-purple-600 hover:bg-purple-700 text-white',
+  },
+  SISTECREDITO: {
+    titulo: 'Sistecrédito',
+    detalle: 'Crédito con tu documento',
+    icono: <Landmark className="h-4 w-4" />,
+    cta: 'Confirmar pedido (Sistecrédito)',
+    acento: 'bg-cyan-700 hover:bg-cyan-800 text-white',
+  },
+  FIADO: {
+    titulo: 'Fiado (crédito)',
+    detalle: 'Solo clientes con cupo en KAOB',
+    icono: <Banknote className="h-4 w-4" />,
+    cta: 'Confirmar pedido a crédito',
+    acento: 'bg-zinc-900 hover:bg-zinc-800 text-white',
+  },
+  CONTRAENTREGA: {
+    titulo: 'Pago contraentrega',
+    detalle: 'Pagas en efectivo al recibir',
+    icono: <Banknote className="h-4 w-4" />,
+    cta: 'Confirmar pedido (pagas al recibir)',
+    acento: 'bg-emerald-600 hover:bg-emerald-700 text-white',
+  },
+  WHATSAPP: {
+    titulo: 'WhatsApp',
+    detalle: 'Coordinar el pago contigo',
+    icono: <Send className="h-4 w-4" />,
+    cta: 'Finalizar por WhatsApp',
+    acento: 'bg-emerald-600 hover:bg-emerald-700 text-white',
+  },
+};
 
 export default function CartDrawerTienda({
   abierto,
@@ -38,13 +118,18 @@ export default function CartDrawerTienda({
   onEliminarItem,
   onVaciarBolsa,
   telefonoWhatsAppTienda = '573000000000',
+  pasarelas = { wompi: process.env.NEXT_PUBLIC_WOMPI_ACTIVO === '1', bold: process.env.NEXT_PUBLIC_BOLD_ACTIVO === '1' },
+  fiadoActivo = process.env.NEXT_PUBLIC_FIADO_ACTIVO === '1',
 }: Props) {
-  const [paso, setPaso] = useState<'carrito' | 'datos'>('carrito');
+  const [paso, setPaso] = useState<'carrito' | 'datos' | 'pago'>('carrito');
   const [nombre, setNombre] = useState('');
   const [celular, setCelular] = useState('');
   const [direccion, setDireccion] = useState('');
   const [ciudad, setCiudad] = useState('');
   const [notas, setNotas] = useState('');
+  const [email, setEmail] = useState('');
+  const [documento, setDocumento] = useState('');
+  const [metodo, setMetodo] = useState<MetodoPagoTienda>('WHATSAPP');
   const [enviando, setEnviando] = useState(false);
   const [errorCheckout, setErrorCheckout] = useState('');
 
@@ -53,6 +138,129 @@ export default function CartDrawerTienda({
   const total = items.reduce((acc, it) => acc + it.precio * it.cantidad, 0);
   const totalPrendas = items.reduce((acc, it) => acc + it.cantidad, 0);
 
+  const opcionesMetodo: MetodoPagoTienda[] = [
+    ...(pasarelas.wompi ? ['WOMPI' as const] : []),
+    ...(pasarelas.bold ? ['BOLD' as const] : []),
+    'ADDI' as const,
+    'SISTECREDITO' as const,
+    ...(fiadoActivo ? ['FIADO' as const] : []),
+    'CONTRAENTREGA' as const,
+    'WHATSAPP' as const,
+  ];
+
+  const bodyCheckout = () => ({
+    nombre: nombre.trim(),
+    celular: celular.trim(),
+    ciudad: ciudad.trim(),
+    direccion: direccion.trim(),
+    notas: notas.trim(),
+    items: items.map((it) => ({ varianteId: it.varianteId, cantidad: it.cantidad })),
+  });
+
+  const datosCompletos = Boolean(nombre.trim() && celular.trim() && ciudad.trim() && direccion.trim());
+
+  // Envía un POST multilinea al Web Checkout de Wompi (inputs hidden) para
+  // redirigir al cliente dentro del gesto del usuario (evita bloqueo de popups).
+  const submitFormPost = (url: string, campos: Record<string, string>) => {
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = url;
+    for (const [nombreCampo, valor] of Object.entries(campos)) {
+      const input = document.createElement('input');
+      input.type = 'hidden';
+      input.name = nombreCampo;
+      input.value = valor;
+      form.appendChild(input);
+    }
+    document.body.appendChild(form);
+    form.submit();
+  };
+
+  const finalizarPago = async () => {
+    if (!datosCompletos || enviando || items.length === 0) return;
+    const requiereDocumento =
+      metodo === 'ADDI' || metodo === 'SISTECREDITO' || metodo === 'FIADO';
+    if (requiereDocumento && documento.replace(/\s/g, '').length < 6) {
+      setErrorCheckout('Escribe tu número de documento para continuar.');
+      return;
+    }
+
+    setEnviando(true);
+    setErrorCheckout('');
+
+    try {
+      const base = bodyCheckout();
+
+      // WhatsApp: pedido en BD + mensaje con la referencia (spec 001, D7).
+      if (metodo === 'WHATSAPP') {
+        await enviarPorWhatsApp();
+        setEnviando(false);
+        return;
+      }
+
+      // Pasarelas: redirigir al proveedor.
+      if (metodo === 'WOMPI' || metodo === 'BOLD') {
+        const res = await fetch(metodo === 'WOMPI' ? '/api/checkout/wompi' : '/api/checkout/bold', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ...base, email: email.trim() }),
+        });
+        const data = await res.json();
+        if (!res.ok || !data.ok) {
+          setErrorCheckout(data.error || 'No pudimos iniciar el pago. Intenta de nuevo.');
+          setEnviando(false);
+          return;
+        }
+        onVaciarBolsa();
+        if (metodo === 'WOMPI') submitFormPost(data.url, data.campos);
+        else window.location.href = data.url;
+        return;
+      }
+
+      // Métodos directos: pedido queda registrado y se muestra su estado.
+      const res = await fetch('/api/checkout/directo', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...base, email: email.trim(), documento: documento.trim(), metodo }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.ok) {
+        setErrorCheckout(data.error || 'No pudimos registrar tu pedido. Intenta de nuevo.');
+        setEnviando(false);
+        return;
+      }
+      onVaciarBolsa();
+      window.location.href = `/tienda/pago/${data.referencia}`;
+    } catch {
+      setErrorCheckout('Error de conexión. Revisa tu internet e intenta de nuevo.');
+      setEnviando(false);
+    }
+  };
+
+  const enviarPorWhatsApp = async () => {
+    // La ventana se abre de forma síncrona (dentro del gesto del usuario) y
+    // luego se redirige tras guardar; evita el bloqueo de popups de Safari.
+    const ventana = window.open('about:blank', '_blank');
+
+    // v1: el pedido queda registrado en BD (PED-<fecha>-<id>) y el mensaje de
+    // WhatsApp se abre después con la referencia incluida (spec 001, D7).
+    const res = await registrarPedidoOnline(bodyCheckout());
+
+    if (!res.ok || !ventana) {
+      setErrorCheckout(!res.ok ? res.error : 'Tu navegador bloqueó la ventana de WhatsApp; el pedido sí quedó registrado.');
+      ventana?.close();
+      return;
+    }
+
+    const mensaje = `${generarMensajeWhatsApp()}${encodeURIComponent(`\n🧾 *Referencia:* ${res.data.referencia}`)}`;
+    const telLimpio = telefonoWhatsAppTienda.replace(/[^0-9]/g, '');
+    ventana.location.href = `https://wa.me/${telLimpio}?text=${mensaje}`;
+
+    onVaciarBolsa();
+    setPaso('carrito');
+  };
+
+  // Mensaje de WhatsApp (bolsa actual, URI-encoded).
   const generarMensajeWhatsApp = () => {
     let msg = `🛒 *NUEVO PEDIDO - KAOB MODERN WEAR*\n`;
     msg += `--------------------------------------\n`;
@@ -75,45 +283,6 @@ export default function CartDrawerTienda({
     msg += `¡Hola! Acabo de armar mi pedido desde la tienda online KAOB. Quedo atento a los datos de pago y envío.`;
 
     return encodeURIComponent(msg);
-  };
-
-  const handleEnviarPedidoWhatsApp = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (items.length === 0 || !nombre || !celular) return;
-
-    setEnviando(true);
-    setErrorCheckout('');
-
-    // La ventana se abre de forma síncrona (dentro del gesto del usuario) y
-    // luego se redirige tras guardar; evita el bloqueo de popups de Safari.
-    const ventana = window.open('about:blank', '_blank');
-
-    // v1: el pedido queda registrado en BD (PED-<fecha>-<id>) y el mensaje de
-    // WhatsApp se abre después con la referencia incluida (spec 001, D7).
-    const res = await registrarPedidoOnline({
-      nombre,
-      celular,
-      ciudad,
-      direccion,
-      notas,
-      items: items.map((it) => ({ varianteId: it.varianteId, cantidad: it.cantidad })),
-    });
-
-    if (!res.ok || !ventana) {
-      setErrorCheckout(res.ok ? 'Tu navegador bloqueó la ventana de WhatsApp; el pedido sí quedó registrado.' : res.error);
-      ventana?.close();
-      setEnviando(false);
-      return;
-    }
-
-    let mensaje = generarMensajeWhatsApp();
-    mensaje += encodeURIComponent(`\n🧾 *Referencia:* ${res.data.referencia}`);
-    const telLimpio = telefonoWhatsAppTienda.replace(/[^0-9]/g, '');
-    ventana.location.href = `https://wa.me/${telLimpio}?text=${mensaje}`;
-
-    setEnviando(false);
-    onVaciarBolsa();
-    setPaso('carrito');
   };
 
   const MONTO_ENVIO_GRATIS = 150000;
@@ -263,13 +432,13 @@ export default function CartDrawerTienda({
                 <span>Stock asegurado</span>
               </div>
             </div>
-          ) : (
+          ) : paso === 'datos' ? (
             /* PASO 2: DATOS DEL CLIENTE */
-            <form id="form-checkout-wa" onSubmit={handleEnviarPedidoWhatsApp} className="space-y-3.5">
+            <form id="form-checkout-wa" onSubmit={(e) => e.preventDefault()} className="space-y-3.5">
               <div className="rounded-xl bg-zinc-100 p-3 text-xs text-zinc-700 space-y-1">
                 <p className="font-bold">Completa tus datos para despachar tu pedido</p>
                 <p className="text-zinc-500 text-[11px]">
-                  Al continuar te abrirá WhatsApp con el resumen de tu compra listo para coordinar el pago.
+                  Ciudad y dirección son necesarias para envíos a toda Colombia.
                 </p>
               </div>
 
@@ -329,6 +498,96 @@ export default function CartDrawerTienda({
                 />
               </div>
             </form>
+          ) : (
+            /* PASO 3: MÉTODO DE PAGO (spec 002, US1) */
+            <div className="space-y-3.5">
+              <div className="rounded-xl bg-zinc-100 p-3 text-xs text-zinc-700 space-y-1">
+                <p className="font-bold">¿Cómo quieres pagar tu pedido?</p>
+                <p className="text-zinc-500 text-[11px]">
+                  Todos los métodos quedan coordinados con la referencia de tu pedido.
+                </p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                {opcionesMetodo.map((op) => {
+                  const meta = METODO_META[op];
+                  const activo = metodo === op;
+                  return (
+                    <button
+                      key={op}
+                      type="button"
+                      onClick={() => setMetodo(op)}
+                      aria-pressed={activo}
+                      className={`text-left rounded-xl border p-2.5 transition-all ${
+                        activo
+                          ? 'border-zinc-900 bg-zinc-900 text-white shadow-md'
+                          : 'border-zinc-200 bg-white text-zinc-800 hover:border-zinc-400'
+                      }`}
+                    >
+                      <span className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wide">
+                        {meta.icono}
+                        {meta.titulo}
+                      </span>
+                      <span className={`block mt-0.5 text-[10px] ${activo ? 'text-zinc-300' : 'text-zinc-500'}`}>
+                        {meta.detalle}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {(metodo === 'WOMPI' || metodo === 'BOLD') && (
+                <div>
+                  <label className="block text-xs font-bold text-zinc-700 mb-1">
+                    Correo electrónico (para el recibo)
+                  </label>
+                  <Input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="tucorreo@ejemplo.com"
+                    className="text-xs"
+                  />
+                </div>
+              )}
+
+              {(metodo === 'ADDI' || metodo === 'SISTECREDITO' || metodo === 'FIADO') && (
+                <div>
+                  <label className="block text-xs font-bold text-zinc-700 mb-1">
+                    Número de documento {metodo === 'FIADO' ? '(el de tu cuenta KAOB con cupo)' : ''}
+                  </label>
+                  <Input
+                    inputMode="numeric"
+                    value={documento}
+                    onChange={(e) => setDocumento(e.target.value.replace(/[^0-9 ]/g, ''))}
+                    placeholder="Ej. 1010123456"
+                    className="text-xs"
+                  />
+                  <p className="text-[10px] text-zinc-500 mt-1">
+                    {metodo === 'FIADO'
+                      ? 'Verificamos el cupo disponible antes de confirmar.'
+                      : 'Gestionamos el crédito y te confirmamos por WhatsApp.'}
+                  </p>
+                </div>
+              )}
+
+              {metodo === 'CONTRAENTREGA' && (
+                <div className="rounded-xl bg-emerald-50 border border-emerald-200 p-3 text-[11px] text-emerald-800">
+                  Pagas en efectivo cuando recibas tu pedido. Coordinamos la entrega por WhatsApp con la referencia.
+                </div>
+              )}
+
+              {metodo === 'WOMPI' && (
+                <div className="rounded-xl bg-sky-50 border border-sky-200 p-3 text-[11px] text-sky-800">
+                  Te llevamos a la pasarela segura de Wompi para completar el pago y volver a la tienda.
+                </div>
+              )}
+              {metodo === 'BOLD' && (
+                <div className="rounded-xl bg-amber-50 border border-amber-200 p-3 text-[11px] text-amber-800">
+                  Te llevamos a un enlace de pago Bold y regresamos a la tienda al terminar.
+                </div>
+              )}
+            </div>
           )}
         </div>
 
@@ -352,7 +611,7 @@ export default function CartDrawerTienda({
               >
                 Proceder al Checkout <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
-            ) : (
+            ) : paso === 'datos' ? (
               <div className="space-y-2">
                 {errorCheckout && (
                   <p className="text-xs font-semibold text-red-600 bg-red-50 border border-red-200 rounded-xl px-3 py-2">
@@ -360,13 +619,12 @@ export default function CartDrawerTienda({
                   </p>
                 )}
                 <Button
-                  type="submit"
-                  form="form-checkout-wa"
-                  disabled={enviando || !nombre || !celular}
                   size="lg"
-                  className="w-full py-6 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold uppercase tracking-widest text-xs shadow-lg flex items-center justify-center gap-2"
+                  disabled={!nombre || !celular}
+                  onClick={() => setPaso('pago')}
+                  className="w-full py-6 rounded-2xl bg-black text-white hover:bg-zinc-800 font-bold uppercase tracking-widest text-xs shadow-lg"
                 >
-                  <Send className="h-4 w-4" /> Finalizar Pedido por WhatsApp
+                  Continuar al pago <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
                 <Button
                   type="button"
@@ -375,6 +633,32 @@ export default function CartDrawerTienda({
                   className="w-full text-xs font-semibold text-zinc-600"
                 >
                   Volver a editar prendas
+                </Button>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {errorCheckout && (
+                  <p className="text-xs font-semibold text-red-600 bg-red-50 border border-red-200 rounded-xl px-3 py-2">
+                    {errorCheckout}
+                  </p>
+                )}
+                <Button
+                  type="button"
+                  disabled={enviando || !datosCompletos}
+                  onClick={() => finalizarPago()}
+                  size="lg"
+                  className={`w-full py-6 rounded-2xl font-bold uppercase tracking-widest text-xs shadow-lg flex items-center justify-center gap-2 ${METODO_META[metodo].acento}`}
+                >
+                  {enviando ? 'Procesando…' : METODO_META[metodo].cta} <ArrowRight className="h-4 w-4" />
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  disabled={enviando}
+                  onClick={() => setPaso('datos')}
+                  className="w-full text-xs font-semibold text-zinc-600"
+                >
+                  Volver a mis datos
                 </Button>
               </div>
             )}

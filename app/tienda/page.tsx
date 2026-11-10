@@ -1,6 +1,7 @@
 import { db } from '@/lib/db';
 import { listarProductosPublicos, type ProductoTienda } from '@/lib/tienda/public-productos';
 import TiendaClient from './TiendaClient';
+import { wompiConfigurado, boldConfigurado } from '@/lib/pagos/tipos';
 
 export const dynamic = 'force-dynamic';
 
@@ -44,6 +45,7 @@ export default async function TiendaVirtualPage() {
       productos={productos}
       categorias={categorias}
       configuracion={configuracion}
+      pasarelas={{ wompi: wompiConfigurado(), bold: boldConfigurado() }}
     />
   );
 }

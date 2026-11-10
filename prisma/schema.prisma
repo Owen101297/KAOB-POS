@@ -719,11 +719,57 @@ model Pedido {
   createdAt        DateTime           @default(now())
 
   items PedidoItem[]
+  pago  PagoOnline?
 
   @@index([estado])
   @@index([createdAt])
   @@index([telefonoContacto])
   @@map("pedidos")
+}
+
+// ───────────────────────── PAGOS ONLINE (CHECKOUT TIENDA) ─────────────────────────
+
+enum ProveedorPagoOnline {
+  WOMPI
+  BOLD
+  ADDI
+  SISTECREDITO
+  FIADO
+  CONTRAENTREGA
+
+  @@map("proveedor_pago_online")
+}
+
+enum EstadoPagoOnline {
+  PENDIENTE
+  APROBADO
+  RECHAZADO
+  EN_TRANSITO
+  CANCELADO
+
+  @@map("estado_pago_online")
+}
+
+// Un pago por pedido (unique pedidoId). La referencia externa es única para
+// idempotencia de webhooks (spec 002, FR-005).
+model PagoOnline {
+  id                   Int                 @id @default(autoincrement())
+  pedidoId             Int                 @unique
+  pedido               Pedido              @relation(fields: [pedidoId], references: [id], onDelete: Cascade)
+  proveedor            ProveedorPagoOnline
+  estado               EstadoPagoOnline    @default(PENDIENTE)
+  referenciaExterna    String?             @unique // Id de la pasarela o link (LNK_*, WOMPI-<txid>)
+  monto                Int
+  moneda               String              @default("COP")
+  emailCliente         String?
+  documentoCliente     String?             // Addi / Sistecrédito
+  webhookEventos       Int                 @default(0) // Contador de eventos recibidos (idempotencia)
+  createdAt            DateTime            @default(now())
+  updatedAt            DateTime            @updatedAt
+
+  @@index([proveedor])
+  @@index([estado])
+  @@map("pagos_online")
 }
 
 model PedidoItem {

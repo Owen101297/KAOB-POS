@@ -23,9 +23,11 @@ interface Props {
     direccion?: string;
     ciudad?: string;
   };
+  /** Pasarelas activas según el servidor (llaves en Coolify, spec 002). */
+  pasarelas?: { wompi: boolean; bold: boolean };
 }
 
-export default function TiendaClient({ productos, categorias, configuracion }: Props) {
+export default function TiendaClient({ productos, categorias, configuracion, pasarelas }: Props) {
   const [busqueda, setBusqueda] = useState('');
   const [categoriaActiva, setCategoriaActiva] = useState<string | null>(null);
   const [generoActivo, setGeneroActivo] = useState<string | null>(null);
@@ -333,6 +335,7 @@ export default function TiendaClient({ productos, categorias, configuracion }: P
         onEliminarItem={eliminarItem}
         onVaciarBolsa={() => setItemsBolsa([])}
         telefonoWhatsAppTienda={configuracion?.telefono || '573000000000'}
+        pasarelas={pasarelas}
       />
     </div>
   );
