@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { Inter, Playfair_Display } from 'next/font/google';
+import localFont from 'next/font/local';
 import './globals.css';
 import Shell from '@/components/layout/Shell';
 import { BodegaProvider } from '@/components/providers/BodegaProvider';
@@ -7,18 +7,25 @@ import { asegurarBodegaPrincipal } from '@/lib/actions/catalogos';
 import { db } from '@/lib/db';
 import type { Bodega } from '@prisma/client';
 
-const inter = Inter({
-  subsets: ['latin'],
+// Fuentes auto-alojadas (app/fonts, licencia OFL incluida): el build no depende
+// de fonts.googleapis.com/fonts.gstatic.com, que falló de forma intermitente
+// en el servidor de despliegue y tumbaba la compilación.
+const inter = localFont({
+  src: [{ path: './fonts/Inter-Variable.woff2', weight: '100 900', style: 'normal' }],
   variable: '--font-inter',
   display: 'swap',
+  fallback: ['system-ui', 'Segoe UI', 'Helvetica Neue', 'Arial', 'sans-serif'],
 });
 
 // Serif de exhibición para la identidad editorial de la tienda (002b).
-const playfair = Playfair_Display({
-  subsets: ['latin'],
+const playfair = localFont({
+  src: [
+    { path: './fonts/PlayfairDisplay-Variable.woff2', weight: '400 900', style: 'normal' },
+    { path: './fonts/PlayfairDisplay-Italic-Variable.woff2', weight: '400 900', style: 'italic' },
+  ],
   variable: '--font-playfair',
   display: 'swap',
-  style: ['normal', 'italic'],
+  fallback: ['Didot', 'Georgia', 'Times New Roman', 'serif'],
 });
 
 export const metadata: Metadata = {
