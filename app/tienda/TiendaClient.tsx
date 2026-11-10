@@ -10,6 +10,7 @@ import SocialProofSection from '@/components/tienda/SocialProofSection';
 import FooterTienda from '@/components/tienda/FooterTienda';
 import ProductCardTienda from '@/components/tienda/ProductCardTienda';
 import ProductDetailModal from '@/components/tienda/ProductDetailModal';
+import FeaturedShowcase from '@/components/tienda/FeaturedShowcase';
 import CartDrawerTienda, { type ItemBolsa } from '@/components/tienda/CartDrawerTienda';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/Select';
 import { Button } from '@/components/ui/Button';
@@ -23,9 +24,11 @@ interface Props {
     direccion?: string;
     ciudad?: string;
   };
+  /** Pasarelas activas según el servidor (llaves en Coolify, spec 002). */
+  pasarelas?: { wompi: boolean; bold: boolean };
 }
 
-export default function TiendaClient({ productos, categorias, configuracion }: Props) {
+export default function TiendaClient({ productos, categorias, configuracion, pasarelas }: Props) {
   const [busqueda, setBusqueda] = useState('');
   const [categoriaActiva, setCategoriaActiva] = useState<string | null>(null);
   const [generoActivo, setGeneroActivo] = useState<string | null>(null);
@@ -306,6 +309,14 @@ export default function TiendaClient({ productos, categorias, configuracion }: P
         )}
       </main>
 
+      {/* ESCAPARATE DEL PRODUCTO DESTACADO (solo si no hay filtros activos) */}
+      {!busqueda && !categoriaActiva && !generoActivo && (
+        <FeaturedShowcase
+          productos={productosFiltrados}
+          onVerDetalle={(p) => setProductoSeleccionado(p)}
+        />
+      )}
+
       {/* SECCIÓN SOCIAL PROOF Y GARANTÍAS */}
       <SocialProofSection />
 
@@ -333,6 +344,7 @@ export default function TiendaClient({ productos, categorias, configuracion }: P
         onEliminarItem={eliminarItem}
         onVaciarBolsa={() => setItemsBolsa([])}
         telefonoWhatsAppTienda={configuracion?.telefono || '573000000000'}
+        pasarelas={pasarelas}
       />
     </div>
   );
