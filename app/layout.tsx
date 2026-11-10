@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { Inter } from 'next/font/google';
+import { Inter, Playfair_Display } from 'next/font/google';
 import './globals.css';
 import Shell from '@/components/layout/Shell';
 import { BodegaProvider } from '@/components/providers/BodegaProvider';
@@ -11,6 +11,14 @@ const inter = Inter({
   subsets: ['latin'],
   variable: '--font-inter',
   display: 'swap',
+});
+
+// Serif de exhibición para la identidad editorial de la tienda (002b).
+const playfair = Playfair_Display({
+  subsets: ['latin'],
+  variable: '--font-playfair',
+  display: 'swap',
+  style: ['normal', 'italic'],
 });
 
 export const metadata: Metadata = {
@@ -37,7 +45,7 @@ async function obtenerBodegas(): Promise<Bodega[]> {
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const bodegas = await obtenerBodegas();
   return (
-    <html lang="es" className={inter.variable}>
+    <html lang="es" className={`${inter.variable} ${playfair.variable}`}>
       <body className="font-sans">
         <BodegaProvider bodegas={bodegas}>
           <Shell>{children}</Shell>
