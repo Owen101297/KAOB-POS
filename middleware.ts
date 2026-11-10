@@ -28,6 +28,17 @@ function isPublicRequest(request: NextRequest): boolean {
     return true;
   }
 
+  // El checkout de la tienda pública y los webhooks de pasarelas son públicos
+  // por diseño (spec 002): los webhooks llevan firma/consulta autoritativa.
+  if (
+    !isServerAction &&
+    (matchesPath(pathname, "/tienda/pago") ||
+      matchesPath(pathname, "/api/checkout") ||
+      matchesPath(pathname, "/api/webhooks"))
+  ) {
+    return true;
+  }
+
   // Los archivos servidos desde /public son públicos por diseño; no proteger rutas API por extensión.
   if (!pathname.startsWith("/api/") && /\.(?:avif|css|eot|gif|ico|jpe?g|js|json|map|otf|png|svg|ttf|txt|webp|woff2?)$/i.test(pathname)) {
     return true;

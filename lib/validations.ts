@@ -494,6 +494,26 @@ export const cancelarPedidoSchema = z.object({
   id: z.coerce.number().int().positive("Pedido inválido"),
 });
 
+// Checkout con métodos directos (sin pasarela) — spec 002, US1: Addi,
+// Sistecrédito, fiado (documento para cupo) y contraentrega.
+export const checkoutDirectoSchema = pedidoOnlineSchema.extend({
+  email: z
+    .string()
+    .trim()
+    .toLowerCase()
+    .email("Correo inválido")
+    .max(200)
+    .optional()
+    .or(z.literal("")),
+  documento: z
+    .string()
+    .trim()
+    .regex(/^\d{6,12}$/, "Documento inválido (6 a 12 dígitos)")
+    .optional()
+    .or(z.literal("")),
+  metodo: z.enum(["ADDI", "SISTECREDITO", "FIADO", "CONTRAENTREGA"]),
+});
+
 export type ActionResult<T = undefined> =
   | ({ ok: true } & (T extends undefined ? { data?: undefined } : { data: T }))
   | { ok: false; error: string };

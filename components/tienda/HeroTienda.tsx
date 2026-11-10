@@ -75,6 +75,19 @@ export default function HeroTienda({
               Ver Todo el Catálogo <ArrowRight className="ml-1.5 h-4 w-4" />
             </Button>
           </div>
+
+          {/* Barras de confianza inmediata (conversión, spec 002 US3) */}
+          <div className="mt-6 flex flex-wrap gap-x-4 gap-y-2 text-[11px] font-semibold text-zinc-300">
+            <span className="flex items-center gap-1.5">
+              <Truck className="h-3.5 w-3.5 text-emerald-400" /> Envío gratis desde $150.000
+            </span>
+            <span className="flex items-center gap-1.5">
+              <ShieldCheck className="h-3.5 w-3.5 text-sky-400" /> Pago seguro online
+            </span>
+            <span className="flex items-center gap-1.5">
+              <RefreshCw className="h-3.5 w-3.5 text-amber-400" /> Cambios sin drama por 30 días
+            </span>
+          </div>
         </div>
 
         {/* Categorías tipo Chips de Selección Rápida */}

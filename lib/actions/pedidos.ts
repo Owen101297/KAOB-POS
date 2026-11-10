@@ -1,6 +1,7 @@
 "use server";
 import { db } from "@/lib/db";
 import { requireAuth } from "@/lib/auth";
+import { revalidatePath } from "next/cache";
 import {
   pedidoOnlineSchema,
   cambioEstadoPedidoSchema,
@@ -8,7 +9,7 @@ import {
   errorDesconocido,
   type ActionResult,
 } from "@/lib/validations";
-import { revalidatePath } from "next/cache";
+import { crearPedidoConItems } from "@/lib/tienda/checkout-core";
 
 // ───────────────────────── PEDIDOS ONLINE (TIENDA WEB → POS) ─────────────────────────
 // Detalle de contrato: specs/001-ventas-online-real/contracts/pedidos.md
@@ -17,109 +18,20 @@ import { revalidatePath } from "next/cache";
 
 const PEDIDO_PATHS = ["/ventas-online"];
 
-function referenciaFecha(): string {
-  // Fecha de Bogotá (zona horaria del negocio) en formato YYYYMMDD.
-  return new Intl.DateTimeFormat("en-CA", {
-    timeZone: "America/Bogota",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  })
-    .format(new Date())
-    .replace(/-/g, "");
-}
-
 export async function registrarPedidoOnline(
   input: unknown
 ): Promise<ActionResult<{ id: number; referencia: string }>> {
   try {
     const data = pedidoOnlineSchema.parse(input);
 
-    // Consolidar cantidades por variante (la bolsa es única por variante, pero
-    // evitamos duplicados por robustez).
-    const cantidades = new Map<number, number>();
-    for (const item of data.items) {
-      cantidades.set(item.varianteId, (cantidades.get(item.varianteId) ?? 0) + item.cantidad);
-    }
-
-    const variantes = await db.variante.findMany({
-      where: {
-        id: { in: [...cantidades.keys()] },
-        activa: true,
-        producto: { activo: true },
-      },
-      select: {
-        id: true,
-        precioOverride: true,
-        producto: { select: { referencia: true, nombre: true, precioBase: true } },
-        talla: { select: { valor: true } },
-        color: { select: { nombre: true } },
-      },
-    });
-
-    if (variantes.length !== cantidades.size) {
-      return {
-        ok: false,
-        error: "Una o más prendas de tu bolsa ya no están disponibles. Actualiza la página e intenta de nuevo.",
-      };
-    }
-
-    type ItemData = {
-      varianteId: number;
-      referencia: string;
-      nombre: string;
-      tallaValor: string;
-      colorNombre: string;
-      cantidad: number;
-      precioUnitario: number;
-      subtotal: number;
-    };
-
-    const itemsData: ItemData[] = [];
-    let total = 0;
-    for (const v of variantes) {
-      const cantidad = cantidades.get(v.id)!;
-      const precioUnitario = v.precioOverride ?? v.producto.precioBase;
-      const subtotal = precioUnitario * cantidad;
-      total += subtotal;
-      itemsData.push({
-        varianteId: v.id,
-        referencia: v.producto.referencia,
-        nombre: v.producto.nombre,
-        tallaValor: v.talla.valor,
-        colorNombre: v.color.nombre,
-        cantidad,
-        precioUnitario,
-        subtotal,
-      });
-    }
-
-    const resultado = await db.$transaction(async (tx) => {
-      // Referencia provisional única (la final depende del id autoincrement
-      // que aún no existe; D2 de research.md).
-      const provisional = `PED-${referenciaFecha()}-P${Date.now().toString(36)}`;
-
-      const pedido = await tx.pedido.create({
-        data: {
-          referencia: provisional,
-          nombreContacto: data.nombre,
-          telefonoContacto: data.celular,
-          ciudad: data.ciudad || null,
-          direccion: data.direccion || null,
-          notas: data.notas || null,
-          total,
-          items: { create: itemsData },
-        },
-      });
-
-      // Referencia definitiva: PED-<YYYYMMDD>-<id> — única por construcción.
-      const referencia = `PED-${referenciaFecha()}-${pedido.id}`;
-      await tx.pedido.update({ where: { id: pedido.id }, data: { referencia } });
-      return { id: pedido.id, referencia };
-    });
+    const core = await crearPedidoConItems(data);
+    if (!core.ok) return { ok: false, error: core.error };
 
     for (const path of PEDIDO_PATHS) revalidatePath(path);
-    return { ok: true, data: resultado };
+    return {
+      ok: true,
+      data: { id: core.pedido.id, referencia: core.pedido.referencia },
+    };
   } catch (e) {
     return { ok: false, error: errorDesconocido(e) };
   }
@@ -151,6 +63,7 @@ export interface PedidoOnlineLista {
   estadoPor: string | null;
   estadoEn: string | null; // ISO — serializable hacia el cliente
   createdAt: string; // ISO
+  pago: { proveedor: string; estado: string } | null;
   items: PedidoOnlineListaItem[];
 }
 
@@ -175,6 +88,9 @@ export async function listarPedidosOnline(
           precioUnitario: true,
           subtotal: true,
         },
+      },
+      pago: {
+        select: { proveedor: true, estado: true },
       },
     },
   });

@@ -83,6 +83,30 @@ export default function SocialProofSection() {
           ))}
         </div>
 
+        {/* Métodos de pago online (spec 002, US1/US3) */}
+        <div className="mb-14 rounded-3xl border border-zinc-800 bg-zinc-900/60 p-6 sm:p-7">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <p className="text-[11px] font-bold uppercase tracking-widest text-green-400">
+                💳 Paga como quieras, sin filas
+              </p>
+              <p className="text-[11px] text-zinc-400 mt-1">
+                Checkout 100% en línea con confirmación inmediata de tu pedido.
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {['Wompi · Tarjeta/PSE', 'Bold', 'Addi', 'Sistecrédito', 'Contraentrega', 'Fiado'].map((m) => (
+                <span
+                  key={m}
+                  className="px-3 py-1.5 rounded-full bg-black border border-zinc-700 text-[10px] font-bold uppercase tracking-wide text-zinc-200"
+                >
+                  {m}
+                </span>
+              ))}
+            </div>
+          </div>
+        </div>
+
         {/* Pilares de Confianza y Garantía */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6 pt-10 border-t border-zinc-900">
           <div className="flex flex-col items-center text-center p-4 rounded-2xl bg-zinc-900/50 border border-zinc-800/60">

@@ -58,10 +58,12 @@ test.describe.serial('Tienda online → WhatsApp → despacho', () => {
     await page.getByPlaceholder('Ej. Medellín').fill('Bogotá');
     await page.getByPlaceholder('Ej. Calle 10 # 40-20').fill('Calle Falsa 123');
     await page.getByPlaceholder(/Apto 301/).fill('Entrega de prueba E2E');
+    // Spec 002: paso adicional de método de pago; WhatsApp viene preseleccionado.
+    await page.getByRole('button', { name: 'Continuar al pago' }).click();
 
     const [popup] = await Promise.all([
       page.waitForEvent('popup', { timeout: 20000 }),
-      page.getByRole('button', { name: 'Finalizar Pedido por WhatsApp' }).click(),
+      page.getByRole('button', { name: 'Finalizar por WhatsApp' }).click(),
     ]);
     // El pedido se guarda primero en BD (PED-...) y luego se abre el chat.
     await expect.poll(() => popup.url(), { timeout: 20000 }).toContain('whatsapp.com');

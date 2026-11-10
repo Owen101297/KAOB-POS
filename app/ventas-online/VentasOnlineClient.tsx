@@ -249,6 +249,18 @@ export default function VentasOnlineClient({ pedidosIniciales }: Props) {
                     <Badge variant={meta.badge}>{meta.label}</Badge>
                   </div>
 
+                  {/* Estado del pago online (spec 002) */}
+                  {ped.pago && (
+                    <div className="flex items-center gap-1.5 text-[11px] font-semibold text-slate-600">
+                      <span className="inline-flex items-center gap-1 rounded-full bg-slate-900 px-2 py-0.5 text-[10px] font-bold text-white">
+                        {ped.pago.proveedor}
+                        <span className={ped.pago.estado === 'APROBADO' ? 'text-emerald-400' : ped.pago.estado === 'RECHAZADO' ? 'text-red-400' : 'text-amber-300'}>
+                          · {ped.pago.estado}
+                        </span>
+                      </span>
+                    </div>
+                  )}
+
                   {/* Datos del Cliente */}
                   <div className="p-3 rounded-xl bg-slate-50 border border-slate-100 text-xs space-y-1">
                     <p className="font-bold text-slate-900">{ped.nombreContacto}</p>
