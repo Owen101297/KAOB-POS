@@ -1,12 +1,18 @@
 'use client';
 
-import { ArrowUpRight, Sparkles, User, Users, Gem } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { ArrowUpRight } from 'lucide-react';
+import { fadeUp, viewportOnce } from '@/components/tienda/motion';
 
 interface Props {
   onSeleccionarGenero: (genero: string | null) => void;
   generoSeleccionado: string | null;
 }
 
+/**
+ * Mosaico editorial de colecciones (002b): tarjetas de papel con numeración
+ * serif "Nº", sello bronce y flecha que se revela al hover. Contrato intacto.
+ */
 export default function CategoryGridBento({
   onSeleccionarGenero,
   generoSeleccionado,
@@ -14,132 +20,118 @@ export default function CategoryGridBento({
   const colecciones = [
     {
       id: 'DAMA',
+      num: 'Nº 01',
       nombre: 'Colección Dama',
-      tagline: 'Elegancia casual & prendas contemporáneas',
+      tagline: 'Elegancia casual y siluetas contemporáneas',
       badge: 'Tendencia 2026',
-      colorBadge: 'bg-rose-500/20 text-rose-300 border-rose-500/30',
-      icono: Sparkles,
-      bgGrad: 'from-zinc-900 via-neutral-900 to-stone-900',
-      iconoBg: 'bg-rose-500/10 text-rose-400',
-      colSpan: 'md:col-span-2 lg:col-span-2',
+      colSpan: 'md:col-span-2',
       generoKey: 'DAMA',
     },
     {
       id: 'CABALLERO',
+      num: 'Nº 02',
       nombre: 'Colección Caballero',
-      tagline: 'Oversize, hoodies & streetwear de alto gramaje',
-      badge: 'Lo Más Vendido',
-      colorBadge: 'bg-sky-500/20 text-sky-300 border-sky-500/30',
-      icono: User,
-      bgGrad: 'from-zinc-900 via-slate-900 to-zinc-950',
-      iconoBg: 'bg-sky-500/10 text-sky-400',
-      colSpan: 'md:col-span-1 lg:col-span-1',
+      tagline: 'Oversize y hoodies de alto gramaje',
+      badge: 'Lo más vendido',
+      colSpan: 'md:col-span-1',
       generoKey: 'CABALLERO',
     },
     {
       id: 'UNISEX',
+      num: 'Nº 03',
       nombre: 'Línea Unisex & Urban',
-      tagline: 'Prendas neutras, cortes boxy y esenciales',
+      tagline: 'Esenciales neutros de corte boxy',
       badge: 'Esenciales',
-      colorBadge: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30',
-      icono: Users,
-      bgGrad: 'from-zinc-900 via-stone-900 to-neutral-950',
-      iconoBg: 'bg-emerald-500/10 text-emerald-400',
-      colSpan: 'md:col-span-1 lg:col-span-1',
+      colSpan: 'md:col-span-1',
       generoKey: 'UNISEX',
     },
     {
       id: 'ACCESORIOS',
+      num: 'Nº 04',
       nombre: 'Accesorios & Gorras',
-      tagline: 'Caps estructuradas, morrales y complementos',
+      tagline: 'Complementos para completar el look',
       badge: 'Complementos',
-      colorBadge: 'bg-amber-500/20 text-amber-300 border-amber-500/30',
-      icono: Gem,
-      bgGrad: 'from-zinc-900 via-zinc-950 to-black',
-      iconoBg: 'bg-amber-500/10 text-amber-400',
-      colSpan: 'md:col-span-2 lg:col-span-2',
+      colSpan: 'md:col-span-2',
       generoKey: 'ACCESORIOS',
     },
   ];
 
   return (
-    <section className="py-12 md:py-16 bg-black text-white border-b border-zinc-900">
+    <section className="py-14 md:py-16 bg-bone-50 border-b border-ink/10">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        
-        {/* Cabecera de la sección */}
-        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8">
+        <motion.div
+          variants={fadeUp}
+          initial="hidden"
+          whileInView="visible"
+          viewport={viewportOnce}
+          className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8"
+        >
           <div>
-            <span className="text-[11px] font-bold uppercase tracking-[0.25em] text-zinc-400">
-              Explora por Colección
+            <span className="text-[10px] font-bold uppercase tracking-[0.26em] text-ink-400">
+              Explora por colección
             </span>
-            <h2 className="text-2xl sm:text-3xl font-black uppercase tracking-tight text-white mt-1">
-              ESTILOS SEGÚN TU PREFERENCIA
+            <h2 className="font-display text-3xl sm:text-4xl tracking-tight text-ink mt-1">
+              Elige tu colección
             </h2>
           </div>
           {generoSeleccionado && (
             <button
               type="button"
               onClick={() => onSeleccionarGenero(null)}
-              className="text-xs font-semibold text-zinc-400 hover:text-white underline"
+              className="text-xs font-semibold text-ink-400 hover:text-ink underline underline-offset-4"
             >
               Ver todas las colecciones
             </button>
           )}
-        </div>
+        </motion.div>
 
-        {/* Bento Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 lg:gap-6">
-          {colecciones.map((col) => {
-            const Icono = col.icono;
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 lg:gap-5">
+          {colecciones.map((col, idx) => {
             const esActivo = generoSeleccionado === col.generoKey;
-
             return (
-              <div
+              <motion.button
                 key={col.id}
+                type="button"
+                variants={fadeUp}
+                initial="hidden"
+                whileInView="visible"
+                viewport={viewportOnce}
+                transition={{ delay: idx * 0.06 }}
                 onClick={() => {
                   onSeleccionarGenero(esActivo ? null : col.generoKey);
                   const el = document.getElementById('catalogo-prendas');
                   el?.scrollIntoView({ behavior: 'smooth' });
                 }}
-                className={`group relative overflow-hidden rounded-3xl p-6 sm:p-8 bg-gradient-to-br ${col.bgGrad} border cursor-pointer transition-all duration-300 flex flex-col justify-between min-h-[220px] ${col.colSpan} ${
+                className={`group relative overflow-hidden rounded-3xl text-left p-6 sm:p-8 border cursor-pointer transition-all duration-300 flex flex-col justify-between min-h-[200px] bg-bone-100 ${col.colSpan} ${
                   esActivo
-                    ? 'border-white ring-2 ring-white/50 scale-[1.01] shadow-2xl'
-                    : 'border-zinc-800 hover:border-zinc-600 hover:shadow-xl'
+                    ? 'border-ink ring-2 ring-bronze/40 shadow-xl'
+                    : 'border-ink/10 hover:border-ink/30 hover:shadow-lg'
                 }`}
               >
-                {/* Isotipo sutil en marca de agua */}
-                <div className="absolute -right-6 -bottom-6 opacity-10 group-hover:opacity-20 group-hover:scale-110 transition-all duration-500 pointer-events-none">
+                {/* Isotipo translúcido */}
+                <div className="absolute -right-8 -bottom-8 opacity-[0.05] group-hover:opacity-[0.09] group-hover:scale-110 transition-all duration-500 pointer-events-none">
                   <img src="/brand/isotype.svg" alt="" className="w-44 h-44 object-contain" />
                 </div>
 
-                {/* Superior: Icono y Badge */}
                 <div className="flex items-center justify-between relative z-10">
-                  <div className={`p-3 rounded-2xl ${col.iconoBg} backdrop-blur`}>
-                    <Icono className="h-6 w-6" />
-                  </div>
-                  <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest border ${col.colorBadge}`}>
+                  <span className="font-display italic text-ink-400 text-lg">{col.num}</span>
+                  <span className="px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-[0.18em] border border-bronze/40 text-bronze-dark bg-bone-50">
                     {col.badge}
                   </span>
                 </div>
 
-                {/* Inferior: Título, Tagline y Flecha */}
-                <div className="relative z-10 pt-8">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h3 className="text-lg sm:text-xl font-black uppercase tracking-tight text-white group-hover:text-zinc-100">
-                        {col.nombre}
-                      </h3>
-                      <p className="text-xs text-zinc-400 mt-1 max-w-sm leading-relaxed">
-                        {col.tagline}
-                      </p>
-                    </div>
-
-                    <div className="h-10 w-10 rounded-full bg-white/10 group-hover:bg-white group-hover:text-black flex items-center justify-center transition-all duration-300 shrink-0 ml-3">
-                      <ArrowUpRight className="h-5 w-5 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
-                    </div>
+                <div className="relative z-10 pt-8 flex items-end justify-between gap-3">
+                  <div>
+                    <h3 className="font-display text-xl sm:text-2xl tracking-tight text-ink group-hover:text-ink-600">
+                      {col.nombre}
+                    </h3>
+                    <p className="text-xs text-ink-400 mt-1 max-w-sm leading-relaxed">{col.tagline}</p>
                   </div>
+                  <span className="h-10 w-10 rounded-full border border-ink/15 flex items-center justify-center text-ink-500 group-hover:bg-ink group-hover:text-bone-50 group-hover:border-ink transition-all duration-300 shrink-0">
+                    <ArrowUpRight className="h-5 w-5 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+                  </span>
                 </div>
-              </div>
+              </motion.button>
             );
           })}
         </div>

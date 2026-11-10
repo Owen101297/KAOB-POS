@@ -1,10 +1,11 @@
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
-import { Sparkles, SlidersHorizontal, Package, RefreshCw, Phone, MapPin, X } from 'lucide-react';
+import { ArrowRight, X } from 'lucide-react';
 import type { ProductoTienda } from '@/lib/tienda/public-productos';
 import NavbarTienda from '@/components/tienda/NavbarTienda';
 import HeroTienda from '@/components/tienda/HeroTienda';
+import MarqueeTienda from '@/components/tienda/MarqueeTienda';
 import CategoryGridBento from '@/components/tienda/CategoryGridBento';
 import SocialProofSection from '@/components/tienda/SocialProofSection';
 import FooterTienda from '@/components/tienda/FooterTienda';
@@ -175,16 +176,16 @@ export default function TiendaClient({ productos, categorias, configuracion, pas
 
   const tituloSeccion = useMemo(() => {
     if (busqueda) return `Resultados para "${busqueda}"`;
-    if (generoActivo === 'DAMA') return 'Colección Dama 👩';
-    if (generoActivo === 'CABALLERO') return 'Colección Caballero 👨';
-    if (generoActivo === 'UNISEX') return 'Línea Unisex & Urban ⚡';
-    if (generoActivo === 'ACCESORIOS') return 'Accesorios & Gorras 🎒';
+    if (generoActivo === 'DAMA') return 'Edición Dama';
+    if (generoActivo === 'CABALLERO') return 'Edición Caballero';
+    if (generoActivo === 'UNISEX') return 'Línea Unisex & Urban';
+    if (generoActivo === 'ACCESORIOS') return 'Accesorios & Gorras';
     if (categoriaActiva) return `Categoría: ${categoriaActiva}`;
     return 'Catálogo Completo';
   }, [busqueda, generoActivo, categoriaActiva]);
 
   return (
-    <div className="min-h-screen bg-zinc-50 font-sans text-zinc-900 flex flex-col justify-between selection:bg-zinc-900 selection:text-white">
+    <div className="min-h-screen bg-bone-50 font-sans text-ink flex flex-col justify-between selection:bg-ink selection:text-bone-100">
       {/* NAVBAR */}
       <NavbarTienda
         totalItemsEnBolsa={totalItemsEnBolsa}
@@ -209,6 +210,9 @@ export default function TiendaClient({ productos, categorias, configuracion, pas
         />
       )}
 
+      {/* FRANJA DE PROMESAS (marquee editorial) */}
+      {!busqueda && <MarqueeTienda />}
+
       {/* BENTO GRID DE COLECCIONES POR GÉNERO */}
       {!busqueda && (
         <CategoryGridBento
@@ -220,15 +224,13 @@ export default function TiendaClient({ productos, categorias, configuracion, pas
       {/* CATÁLOGO DE PRODUCTOS */}
       <main id="catalogo-prendas" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14 flex-1 w-full">
         {/* Cabecera del Catálogo */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-zinc-200">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-ink/10">
           <div>
-            <div className="flex items-center gap-2">
-              <span className="h-2.5 w-2.5 rounded-full bg-emerald-500 animate-pulse" />
-              <h2 className="text-xl sm:text-2xl font-black uppercase tracking-tight text-zinc-900">
-                {tituloSeccion}
-              </h2>
-            </div>
-            <p className="text-xs text-zinc-500 mt-1">
+            <h2 className="font-display text-2xl sm:text-4xl tracking-tight text-ink">
+              {tituloSeccion}
+            </h2>
+            <p className="text-xs text-ink-400 mt-1.5 flex items-center gap-1.5">
+              <span className={`h-1.5 w-1.5 rounded-full ${productosFiltrados.length > 0 ? 'bg-bronze' : 'bg-ink-400/40'}`} />
               {productosFiltrados.length === 1
                 ? '1 prenda disponible en vitrina'
                 : `${productosFiltrados.length} prendas disponibles en vitrina`}
@@ -245,7 +247,7 @@ export default function TiendaClient({ productos, categorias, configuracion, pas
                   setCategoriaActiva(null);
                   setBusqueda('');
                 }}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-zinc-200 hover:bg-zinc-300 text-xs font-bold text-zinc-800 transition-colors"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-bone-100 hover:bg-bone-200 border border-ink/10 text-xs font-bold text-ink-600 transition-colors"
               >
                 <span>Limpiar filtros</span>
                 <X className="h-3.5 w-3.5" />
@@ -253,9 +255,9 @@ export default function TiendaClient({ productos, categorias, configuracion, pas
             )}
 
             <div className="flex items-center gap-2">
-              <span className="text-xs font-semibold text-zinc-500 whitespace-nowrap">Ordenar:</span>
+              <span className="text-xs font-semibold text-ink-400 whitespace-nowrap">Ordenar:</span>
               <Select value={orden} onValueChange={(v: any) => setOrden(v)}>
-                <SelectTrigger className="w-[170px] text-xs h-9 bg-white border-zinc-300">
+                <SelectTrigger className="w-[170px] text-xs h-9 bg-bone-100 border-ink/15 text-ink">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -271,28 +273,40 @@ export default function TiendaClient({ productos, categorias, configuracion, pas
 
         {/* Rejilla de Productos */}
         {productosFiltrados.length === 0 ? (
-          <div className="my-16 text-center p-10 bg-white rounded-3xl border border-zinc-200 max-w-lg mx-auto shadow-sm">
-            <div className="w-16 h-16 rounded-full bg-zinc-100 flex items-center justify-center mx-auto text-zinc-400">
-              <Package className="h-8 w-8" />
+          <div className="my-16 text-center border border-ink/10 rounded-3xl bg-bone-100 max-w-lg mx-auto py-14 px-8">
+            <div className="flex h-20 w-20 items-center justify-center rounded-full border border-bronze/40 bg-bone-50 mx-auto">
+              <img src="/brand/isotype.svg" alt="" className="h-12 w-12 opacity-80" />
             </div>
-            <h3 className="mt-4 text-base font-bold text-zinc-900">No se encontraron prendas</h3>
-            <p className="text-xs text-zinc-500 mt-1 max-w-xs mx-auto">
+            <h3 className="mt-6 font-display text-2xl tracking-tight text-ink">
+              {busqueda ? 'Sin coincidencias' : 'Próximamente, nueva edición'}
+            </h3>
+            <p className="text-xs text-ink-400 mt-2 max-w-xs mx-auto leading-relaxed">
               {busqueda
                 ? `No hay resultados para "${busqueda}". Intenta con otra palabra clave.`
-                : 'No hay productos disponibles en esta sección actualmente.'}
+                : 'La confección avanza por lotes pequeños. Escríbenos por WhatsApp y te avisamos cuando esta pieza entre en vitrina.'}
             </p>
+            <
+              a
+              href={`https://wa.me/${(configuracion?.telefono || '573000000000').replace(/[^0-9]/g, '')}?text=${encodeURIComponent('¡Hola! Quiero saber cuándo llega la nueva colección a la tienda KAOB.')}`}
+              target="_blank"
+              rel="noreferrer"
+              className="mt-6 inline-flex items-center gap-2 rounded-full bg-ink px-6 py-3 text-xs font-bold uppercase tracking-[0.18em] text-bone-50 hover:bg-ink-700 transition-colors"
+            >
+              Avisen por WhatsApp
+              <ArrowRight className="h-4 w-4" />
+            </a>
             {(busqueda || categoriaActiva || generoActivo) && (
-              <Button
-                variant="outline"
+              <button
+                type="button"
                 onClick={() => {
                   setBusqueda('');
                   setCategoriaActiva(null);
                   setGeneroActivo(null);
                 }}
-                className="mt-5 text-xs font-bold uppercase tracking-wider rounded-full"
+                className="mt-4 mx-auto block text-xs font-semibold text-ink-400 hover:text-ink underline underline-offset-4"
               >
                 Ver todo el catálogo
-              </Button>
+              </button>
             )}
           </div>
         ) : (

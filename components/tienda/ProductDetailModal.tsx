@@ -105,32 +105,32 @@ export default function ProductDetailModal({
 
   return (
     <div className="fixed inset-0 z-[1400] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="relative w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-3xl bg-white shadow-2xl border border-zinc-200">
-        
+      <div className="relative w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-3xl bg-bone-50 shadow-2xl border border-ink/10">
+
         {/* Botón cerrar */}
         <button
           type="button"
           onClick={onCerrar}
-          className="absolute top-4 right-4 z-20 flex h-9 w-9 items-center justify-center rounded-full bg-zinc-100 text-zinc-500 hover:bg-zinc-200 hover:text-black transition-colors"
+          className="absolute top-4 right-4 z-20 flex h-9 w-9 items-center justify-center rounded-full bg-bone-100 text-ink-500 hover:bg-bone-200 hover:text-ink transition-colors"
           aria-label="Cerrar modal"
         >
           <X className="h-5 w-5" />
         </button>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-6 sm:p-8">
-          
+
           {/* Columna Izquierda: Mockup Visual */}
-          <div className="relative aspect-square w-full rounded-2xl bg-gradient-to-b from-zinc-100 to-zinc-200 flex items-center justify-center overflow-hidden border border-zinc-200">
-            <div className="absolute inset-0 flex items-center justify-center opacity-15">
+          <div className="relative aspect-square w-full rounded-2xl bg-bone-100 flex items-center justify-center overflow-hidden border border-ink/10">
+            <div className="absolute inset-0 flex items-center justify-center opacity-[0.08]">
               <img src="/brand/isotype.svg" alt="" className="w-3/4 h-3/4 object-contain" />
             </div>
             <div className="relative z-10 text-center">
-              <div className="w-28 h-28 rounded-full bg-white shadow-lg flex items-center justify-center mx-auto border border-zinc-200">
-                <span className="font-extrabold text-3xl font-serif text-zinc-900">
+              <div className="w-28 h-28 rounded-full bg-bone-50 shadow-[0_2px_14px_rgba(28,23,18,0.10)] flex items-center justify-center mx-auto border border-ink/10">
+                <span className="font-display font-bold text-3xl text-ink">
                   {productoVisual.nombre.slice(0, 2).toUpperCase()}
                 </span>
               </div>
-              <span className="mt-3 block font-mono text-xs font-bold tracking-widest text-zinc-600">
+              <span className="mt-3 block font-mono text-[10px] font-bold tracking-[0.28em] text-ink-400 uppercase">
                 REF: {productoVisual.referencia}
               </span>
             </div>
@@ -140,26 +140,26 @@ export default function ProductDetailModal({
           <div className="flex flex-col justify-between space-y-4">
             <div>
               <div className="flex items-center gap-2">
-                <span className="text-[11px] font-bold uppercase tracking-widest text-zinc-400">
+                <span className="text-[10px] font-bold uppercase tracking-[0.24em] text-ink-400">
                   {productoVisual.categoria?.nombre ?? 'Prenda'}
                 </span>
                 {productoVisual.calidad && (
-                  <span className="px-2 py-0.5 rounded-full bg-zinc-900 text-white text-[9px] font-bold uppercase tracking-wider">
+                  <span className="px-2 py-0.5 rounded-full border border-bronze/40 text-bronze-dark text-[9px] font-bold uppercase tracking-[0.14em]">
                     {CALIDAD_LABEL[productoVisual.calidad as keyof typeof CALIDAD_LABEL] ?? productoVisual.calidad}
                   </span>
                 )}
               </div>
 
-              <h2 className="text-xl sm:text-2xl font-black text-zinc-900 mt-1 uppercase tracking-tight">
+              <h2 className="font-display text-2xl sm:text-3xl tracking-tight text-ink mt-1">
                 {productoVisual.nombre}
               </h2>
 
-              <p className="text-2xl font-black text-zinc-900 mt-2">
+              <p className="text-2xl font-bold text-ink mt-2">
                 {formatoCOP(precio)}
               </p>
 
               {productoVisual.descripcion && (
-                <p className="text-xs text-zinc-500 mt-2 leading-relaxed">
+                <p className="text-xs text-ink-500 mt-2 leading-relaxed">
                   {productoVisual.descripcion}
                 </p>
               )}

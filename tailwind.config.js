@@ -21,8 +21,39 @@ module.exports = {
           'Arial',
           'sans-serif',
         ],
+        // Tipografía de exhibición para la tienda editorial (titulares serif).
+        display: [
+          'var(--font-playfair)',
+          'Playfair Display',
+          'Didot',
+          'Georgia',
+          'Times New Roman',
+          'serif',
+        ],
       },
       colors: {
+        // Identidad editorial de la vitrina (spec 002b): papel hueso, tinta y bronce.
+        bone: {
+          50: '#FBF9F4',
+          100: '#F7F2EA',
+          200: '#EFE7DA',
+          300: '#E3D9C8',
+          400: '#D6C9B2',
+        },
+        ink: {
+          DEFAULT: '#1C1712',
+          400: '#7A7062',
+          500: '#5C5346',
+          600: '#453C30',
+          700: '#2E261D',
+          800: '#241E16',
+          900: '#14100B',
+        },
+        bronze: {
+          light: '#C6A46B',
+          DEFAULT: '#B08D57',
+          dark: '#8F6E3F',
+        },
         // Escala brand derivada del verde Vendty #62cb31
         brand: {
           50: '#f3fced',
